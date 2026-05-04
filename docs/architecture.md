@@ -2,7 +2,7 @@
 
 ## Base técnica do repositório
 
-O código da aplicação assenta em **Laravel** (skeleton oficial na raiz do repositório: `artisan`, `app/`, `routes/`, `config/`, etc.). A versão do framework está fixada em `composer.json` / `composer.lock` (actualmente **Laravel 13** com PHP **^8.3**). O painel **Filament**, multi-tenancy explícito e restantes módulos de negócio serão adicionados em fases posteriores sobre esta base.
+O código da aplicação assenta em **Laravel** (skeleton oficial na raiz do repositório: `artisan`, `app/`, `routes/`, `config/`, etc.). A versão do framework está fixada em `composer.json` / `composer.lock` (actualmente **Laravel 13** com PHP **^8.3**). O painel **Filament**, multi-tenancy explícito e restantes módulos de negócio serão adicionados em fases posteriores sobre esta base — ver [roadmap.md](roadmap.md).
 
 ## Produto
 
@@ -28,7 +28,9 @@ Idiomas suportados (**pt_BR**, **en**, **es**), middleware `SetLocale`, ficheiro
 
 ## Multi-tenancy
 
-- Modelo alvo: **uma base MySQL**, dados de negócio com **`tenant_id`**, isolamento por **global scopes** / trait **`BelongsToTenant`** e resolução de tenant no pedido (subdomínio, path ou fluxo pós-login — **a fixar na implementação** e documentar em [features/multitenancy.md](features/multitenancy.md)).
+- Modelo alvo: **uma base MySQL**, dados de negócio com **`tenant_id`**, isolamento por **`TenantScope`** / trait **`BelongsToTenant`** e **resolução por utilizador autenticado** (`TenantResolver`; subdomínio fica para evolução futura). Detalhe em [features/multitenancy.md](features/multitenancy.md).
+- Tabela `tenants`; `users.tenant_id` (nullable durante transição); `users.is_super_admin` ignora o scope como flag bootstrap até existir role `super_admin` via Spatie (ver ficha).
+- Seed inicial: `InitialTenantSeeder` + variáveis `SEED_ADMIN_*` (ver ficha).
 - Perfis: **`super_admin`** (acesso global explícito), **`tenant_admin`** e utilizadores do tenant apenas no seu contexto.
 - **Nenhuma** consulta ou policy pode assumir dados de outro tenant.
 
