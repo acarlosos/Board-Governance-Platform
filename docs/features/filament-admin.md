@@ -4,6 +4,10 @@
 
 Fornecer a **UI administrativa** da Board (gestão por tenant) com formulários e tabelas consistentes, **autorização** via Policies e **consultas sempre filtradas** pelo tenant actual.
 
+## Painel `admin`
+
+- `App\Providers\Filament\AdminPanelProvider` regista o painel com `->id('admin')`, `->path('admin')` e **`->default()`**. Sem painel por defeito, comandos como `php artisan make:filament-user` falham com `NoDefaultPanelSetException`.
+
 ## Tabelas envolvidas
 
 _A preencher por recurso Filament:_ mesmas tabelas de domínio expostas nos Resources (ver fichas de feature de negócio correspondentes).
