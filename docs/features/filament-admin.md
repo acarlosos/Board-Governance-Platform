@@ -36,7 +36,7 @@ _A preencher:_ feature tests Filament (Livewire) ou HTTP contra rotas do painel,
 
 ## Traduções
 
-Strings do Filament podem ser sobrescritas em **`lang/vendor/`** (pacotes `filament`, `filament-forms`, `filament-panels`, etc.). Ver [localization.md](localization.md).
+Preferir labels explícitos com chaves da app em **`lang/{pt_BR,en,es}/`** (ex. `fields.*`). Sobrescritas pontuais de pacotes Filament só quando necessário — ver estratégia e limites em [localization.md](localization.md) (`lang/vendor/` ignorado no Git por defeito).
 
 ## Pendências futuras
 

@@ -2,7 +2,17 @@
 
 ## Objetivo
 
-Suportar **pt_BR** (padrão), **en** e **es** na Board, com locale por utilizador, fallback de traduções e base pronta para **Filament** (labels traduzíveis no futuro).
+Suportar **pt_BR** (idioma padrão da aplicação), **en** (fallback) e **es** (idioma suportado), com locale por utilizador e strings da app versionadas de forma enxuta. **Não** versionar árvores completas de tradução de pacotes (Filament, etc.) sem necessidade real.
+
+## Estratégia de idiomas
+
+| Papel | Locale | Notas |
+|--------|--------|--------|
+| **Padrão** | `pt_BR` | `config('app.locale')`; UI e cópias por defeito. |
+| **Fallback** | `en` | `config('app.fallback_locale')`; chaves em falta noutros idiomas resolvem-se em inglês. |
+| **Suportado** | `es` | Mesmo tratamento que `pt_BR` nas listas `supported` e validação de perfil. |
+
+Traduções **próprias do projeto** ficam em **`lang/{locale}/`** (`pt_BR`, `en`, `es`), em ficheiros por domínio: `messages.php`, `validation.php`, `fields.php`, `navigation.php`, `boards.php`, `auth.php` (quando aplicável ao domínio da app), etc.
 
 ## Tabelas envolvidas
 
@@ -23,45 +33,30 @@ _Nenhuma específica nesta fase._
 ## Como funciona
 
 1. **`config/app.php`:** `locale` default `pt_BR`, `fallback_locale` `en` (sobreponível via `.env`).
-2. **`config/localization.php`:** lista `supported` (`pt_BR`, `en`, `es`) e `labels` para UI futura (selector de idioma).
-3. **Ficheiros:** `lang/{pt_BR,en,es}/messages.php` (textos da app) e `lang/en/validation.php` (completo, publicado pelo framework) + `lang/pt_BR/validation.php` e `lang/es/validation.php` (regras frequentes; chaves em falta usam o **fallback** em inglês).
+2. **`config/localization.php`:** lista `supported` (`pt_BR`, `en`, `es`) e `labels` para UI (selector de idioma).
+3. **Ficheiros em `lang/{locale}/`:** mensagens da app, validação, campos, navegação, etc. O **inglês** pode incluir ficheiros publicados pelo framework (`auth.php`, `pagination.php`, `passwords.php`) quando fizer sentido manter alinhados ao Laravel.
 4. **Middleware `SetLocale`:** registado no grupo **`web`** (após sessão); convidados usam só o default da config; utilizadores com `locale` inválido mantêm o default da config.
-5. **Views:** preferir `__('chave')` ou `@lang` em vez de texto fixo (exemplo na `welcome`: título e `<h1>`).
+5. **Views / Filament:** preferir `__('chave')` com prefixo de ficheiro (`messages.*`, `fields.*`, …). Labels de recursos Filament podem usar `__('fields.*')` ou chaves estáveis em `lang/{locale}/`.
 
-## Como adicionar novas traduções
+## Traduções de vendor (Filament e outros)
 
-1. Escolher ficheiro: `messages.php` para UI geral; `validation.php` para mensagens de validação; ou ficheiros por domínio (ex. `lang/pt_BR/boards.php`) quando o volume crescer.
-2. Adicionar a mesma chave em **pt_BR**, **en** e **es** (ou só em pt_BR + en e deixar es herdar do fallback até existir tradução).
-3. Na view ou PHP: `__('messages.chave.subchave')` ou `trans('boards.title')`.
-4. Para atributos de validação legíveis: preencher `'attributes' => ['email' => 'e-mail']` em `validation.php` por idioma.
+- O Filament e os restantes pacotes trazem traduções **dentro de `vendor/`** via Composer; **não** é obrigatório copiar tudo para o repositório.
+- **`lang/vendor/`** está em **`.gitignore`**: evita voltar a versionar milhares de ficheiros por engano.
+- **Só publicar e versionar** traduções de pacote quando for **estritamente necessário** sobrescrever uma ou mais chaves concretas (copywriting, correcção, locale em falta no pacote).
+- Nesse caso: usar `php artisan vendor:publish` **apenas com a tag** do pacote necessário (ex. um único conjunto `*-translations`), editar **só** os ficheiros/locales alterados e **não** adicionar árvores completas de dezenas de idiomas sem critério.
+
+## Como adicionar novas traduções (app)
+
+1. Escolher ficheiro em `lang/{locale}/`: `messages.php`, `validation.php`, `fields.php`, `navigation.php`, ou ficheiro por domínio (ex. `boards.php`).
+2. Manter a mesma chave em **pt_BR**, **en** e **es** quando possível (ou só em `pt_BR` + `en` e deixar `es` herdar do fallback até existir tradução).
+3. No código: `__('messages.chave')`, `trans('boards.title')`, etc.
+4. Para atributos de validação legíveis: `'attributes' => ['email' => '…']` em `validation.php` por idioma.
 
 ## Boas práticas
 
 - Chaves estáveis e hierárquicas (`messages.welcome.heading`), sem concatenar frases com variáveis soltas.
-- Não duplicar ficheiros enormes entre idiomas: manter **en** completo para `validation` onde fizer sentido; outros idiomas com subconjunto + fallback.
-- Ao adicionar idioma novo: incluir em `config/localization.php` → `supported` e `labels`, criar pasta `lang/{locale}/`, atualizar validação de perfil quando existir formulário de `locale`.
-- **Filament:** traduções publicadas em `lang/vendor/` (ver secção abaixo). O locale da app (`App::getLocale()`, ex. via `SetLocale`) é o que o Filament usa. Em recursos: `->label(__('...'))` ou chaves `filament::*` / `filament-forms::*` conforme o ficheiro em `lang/vendor/`.
-
-## Traduções Filament (`lang/vendor/`)
-
-Publicadas com `php artisan vendor:publish` e tags `*-translations`, mais cópia manual do pacote **query-builder** (não expõe tag de publish):
-
-| Pasta | Pacote |
-|-------|--------|
-| `lang/vendor/filament` | `filament/support` |
-| `lang/vendor/filament-forms` | `filament/forms` |
-| `lang/vendor/filament-tables` | `filament/tables` |
-| `lang/vendor/filament-actions` | `filament/actions` |
-| `lang/vendor/filament-panels` | `filament/filament` (painel) |
-| `lang/vendor/filament-notifications` | `filament/notifications` |
-| `lang/vendor/filament-widgets` | `filament/widgets` |
-| `lang/vendor/filament-infolists` | `filament/infolists` |
-| `lang/vendor/filament-schemas` | `filament/schemas` |
-| `lang/vendor/filament-query-builder` | `filament/query-builder` |
-
-Para voltar a publicar após upgrade:  
-`php artisan vendor:publish --tag=filament-translations --tag=filament-forms-translations ... --force`  
-(ou republish individual por tag). Personalizar só **pt_BR**, **en** e **es** nos ficheiros necessários; podes apagar pastas de outros locales se quiseres reduzir o repositório (opcional).
+- Não duplicar ficheiros enormes entre idiomas: `validation` pode estar mais completo em `en` com fallback para os restantes.
+- Ao adicionar idioma novo: `config/localization.php` → `supported` e `labels`, pasta `lang/{locale}/`, validação de `locale` em Form Requests (whitelist).
 
 ## Regras de negócio
 
@@ -79,5 +74,4 @@ Para voltar a publicar após upgrade:
 ## Pendências futuras
 
 - Selector de idioma na UI e persistência ao guardar perfil.
-- Pacote de traduções Filament e `php artisan filament:install` com locale.
 - Sincronizar `Carbon` / `Date` com locale se necessário para formatos regionais.
