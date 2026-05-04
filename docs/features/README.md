@@ -2,6 +2,12 @@
 
 Índice das fichas em `docs/features/`. **Sempre que criar uma nova feature**, adicionar **sempre** uma entrada neste índice e criar o ficheiro `docs/features/{nome}.md` (kebab-case).
 
+## Roadmap
+
+- [../roadmap.md](../roadmap.md) — fases 0–18 e ordem obrigatória de entrega.
+
+## Índice de features
+
 - [multitenancy.md](multitenancy.md)
 - [auth-permissions.md](auth-permissions.md)
 - [audit-logs.md](audit-logs.md)

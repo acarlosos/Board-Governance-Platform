@@ -17,6 +17,7 @@ Traduções **próprias do projeto** ficam em **`lang/{locale}/`** (`pt_BR`, `en
 ## Tabelas envolvidas
 
 - `users.locale` — `string(10)`, default `pt_BR` (migração `*_add_locale_to_users_table`).
+- `users.tenant_id`, `users.status`, `users.is_super_admin` — multi-tenancy e estado de conta; ver [multitenancy.md](multitenancy.md).
 
 ## Models envolvidos
 
