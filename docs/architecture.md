@@ -16,6 +16,7 @@ SaaS **multi-tenant** de **governança corporativa**: organizações (tenants), 
 | Painel administrativo | Filament v5 (Livewire v4) — pacote instalado; painel a configurar |
 | UI reativa (onde aplicável) | Livewire |
 | Base de dados | MySQL |
+| Roles / permissões | Spatie Laravel Permission (roles globais; `teams` off — ver [features/auth-permissions.md](features/auth-permissions.md)) |
 | API (quando existir) | Laravel + Sanctum (tokens com abilities) |
 
 ## Testes e base de dados
