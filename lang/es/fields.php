@@ -1,5 +1,7 @@
 <?php
 
+// Filament: recursos usan principalmente `tenants.php`, `users.php` y `actions.php`.
+
 return [
 
     'user' => [

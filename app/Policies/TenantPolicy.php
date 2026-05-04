@@ -35,4 +35,29 @@ class TenantPolicy
     {
         return $user->isSuperAdmin();
     }
+
+    public function restore(User $user, Tenant $tenant): bool
+    {
+        return $user->isSuperAdmin();
+    }
+
+    public function forceDelete(User $user, Tenant $tenant): bool
+    {
+        return $user->isSuperAdmin();
+    }
+
+    public function deleteAny(User $user): bool
+    {
+        return $user->isSuperAdmin();
+    }
+
+    public function restoreAny(User $user): bool
+    {
+        return $user->isSuperAdmin();
+    }
+
+    public function forceDeleteAny(User $user): bool
+    {
+        return $user->isSuperAdmin();
+    }
 }

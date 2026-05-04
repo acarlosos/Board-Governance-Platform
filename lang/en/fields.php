@@ -1,5 +1,7 @@
 <?php
 
+// Filament admin: prefer `tenants.php`, `users.php`, and `actions.php` for resource copy.
+
 return [
 
     'user' => [
