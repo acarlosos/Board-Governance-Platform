@@ -9,6 +9,8 @@ return [
     'fields' => [
         'name' => 'Name',
         'slug' => 'Slug',
+        'slug_helper_create' => 'Auto-generated from the name; you can adjust before saving. Must be unique.',
+        'slug_helper_edit' => 'The slug cannot be changed after creation.',
         'document' => 'Document',
         'status' => 'Status',
         'created_at' => 'Created at',

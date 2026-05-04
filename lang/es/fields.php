@@ -1,6 +1,6 @@
 <?php
 
-// Filament: recursos usan principalmente `tenants.php`, `users.php` y `actions.php`.
+// Filament: recursos usan `tenants.php`, `users.php`, `roles.php` (Spatie) y `actions.php`.
 
 return [
 

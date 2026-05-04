@@ -12,7 +12,7 @@ Suportar **pt_BR** (idioma padrão da aplicação), **en** (fallback) e **es** (
 | **Fallback** | `en` | `config('app.fallback_locale')`; chaves em falta noutros idiomas resolvem-se em inglês. |
 | **Suportado** | `es` | Mesmo tratamento que `pt_BR` nas listas `supported` e validação de perfil. |
 
-Traduções **próprias do projeto** ficam em **`lang/{locale}/`** (`pt_BR`, `en`, `es`), em ficheiros por domínio: `messages.php`, `validation.php`, `fields.php`, `navigation.php`, `boards.php`, `auth.php` (quando aplicável ao domínio da app), **`tenants.php`**, **`users.php`**, **`actions.php`** (painel Filament — Fase 3), etc.
+Traduções **próprias do projeto** ficam em **`lang/{locale}/`** (`pt_BR`, `en`, `es`), em ficheiros por domínio: `messages.php`, `validation.php`, `fields.php`, `navigation.php`, `boards.php`, `auth.php` (quando aplicável ao domínio da app), **`tenants.php`**, **`users.php`**, **`roles.php`** (rótulos por nome de role Spatie usados no `UserResource`), **`actions.php`** (painel Filament — Fase 3), etc.
 
 ## Tabelas envolvidas
 
@@ -37,7 +37,7 @@ _Nenhuma específica nesta fase._
 2. **`config/localization.php`:** lista `supported` (`pt_BR`, `en`, `es`) e `labels` para UI (selector de idioma).
 3. **Ficheiros em `lang/{locale}/`:** mensagens da app, validação, campos, navegação, etc. O **inglês** pode incluir ficheiros publicados pelo framework (`auth.php`, `pagination.php`, `passwords.php`) quando fizer sentido manter alinhados ao Laravel.
 4. **Middleware `SetLocale`:** registado no grupo **`web`** (após sessão); convidados usam só o default da config; utilizadores com `locale` inválido mantêm o default da config.
-5. **Views / Filament:** preferir `__('chave')` com prefixo de ficheiro (`messages.*`, `fields.*`, `tenants.*`, `users.*`, `actions.*`, …). Recursos `TenantResource` / `UserResource` usam `tenants.*`, `users.*` e `actions.*`.
+5. **Views / Filament:** preferir `__('chave')` com prefixo de ficheiro (`messages.*`, `fields.*`, `tenants.*`, `users.*`, `roles.*`, `actions.*`, …). Recursos `TenantResource` / `UserResource` usam `tenants.*`, `users.*`, `roles.*` e `actions.*`.
 
 ## Traduções de vendor (Filament e outros)
 

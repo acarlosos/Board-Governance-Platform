@@ -9,6 +9,14 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 - `App\Providers\Filament\AdminPanelProvider` regista o painel com `->id('admin')`, `->path('admin')` e **`->default()`**. Sem painel por defeito, comandos como `php artisan make:filament-user` falham com `NoDefaultPanelSetException`.
 - Recursos em `app/Filament/Admin/Resources/` com descoberta automática.
 
+### Formulários e modais
+
+- **`ManageRecords`** (via `ListRecords`) aplica **`columns(2)`** no **schema raiz** dos modais de criar/editar quando o schema ainda não tem colunas custom. Com **uma única `Section`**, o bloco ficava só na **primeira** coluna da grelha do root (a segunda vazia). Nos resources, o `form()` chama **`$schema->columns(1)`** no root e a **`Section`** usa **`->columns(2)`** + **`columnSpanFull()`** para a grelha de campos ser só **dentro** da secção.
+- Secções de formulário usam **`->columns(2)`** no conteúdo (Filament: `1` coluna por defeito, **`2` a partir de `lg`** — `--cols-default` / `--cols-lg` com `repeat(2, minmax(0, 1fr))`).
+- As secções usam **`->contained(false)`** para o conteúdo ocupar a **largura útil do modal** (o defeito `contained` da `Section` limita a largura e deixa margem vazia à direita).
+- O **schema** do formulário e a **secção** usam `extraAttributes(['class' => 'w-full min-w-0'])` e a secção **`->grow()`**, para o bloco do formulário esticar dentro do `flex` do conteúdo do modal (evita o conteúdo ficar com largura “intrínseca” à esquerda).
+- Modais de **Criar** / **Editar** usam `modalWidth(Width::FiveExtraLarge)` (compromisso entre largura e leitura; o defeito do Filament é `FourExtraLarge`).
+
 ## Resources (Fase 3 — base)
 
 | Resource | Model | Visibilidade / query |
@@ -18,14 +26,17 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 
 ### Tenants
 
-- Formulário: `name`, `slug` (único na criação; desactivado na edição), `document`, `status` (`TenantStatus`), soft deletes na tabela.
+- Formulário na **Section** «Dados do tenant» (`tenants.section_main`): `name`, `slug`, `document`, `status` (`TenantStatus`), soft deletes na tabela.
+- **Slug:** na criação, preenchido automaticamente a partir de `name` (`live(onBlur)` + `Str::slug`); **único** na BD (`Rule::unique` só sem registo); na edição o campo fica **desactivado** e **não desidratado** (o valor não volta no submit do Filament), mantendo o slug original — ver teste `test_edicao_tenant_via_filament_preserva_slug`.
 - Tabela: filtros por `status` e `TrashedFilter`.
 - Rotas do resource: **403** para `tenant_admin` (policy `viewAny` negada).
 
 ### Users
 
-- Formulário: `name`, `email`, `password` (obrigatório na criação; opcional na edição; cast `hashed` no model), `tenant_id` (só super-admin vê o campo), `locale`, `status` (`UserStatus`), `roles` (Spatie), `is_super_admin` (só super-admin).
-- Persistência: `App\Actions\Filament\PersistPanelUserAction` — valida email único, força `tenant_id` / `is_super_admin` para não super-admin, limita roles atribuíveis por `tenant_admin` à lista `ROLES_ASSIGNABLE_BY_TENANT_ADMIN`, `syncRoles` após save.
+- Formulário em **secções**: Conta (`name`, `email`, `password` com helper na edição a indicar que vazio mantém a senha), Organização (`tenant_id` **só** super-admin), Permissões (`roles` em `CheckboxList` com **2 colunas**, labels `__('roles.{nome})'`; **sem** opção `super_admin` na lista), Preferências (`locale`, `status`).
+- **Super-admin da plataforma:** toggle `is_super_admin` **só** visível para quem `isSuperAdmin()`. Marcar o toggle faz `syncRoles` incluir a role Spatie `super_admin`; desmarcar remove essa role e mantém as roles da checkbox. `tenant_admin` **não** vê o toggle nem o `tenant_id`; o servidor força `tenant_id` do actor e `is_super_admin = false` e rejeita `super_admin` na lista ou no payload (validação + guards).
+- `password` (obrigatório na criação; opcional na edição com `dehydrated` só quando preenchido; cast `hashed` no model).
+- Persistência: `App\Actions\Filament\PersistPanelUserAction` — valida email único, `roles.*` com `Rule::in` nas roles atribuíveis (lista global sem `super_admin` para super-admin), regra **after** «pelo menos um papel ou `is_super_admin`», `syncRoles` após save.
 - Tabela: filtros por tenant (só super-admin), estado, papel Spatie (`spatie_role`), trashed.
 
 ## Tabelas envolvidas
@@ -58,12 +69,12 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 
 ## Testes relacionados
 
-- `tests/Feature/FilamentAdminResourcesTest.php` — HTTP ao `TenantResource`, contagens na query do `UserResource`, regras da `PersistPanelUserAction` (tenant, roles, super-admin, password).
+- `tests/Feature/FilamentAdminResourcesTest.php` — HTTP ao `TenantResource`, contagens na query do `UserResource`, regras da `PersistPanelUserAction` (tenant, roles, super-admin, password), opções de roles sem `super_admin`, sincronização toggle/`super_admin`, edição Livewire de tenant preservando `slug`.
 - `tests/Feature/AuthPermissionsTest.php` — policies base (incl. tenants/users).
 
 ## Traduções
 
-- Chaves em `lang/{pt_BR,en,es}/`: `tenants.php`, `users.php`, `actions.php`; ver [localization.md](localization.md).
+- Chaves em `lang/{pt_BR,en,es}/`: `tenants.php`, `users.php`, `roles.php` (rótulos dos nomes de role Spatie), `actions.php`; ver [localization.md](localization.md).
 
 ## Pendências futuras
 

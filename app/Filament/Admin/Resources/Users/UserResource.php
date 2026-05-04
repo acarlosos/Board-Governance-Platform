@@ -22,8 +22,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -76,9 +78,18 @@ class UserResource extends Resource
             ])
             ->all();
 
+        $sectionLayout = static fn (Section $section): Section => $section
+            ->extraAttributes(['class' => 'w-full min-w-0'])
+            ->columnSpanFull()
+            ->grow()
+            ->contained(false)
+            ->columns(2);
+
         return $schema
+            ->columns(1)
+            ->extraAttributes(['class' => 'w-full min-w-0'])
             ->components([
-                Section::make(__('users.section_account'))
+                $sectionLayout(Section::make(__('users.section_account')))
                     ->components([
                         TextInput::make('name')
                             ->label(__('users.fields.name'))
@@ -95,13 +106,39 @@ class UserResource extends Resource
                             ->revealable()
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->required(fn (string $operation): bool => $operation === 'create')
-                            ->minLength(8),
+                            ->minLength(8)
+                            ->helperText(fn (string $operation): ?string => $operation === 'edit'
+                                ? __('users.fields.password_helper_edit')
+                                : null)
+                            ->columnSpanFull(),
+                    ]),
+                $sectionLayout(Section::make(__('users.section_organization')))
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
+                    ->components([
                         Select::make('tenant_id')
                             ->label(__('users.fields.tenant'))
                             ->relationship('tenant', 'name')
                             ->searchable()
                             ->preload()
-                            ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
+                            ->columnSpanFull(),
+                    ]),
+                $sectionLayout(Section::make(__('users.section_permissions')))
+                    ->components([
+                        CheckboxList::make('roles')
+                            ->label(__('users.fields.roles'))
+                            ->options(fn (): array => self::roleOptionsForForm())
+                            ->columns(2)
+                            ->required(fn (Get $get): bool => ! (bool) $get('is_super_admin'))
+                            ->helperText(__('users.fields.roles_helper'))
+                            ->columnSpanFull(),
+                        Toggle::make('is_super_admin')
+                            ->label(__('users.fields.is_super_admin'))
+                            ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
+                            ->dehydrated(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
+                            ->columnSpanFull(),
+                    ]),
+                $sectionLayout(Section::make(__('users.section_preferences')))
+                    ->components([
                         Select::make('locale')
                             ->label(__('users.fields.locale'))
                             ->options($localeOptions)
@@ -112,16 +149,6 @@ class UserResource extends Resource
                             ->options($statusOptions)
                             ->required()
                             ->native(false),
-                        CheckboxList::make('roles')
-                            ->label(__('users.fields.roles'))
-                            ->options(fn (): array => self::roleOptionsForForm())
-                            ->columns(2)
-                            ->required()
-                            ->helperText(__('users.fields.roles_helper')),
-                        Toggle::make('is_super_admin')
-                            ->label(__('users.fields.is_super_admin'))
-                            ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
-                            ->dehydrated(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
                     ]),
             ]);
     }
@@ -134,14 +161,15 @@ class UserResource extends Resource
         if (auth()->user()?->isSuperAdmin()) {
             return Role::query()
                 ->where('guard_name', 'web')
+                ->where('name', '!=', PersistPanelUserAction::ROLE_SUPER_ADMIN)
                 ->orderBy('name')
                 ->pluck('name', 'name')
-                ->mapWithKeys(fn (string $name): array => [$name => __('users.roles.'.$name)])
+                ->mapWithKeys(fn (string $name): array => [$name => __('roles.'.$name)])
                 ->all();
         }
 
         return collect(PersistPanelUserAction::ROLES_ASSIGNABLE_BY_TENANT_ADMIN)
-            ->mapWithKeys(fn (string $name): array => [$name => __('users.roles.'.$name)])
+            ->mapWithKeys(fn (string $name): array => [$name => __('roles.'.$name)])
             ->all();
     }
 
@@ -190,7 +218,12 @@ class UserResource extends Resource
                     ->options(collect(UserStatus::cases())->mapWithKeys(fn (UserStatus $c) => [$c->value => __('users.status.'.$c->value)])->all()),
                 SelectFilter::make('spatie_role')
                     ->label(__('users.filters.role'))
-                    ->options(fn (): array => Role::query()->where('guard_name', 'web')->orderBy('name')->pluck('name', 'name')->all())
+                    ->options(fn (): array => Role::query()
+                        ->where('guard_name', 'web')
+                        ->where('name', '!=', PersistPanelUserAction::ROLE_SUPER_ADMIN)
+                        ->orderBy('name')
+                        ->pluck('name', 'name')
+                        ->all())
                     ->query(function (Builder $query, array $data): Builder {
                         $value = data_get($data, 'value') ?? data_get($data, 'values.value');
 
@@ -205,12 +238,16 @@ class UserResource extends Resource
             ->recordActions([
                 EditAction::make()
                     ->label(__('actions.edit'))
+                    ->modalWidth(Width::FiveExtraLarge)
                     ->fillForm(function (Model $record): array {
                         /** @var User $record */
                         return [
                             ...$record->attributesToArray(),
                             'password' => null,
-                            'roles' => $record->getRoleNames()->all(),
+                            'roles' => $record->getRoleNames()
+                                ->reject(fn (string $r): bool => $r === PersistPanelUserAction::ROLE_SUPER_ADMIN)
+                                ->values()
+                                ->all(),
                         ];
                     })
                     ->using(function (array $data, HasActions & HasSchemas $livewire, Model $record, ?\Filament\Tables\Table $table): void {

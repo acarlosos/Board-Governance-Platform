@@ -9,6 +9,8 @@ return [
     'fields' => [
         'name' => 'Nome',
         'slug' => 'Identificador (slug)',
+        'slug_helper_create' => 'Gerado automaticamente a partir do nome; pode ajustar antes de guardar. Deve ser único.',
+        'slug_helper_edit' => 'O identificador não pode ser alterado após a criação.',
         'document' => 'Documento',
         'status' => 'Estado',
         'created_at' => 'Criado em',

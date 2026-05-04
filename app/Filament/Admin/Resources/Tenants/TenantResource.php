@@ -18,7 +18,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -27,6 +29,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class TenantResource extends Resource
@@ -59,19 +62,41 @@ class TenantResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        // Ver comentário em UserResource::form — ListRecords injeta `columns(2)` no schema do modal.
         return $schema
+            ->columns(1)
+            ->extraAttributes([
+                'class' => 'w-full min-w-0',
+            ])
             ->components([
                 Section::make(__('tenants.section_main'))
+                    ->extraAttributes([
+                        'class' => 'w-full min-w-0',
+                    ])
+                    ->columnSpanFull()
+                    ->grow()
+                    ->contained(false)
+                    ->columns(2)
                     ->components([
                         TextInput::make('name')
                             ->label(__('tenants.fields.name'))
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, mixed $state, string $operation): void {
+                                if ($operation !== 'create') {
+                                    return;
+                                }
+                                $set('slug', Str::slug((string) $state));
+                            }),
                         TextInput::make('slug')
                             ->label(__('tenants.fields.slug'))
                             ->required()
                             ->maxLength(255)
                             ->alphaDash()
+                            ->helperText(fn (string $operation): ?string => $operation === 'create'
+                                ? __('tenants.fields.slug_helper_create')
+                                : __('tenants.fields.slug_helper_edit'))
                             ->rules(fn (?Model $record): array => filled($record?->getKey())
                                 ? []
                                 : [Rule::unique('tenants', 'slug')])
@@ -135,7 +160,8 @@ class TenantResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()
-                    ->label(__('actions.edit')),
+                    ->label(__('actions.edit'))
+                    ->modalWidth(Width::FiveExtraLarge),
                 DeleteAction::make()
                     ->label(__('actions.delete')),
                 RestoreAction::make()

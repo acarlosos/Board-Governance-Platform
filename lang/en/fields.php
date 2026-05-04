@@ -1,6 +1,6 @@
 <?php
 
-// Filament admin: prefer `tenants.php`, `users.php`, and `actions.php` for resource copy.
+// Filament admin: use `tenants.php`, `users.php`, `roles.php` (Spatie labels), and `actions.php`.
 
 return [
 

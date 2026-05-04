@@ -66,6 +66,7 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 
 - `TenantResource` — autorização via `TenantPolicy` (apenas `isSuperAdmin()`).
 - `UserResource` — `UserPolicy` + query por `tenant_id` para não super-admin; criação/edição via `PersistPanelUserAction` com validação de roles e `is_super_admin`.
+- **Role `super_admin` vs flag:** a CheckboxList de papéis **não** inclui `super_admin`. Super-admin de plataforma gere a role `super_admin` **apenas** via toggle `is_super_admin` (sincronização em `PersistPanelUserAction::syncRolesFromCheckboxAndSuperFlag`). `tenant_admin` não pode definir a flag nem enviar `super_admin` no array de roles (guards + `Rule::in`).
 
 ## Pendências futuras
 
