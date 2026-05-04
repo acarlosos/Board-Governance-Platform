@@ -50,7 +50,7 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 ## Regras de negócio
 
 - Autorização no servidor (Policies + `can()`); UI não substitui checagens.
-- Roles são **globais**; o limite por tenant em listagens vem de **queries** + `UserPolicy` (Filament ajusta-se na Fase 3).
+- Roles são **globais**; o limite por tenant em listagens vem de **queries** (`UserResource::getEloquentQuery()`) + `UserPolicy` no painel Filament.
 
 ## Regras de segurança
 
@@ -60,9 +60,15 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 ## Testes relacionados
 
 - `tests/Feature/AuthPermissionsTest.php` — seeder, tenants, users, guest, bootstrap e role `super_admin`.
+- `tests/Feature/FilamentAdminResourcesTest.php` — rotas do `TenantResource`, scope do `UserResource` e `PersistPanelUserAction` (tenant, roles, password).
+
+## Integração Filament (Fase 3)
+
+- `TenantResource` — autorização via `TenantPolicy` (apenas `isSuperAdmin()`).
+- `UserResource` — `UserPolicy` + query por `tenant_id` para não super-admin; criação/edição via `PersistPanelUserAction` com validação de roles e `is_super_admin`.
+- **Role `super_admin` vs flag:** a CheckboxList de papéis **não** inclui `super_admin`. Super-admin de plataforma gere a role `super_admin` **apenas** via toggle `is_super_admin` (sincronização em `PersistPanelUserAction::syncRolesFromCheckboxAndSuperFlag`). `tenant_admin` não pode definir a flag nem enviar `super_admin` no array de roles (guards + `Rule::in`).
 
 ## Pendências futuras
 
 - 2FA, SSO se requisito.
-- Filament: `modifyQueryUsing` em resources para alinhar listagens ao tenant.
 - Opcional: remover dependência da coluna `is_super_admin` quando só roles bastarem.

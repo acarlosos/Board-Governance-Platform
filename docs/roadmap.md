@@ -11,9 +11,10 @@
 ## Estado actual
 
 - **Fase 0 — concluída**: regras `.cursor/`, `docs/`, **Laravel 13**, MySQL no `.env`, ambiente de testes isolado em SQLite (`.env.testing`), **Filament v5** com painel `admin` (`->default()`), i18n **pt_BR / en / es** com middleware `SetLocale` e `users.locale`.
-- **Fase 1 — base concluída**: tabela `tenants`, `users` com `tenant_id` / `status` / `is_super_admin` (bootstrap até Spatie) / soft deletes, enums, `TenantScope`, trait `BelongsToTenant`, `TenantResolver`, seed `InitialTenantSeeder`, testes de isolamento (modelo só em `tests/Support`). Pendências: middleware/UI de troca de tenant, Resources Filament (Fase 3).
-- **Fase 2 — base concluída**: Spatie Permission (migrations + `config/permission.php`), roles e permissões iniciais, `RolesAndPermissionsSeeder`, `User` com `HasRoles` / `isSuperAdmin()`, `TenantPolicy` e `UserPolicy`, testes em `AuthPermissionsTest`. Pendências: integração Filament (shield / policies em resources), 2FA, refinamento de permissões por módulo.
-- **Fases 3–18 — pendentes.**
+- **Fase 1 — base concluída**: tabela `tenants`, `users` com `tenant_id` / `status` / `is_super_admin` (bootstrap até Spatie) / soft deletes, enums, `TenantScope`, trait `BelongsToTenant`, `TenantResolver`, seed `InitialTenantSeeder`, testes de isolamento (modelo só em `tests/Support`). Pendências: middleware/UI de troca de tenant (multi-tenant “switch” avançado).
+- **Fase 2 — base concluída**: Spatie Permission (migrations + `config/permission.php`), roles e permissões iniciais, `RolesAndPermissionsSeeder`, `User` com `HasRoles` / `isSuperAdmin()`, `TenantPolicy` e `UserPolicy`, testes em `AuthPermissionsTest`. Pendências: 2FA, refinamento de permissões por módulo.
+- **Fase 3 — painel admin inicial (tenants/users) concluída**: `TenantResource`, `UserResource`, `PersistPanelUserAction`, traduções `tenants` / `users` / `roles` / `actions`, testes `FilamentAdminResourcesTest` (incl. UX de secções, `super_admin` só via toggle, preservação de slug em edição, Livewire no tenant). Pendências no roadmap da Fase 3: perfis na UI (3.3), auditoria em recursos (adiada à Fase 4).
+- **Fases 4–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
 
@@ -52,19 +53,19 @@ Ficha: [`features/multitenancy.md`](features/multitenancy.md).
 - 2.2 Criar roles: `super_admin`, `tenant_admin`, `board_member`, `executive`, `guest`
 - 2.3 Criar permissions base
 - 2.4 Configurar policies
-- 2.5 Integrar permissões ao Filament
+- 2.5 Integrar permissões ao Filament — **feito** com a Fase 3 (`TenantResource`, `UserResource`, policies)
 - 2.6 Criar testes de autorização
 
 Ficha: [`features/auth-permissions.md`](features/auth-permissions.md).
 
 ### Fase 3 — Painel administrativo inicial
 
-- 3.1 Resource de Tenants
-- 3.2 Resource de Users
-- 3.3 Gestão de perfis
-- 3.4 Campo de idioma do utilizador
-- 3.5 Controle de status de utilizadores
-- 3.6 Auditoria inicial em utilizadores e tenants
+- 3.1 Resource de Tenants — **feito** (`TenantResource`, policy, i18n, testes de acesso).
+- 3.2 Resource de Users — **feito** (`UserResource`, `PersistPanelUserAction`, scope por tenant, i18n, testes de policy/query/action); refinamento UX/segurança: secções de formulário, `super_admin` fora da CheckboxList e sincronizado com `is_super_admin`, password na edição sem alterar hash se vazio.
+- 3.3 Gestão de perfis — pendente (página ou secção dedicada, se necessário além do resource).
+- 3.4 Campo de idioma do utilizador — **feito** no `UserResource` (`locale` + config `localization`).
+- 3.5 Controle de status de utilizadores — **feito** no `UserResource` (`UserStatus`).
+- 3.6 Auditoria inicial em utilizadores e tenants — **adiado** à Fase 4 (`audit_logs`).
 
 Fichas: [`features/filament-admin.md`](features/filament-admin.md), [`features/audit-logs.md`](features/audit-logs.md).
 

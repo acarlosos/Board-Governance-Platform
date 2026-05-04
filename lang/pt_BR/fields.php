@@ -3,6 +3,7 @@
 /**
  * Etiquetas reutilizáveis de formulários e tabelas (domínio da app).
  * Uma chave por conceito: fields.{grupo}.{campo}.
+ * Painel Filament (Fase 3): recursos usam `tenants.php`, `users.php`, `roles.php` (papéis Spatie) e `actions.php`.
  */
 return [
 

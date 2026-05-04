@@ -1,5 +1,7 @@
 <?php
 
+// Filament: recursos usan `tenants.php`, `users.php`, `roles.php` (Spatie) y `actions.php`.
+
 return [
 
     'user' => [

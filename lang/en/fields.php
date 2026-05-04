@@ -1,5 +1,7 @@
 <?php
 
+// Filament admin: use `tenants.php`, `users.php`, `roles.php` (Spatie labels), and `actions.php`.
+
 return [
 
     'user' => [

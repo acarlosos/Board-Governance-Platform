@@ -44,4 +44,19 @@ class UserPolicy
     {
         return $this->view($user, $model);
     }
+
+    public function restore(User $user, User $model): bool
+    {
+        return $this->view($user, $model);
+    }
+
+    public function deleteAny(User $user): bool
+    {
+        return $user->can('manage_users');
+    }
+
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('manage_users');
+    }
 }
