@@ -13,7 +13,7 @@ SaaS **multi-tenant** de **governança corporativa**: organizações (tenants), 
 | Camada | Tecnologia |
 |--------|------------|
 | Backend | Laravel |
-| Painel administrativo | Filament (Livewire) |
+| Painel administrativo | Filament v5 (Livewire v4) — pacote instalado; painel a configurar |
 | UI reativa (onde aplicável) | Livewire |
 | Base de dados | MySQL |
 | API (quando existir) | Laravel + Sanctum (tokens com abilities) |

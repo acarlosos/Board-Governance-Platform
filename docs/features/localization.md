@@ -40,7 +40,28 @@ _Nenhuma específica nesta fase._
 - Chaves estáveis e hierárquicas (`messages.welcome.heading`), sem concatenar frases com variáveis soltas.
 - Não duplicar ficheiros enormes entre idiomas: manter **en** completo para `validation` onde fizer sentido; outros idiomas com subconjunto + fallback.
 - Ao adicionar idioma novo: incluir em `config/localization.php` → `supported` e `labels`, criar pasta `lang/{locale}/`, atualizar validação de perfil quando existir formulário de `locale`.
-- **Filament (futuro):** usar `->label(__('...'))` em recursos; considerar `lang/vendor/filament` após instalar o pacote; o locale da app (`App::getLocale()`) é o que o Filament segue para formatação e traduções de pacote.
+- **Filament:** traduções publicadas em `lang/vendor/` (ver secção abaixo). O locale da app (`App::getLocale()`, ex. via `SetLocale`) é o que o Filament usa. Em recursos: `->label(__('...'))` ou chaves `filament::*` / `filament-forms::*` conforme o ficheiro em `lang/vendor/`.
+
+## Traduções Filament (`lang/vendor/`)
+
+Publicadas com `php artisan vendor:publish` e tags `*-translations`, mais cópia manual do pacote **query-builder** (não expõe tag de publish):
+
+| Pasta | Pacote |
+|-------|--------|
+| `lang/vendor/filament` | `filament/support` |
+| `lang/vendor/filament-forms` | `filament/forms` |
+| `lang/vendor/filament-tables` | `filament/tables` |
+| `lang/vendor/filament-actions` | `filament/actions` |
+| `lang/vendor/filament-panels` | `filament/filament` (painel) |
+| `lang/vendor/filament-notifications` | `filament/notifications` |
+| `lang/vendor/filament-widgets` | `filament/widgets` |
+| `lang/vendor/filament-infolists` | `filament/infolists` |
+| `lang/vendor/filament-schemas` | `filament/schemas` |
+| `lang/vendor/filament-query-builder` | `filament/query-builder` |
+
+Para voltar a publicar após upgrade:  
+`php artisan vendor:publish --tag=filament-translations --tag=filament-forms-translations ... --force`  
+(ou republish individual por tag). Personalizar só **pt_BR**, **en** e **es** nos ficheiros necessários; podes apagar pastas de outros locales se quiseres reduzir o repositório (opcional).
 
 ## Regras de negócio
 

@@ -34,7 +34,12 @@ _A preencher:_ chamadas desde `CreateAction` / `EditAction` / custom actions par
 
 _A preencher:_ feature tests Filament (Livewire) ou HTTP contra rotas do painel, conforme stack de testes do projeto.
 
+## Traduções
+
+Strings do Filament podem ser sobrescritas em **`lang/vendor/`** (pacotes `filament`, `filament-forms`, `filament-panels`, etc.). Ver [localization.md](localization.md).
+
 ## Pendências futuras
 
+- `php artisan filament:install --panels` e primeiro painel, se ainda não existirem.
 - Temas / branding por tenant se for requisito.
 - Plugins (2FA, media library) documentados aqui quando instalados.

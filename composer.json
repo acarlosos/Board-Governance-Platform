@@ -2,11 +2,17 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "board/governance-platform",
     "type": "project",
-    "description": "Board Governance Platform — SaaS multi-tenant de governança corporativa.",
-    "keywords": ["laravel", "board", "governance", "multi-tenant"],
+    "description": "Board Governance Platform \u2014 SaaS multi-tenant de governan\u00e7a corporativa.",
+    "keywords": [
+        "laravel",
+        "board",
+        "governance",
+        "multi-tenant"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "filament/filament": "^5.6",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0"
     },
@@ -49,7 +55,8 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
