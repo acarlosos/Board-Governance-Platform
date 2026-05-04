@@ -28,7 +28,7 @@ class InitialTenantSeeder extends Seeder
         $email = env('SEED_ADMIN_EMAIL', 'admin@localhost');
         $password = env('SEED_ADMIN_PASSWORD', 'AlterarEstaSenha1!');
 
-        User::query()->updateOrCreate(
+        $user = User::query()->updateOrCreate(
             ['email' => $email],
             [
                 'name' => 'Administrador',
@@ -39,5 +39,7 @@ class InitialTenantSeeder extends Seeder
                 'is_super_admin' => false,
             ],
         );
+
+        $user->syncRoles(['tenant_admin']);
     }
 }

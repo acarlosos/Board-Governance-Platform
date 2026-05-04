@@ -15,9 +15,9 @@ _Não existe tabela de domínio “canário” na aplicação._ Os testes de `Be
 
 ## Flag `is_super_admin` (bootstrap)
 
-- Coluna booleana **`users.is_super_admin`** (default `false`): enquanto **Spatie Permission** não estiver integrado (Fase 2), esta flag permite que um utilizador **ignore o `TenantScope`** (`User::shouldBypassTenantScope()`), alinhado ao papel futuro **`super_admin`**.
-- Após a Fase 2, o ideal é derivar `super_admin` de roles/permissions e **reduzir ou eliminar** a dependência desta flag (migração de dados + política única documentada na ficha `auth-permissions.md`).
-- Utilizadores normais mantêm `is_super_admin = false`; o seed inicial define `false` para o administrador do tenant.
+- Coluna booleana **`users.is_super_admin`** (default `false`): bypass de `TenantScope` e políticas alinhadas a `User::isSuperAdmin()`, que devolve **true** se a flag estiver activa **ou** se o utilizador tiver a role Spatie **`super_admin`**.
+- Manter a flag como rede de segurança / contas de bootstrap até consolidar apenas roles (ver `auth-permissions.md`).
+- O seed inicial (`InitialTenantSeeder`) define `is_super_admin = false` e atribui **`tenant_admin`** ao administrador do tenant.
 
 ## Models envolvidos
 
@@ -35,7 +35,7 @@ _Não existe tabela de domínio “canário” na aplicação._ Os testes de `Be
 ## Services / Actions envolvidos
 
 - `App\Services\Tenancy\TenantResolver` — singleton: `currentId()` e `current()` com base no utilizador autenticado; devolve `null` sem sessão (seguro).
-- `App\Models\Scopes\TenantScope` — global scope: filtra por `auth()->user()->tenant_id` quando há sessão e o utilizador **não** tem `is_super_admin`; sem autenticação **não** aplica filtro (migrations, `artisan db:seed`, testes sem `actingAs`).
+- `App\Models\Scopes\TenantScope` — global scope: filtra por `auth()->user()->tenant_id` quando há sessão e o utilizador **não** é super (`User::isSuperAdmin()` = flag `is_super_admin` **ou** role Spatie `super_admin`); sem autenticação **não** aplica filtro (migrations, `artisan db:seed`, testes sem `actingAs`).
 - `App\Models\Concerns\BelongsToTenant` — regista `TenantScope` e preenche `tenant_id` no `creating` a partir do utilizador autenticado.
 
 ## Seed inicial

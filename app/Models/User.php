@@ -14,13 +14,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'locale', 'tenant_id', 'status', 'is_super_admin'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     /**
      * @return array<string, string>
@@ -41,11 +42,32 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Bypass do TenantScope: flag global até existir role `super_admin` via Spatie (Fase 2).
+     * Role `super_admin` (Spatie) ou flag `is_super_admin` até consolidação única na Fase 2+.
+     */
+    public function isSuperAdmin(): bool
+    {
+        if ($this->is_super_admin) {
+            return true;
+        }
+
+        return $this->hasRole('super_admin');
+    }
+
+    public function hasTenantAccess(Tenant $tenant): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        return $this->tenant_id !== null && (int) $this->tenant_id === (int) $tenant->id;
+    }
+
+    /**
+     * Bypass do TenantScope: alinhado com {@see self::isSuperAdmin()}.
      */
     public function shouldBypassTenantScope(): bool
     {
-        return (bool) $this->is_super_admin;
+        return $this->isSuperAdmin();
     }
 
     public function canAccessPanel(Panel $panel): bool

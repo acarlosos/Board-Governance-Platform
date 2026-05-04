@@ -11,8 +11,9 @@
 ## Estado actual
 
 - **Fase 0 — concluída**: regras `.cursor/`, `docs/`, **Laravel 13**, MySQL no `.env`, ambiente de testes isolado em SQLite (`.env.testing`), **Filament v5** com painel `admin` (`->default()`), i18n **pt_BR / en / es** com middleware `SetLocale` e `users.locale`.
-- **Fase 1 — base concluída**: tabela `tenants`, `users` com `tenant_id` / `status` / `is_super_admin` (bootstrap até Spatie) / soft deletes, enums, `TenantScope`, trait `BelongsToTenant`, `TenantResolver`, seed `InitialTenantSeeder`, testes de isolamento (modelo só em `tests/Support`). Pendências: middleware/UI de troca de tenant, Resources Filament (Fase 3), Spatie (Fase 2).
-- **Fases 2–18 — pendentes.**
+- **Fase 1 — base concluída**: tabela `tenants`, `users` com `tenant_id` / `status` / `is_super_admin` (bootstrap até Spatie) / soft deletes, enums, `TenantScope`, trait `BelongsToTenant`, `TenantResolver`, seed `InitialTenantSeeder`, testes de isolamento (modelo só em `tests/Support`). Pendências: middleware/UI de troca de tenant, Resources Filament (Fase 3).
+- **Fase 2 — base concluída**: Spatie Permission (migrations + `config/permission.php`), roles e permissões iniciais, `RolesAndPermissionsSeeder`, `User` com `HasRoles` / `isSuperAdmin()`, `TenantPolicy` e `UserPolicy`, testes em `AuthPermissionsTest`. Pendências: integração Filament (shield / policies em resources), 2FA, refinamento de permissões por módulo.
+- **Fases 3–18 — pendentes.**
 
 ## Decisões já fixadas
 

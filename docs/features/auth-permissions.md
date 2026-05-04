@@ -2,39 +2,67 @@
 
 ## Objetivo
 
-Controlar **quem** acede à plataforma e **o que** pode fazer, com separação clara entre utilizadores do tenant, administradores do tenant e administradores globais, alinhado com Filament e API.
+Controlar **quem** pode fazer **o quê** com **Spatie Laravel Permission** (`roles` / `permissions` globais, guard `web`), mantendo o **isolamento de dados** por `tenant_id`, `TenantScope` e policies. A flag `users.is_super_admin` continua como **bootstrap** até consolidar só role `super_admin`.
+
+## Pacote
+
+- `spatie/laravel-permission` (^7.4) — `teams` **desligado**; sem team permissions nesta fase.
 
 ## Tabelas envolvidas
 
-_A preencher:_ `users`, `tenant_user` ou equivalente, tabelas Spatie (`roles`, `permissions`, pivots) se adotados, convites, password resets.
+- Tabelas Spatie publicadas: `permissions`, `roles`, `model_has_permissions`, `model_has_roles`, `role_has_permissions` (migration `*_create_permission_tables.php`).
+- `users` — relação morph com roles; `is_super_admin`; `tenant_id`.
 
 ## Models envolvidos
 
-_A preencher:_ `User`, relação com `Tenant`, packages de permissões.
+- `User` — trait `Spatie\Permission\Traits\HasRoles`; métodos `isSuperAdmin()`, `hasTenantAccess(Tenant)`, `shouldBypassTenantScope()` (via `isSuperAdmin()`).
+- Models Spatie: `Spatie\Permission\Models\Role`, `Permission` (config em `config/permission.php`).
 
-## Policies envolvidas
+## Roles iniciais
 
-_A preencher:_ policies por recurso (boards, meetings, documents, etc.) e gates globais se existirem.
+| Role | Uso resumido |
+|------|----------------|
+| `super_admin` | Todas as permissões; equivalente à flag `is_super_admin` para bypass de tenant. |
+| `tenant_admin` | Gestão no tenant **sem** `manage_tenants`. |
+| `board_member` | `view_reports`, `manage_meetings`. |
+| `executive` | `manage_meetings`, `manage_documents`, `manage_votes`, `view_reports`. |
+| `guest` | `view_reports`. |
 
-## Services / Actions envolvidos
+## Permissões iniciais
 
-_A preencher:_ convites, sincronização de perfis com roles, ações de impersonação (se existir).
+`manage_tenants`, `manage_users`, `manage_boards`, `manage_meetings`, `manage_documents`, `manage_votes`, `manage_minutes`, `view_reports`, `manage_settings`.
+
+Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
+
+## Policies
+
+| Policy | Regras principais |
+|--------|-------------------|
+| `TenantPolicy` | `viewAny` / CRUD: **só** `isSuperAdmin()` (flag ou role `super_admin`). A permissão `manage_tenants` **não** concede acesso a tenants (evita `tenant_admin` com permissão atribuída por engano). |
+| `UserPolicy` | Requer `manage_users`; fora de `isSuperAdmin()`, só utilizadores **do mesmo `tenant_id`**. |
+
+## Seeders
+
+- `RolesAndPermissionsSeeder` — cria permissões e roles e faz `syncPermissions`.
+- `DatabaseSeeder` — `RolesAndPermissionsSeeder` **antes** de `InitialTenantSeeder`.
+- `InitialTenantSeeder` — administrador inicial recebe role `tenant_admin`.
 
 ## Regras de negócio
 
-- Autenticação Laravel/Filament padrão; API via Sanctum quando existir.
-- Mapeamento **perfil de produto** → conjunto de permissões/roles documentado aqui quando fechado.
+- Autorização no servidor (Policies + `can()`); UI não substitui checagens.
+- Roles são **globais**; o limite por tenant em listagens vem de **queries** + `UserPolicy` (Filament ajusta-se na Fase 3).
 
 ## Regras de segurança
 
-- Autorização **sempre** no servidor (Policies/Gates); UI esconde mas não substitui checagens.
-- Não expor listagens que permitam enumerar utilizadores de outros tenants sem policy explícita.
+- Não enumerar utilizadores de outro tenant: `UserPolicy::view` / `update` / `delete` validam `tenant_id`.
+- `is_super_admin` e role `super_admin` são equivalentes para `isSuperAdmin()` até unificar num único mecanismo.
 
 ## Testes relacionados
 
-_A preencher:_ testes de login, autorização negada, troca de tenant, API com token e abilities.
+- `tests/Feature/AuthPermissionsTest.php` — seeder, tenants, users, guest, bootstrap e role `super_admin`.
 
 ## Pendências futuras
 
-- **2FA** (Filament/plugin ou fluxo custom).
-- SSO empresarial se for requisito.
+- 2FA, SSO se requisito.
+- Filament: `modifyQueryUsing` em resources para alinhar listagens ao tenant.
+- Opcional: remover dependência da coluna `is_super_admin` quando só roles bastarem.
