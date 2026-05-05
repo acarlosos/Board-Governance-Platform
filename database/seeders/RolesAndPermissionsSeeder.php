@@ -19,6 +19,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'manage_documents',
         'manage_votes',
         'manage_minutes',
+        'manage_tasks',
         'view_reports',
         'manage_settings',
     ];

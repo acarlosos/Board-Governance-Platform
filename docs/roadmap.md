@@ -145,14 +145,14 @@ Ficha: [`features/votes.md`](features/votes.md).
 
 ### Fase 10 — Workflows e pendências
 
-- 10.1 Criar `pending_tasks`
+- 10.1 Criar `tasks` + comentários + histórico — **feito**
 - 10.2 Pendências por utilizador
 - 10.3 Aprovações
 - 10.4 Prazos
 - 10.5 Notificações internas
 - 10.6 Testes
 
-Ficha: a criar (`features/workflows.md`) quando a fase iniciar.
+Ficha: [`features/tasks.md`](features/tasks.md).
 
 ### Fase 11 — Integrações configuráveis via Admin
 

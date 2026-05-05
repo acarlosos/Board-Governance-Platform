@@ -30,7 +30,7 @@ Controlar **quem** pode fazer **o quê** com **Spatie Laravel Permission** (`rol
 
 ## Permissões iniciais
 
-`manage_tenants`, `manage_users`, `manage_boards`, `manage_meetings`, `manage_documents`, `manage_votes`, `manage_minutes`, `view_reports`, `manage_settings`.
+`manage_tenants`, `manage_users`, `manage_boards`, `manage_meetings`, `manage_documents`, `manage_votes`, `manage_minutes`, `manage_tasks`, `view_reports`, `manage_settings`.
 
 Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 

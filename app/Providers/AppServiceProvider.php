@@ -17,6 +17,8 @@ use App\Observers\MinuteApprovalObserver;
 use App\Observers\VoteObserver;
 use App\Observers\VoteOptionObserver;
 use App\Observers\VoteResponseObserver;
+use App\Observers\TaskObserver;
+use App\Observers\TaskCommentObserver;
 use App\Services\Tenancy\TenantResolver;
 use Illuminate\Support\ServiceProvider;
 
@@ -50,5 +52,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Vote::observe(VoteObserver::class);
         \App\Models\VoteOption::observe(VoteOptionObserver::class);
         \App\Models\VoteResponse::observe(VoteResponseObserver::class);
+        \App\Models\Task::observe(TaskObserver::class);
+        \App\Models\TaskComment::observe(TaskCommentObserver::class);
     }
 }
