@@ -19,7 +19,7 @@ class AuthPermissionsTest extends TestCase
 
     public function test_roles_e_permissoes_sao_criadas_pelo_seeder(): void
     {
-        $this->assertSame(9, \Spatie\Permission\Models\Permission::query()->count());
+        $this->assertSame(11, \Spatie\Permission\Models\Permission::query()->count());
         $this->assertSame(5, \Spatie\Permission\Models\Role::query()->count());
         $this->assertTrue(\Spatie\Permission\Models\Role::query()->where('name', 'super_admin')->exists());
     }

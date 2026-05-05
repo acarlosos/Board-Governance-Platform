@@ -14,6 +14,12 @@ use App\Observers\DocumentVersionObserver;
 use App\Observers\MinuteObserver;
 use App\Observers\MinuteVersionObserver;
 use App\Observers\MinuteApprovalObserver;
+use App\Observers\VoteObserver;
+use App\Observers\VoteOptionObserver;
+use App\Observers\VoteResponseObserver;
+use App\Observers\TaskObserver;
+use App\Observers\TaskCommentObserver;
+use App\Observers\IntegrationObserver;
 use App\Services\Tenancy\TenantResolver;
 use Illuminate\Support\ServiceProvider;
 
@@ -44,5 +50,11 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Minute::observe(MinuteObserver::class);
         \App\Models\MinuteVersion::observe(MinuteVersionObserver::class);
         \App\Models\MinuteApproval::observe(MinuteApprovalObserver::class);
+        \App\Models\Vote::observe(VoteObserver::class);
+        \App\Models\VoteOption::observe(VoteOptionObserver::class);
+        \App\Models\VoteResponse::observe(VoteResponseObserver::class);
+        \App\Models\Task::observe(TaskObserver::class);
+        \App\Models\TaskComment::observe(TaskCommentObserver::class);
+        \App\Models\Integration::observe(IntegrationObserver::class);
     }
 }

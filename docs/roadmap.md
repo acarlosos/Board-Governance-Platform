@@ -19,7 +19,8 @@
 - **Fase 6 — reuniões concluída**: `meetings`, `meeting_participants`, `meeting_agenda_items`, enums, models com `BelongsToTenant`, policies, actions (transições de status), `MeetingResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 7 — documentos concluída**: `documents`, `document_versions`, `document_access_logs`, enums, models com `BelongsToTenant`, policies, actions (upload privado + versionamento + logs de acesso), `DocumentResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 8 — atas concluída**: `minutes`, `minute_versions`, `minute_approvals`, enums, models com `BelongsToTenant`, policies, actions (workflow e aprovações), `MinuteResource` + RelationManagers, auditoria (observers) e testes.
-- **Fases 9–18 — pendentes** (salvo itens já marcados como concluídos por fase).
+- **Fase 9 — votações concluída**: `votes`, `vote_options`, `vote_responses`, enums, models com `BelongsToTenant`, policies, actions (máquina de estados e voto), `VoteResource` + RelationManagers, auditoria (observers) e testes.
+- **Fases 10–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
 
@@ -144,26 +145,25 @@ Ficha: [`features/votes.md`](features/votes.md).
 
 ### Fase 10 — Workflows e pendências
 
-- 10.1 Criar `pending_tasks`
+- 10.1 Criar `tasks` + comentários + histórico — **feito**
 - 10.2 Pendências por utilizador
 - 10.3 Aprovações
 - 10.4 Prazos
 - 10.5 Notificações internas
 - 10.6 Testes
 
-Ficha: a criar (`features/workflows.md`) quando a fase iniciar.
+Ficha: [`features/tasks.md`](features/tasks.md).
 
 ### Fase 11 — Integrações configuráveis via Admin
 
-- 11.1 Criar `integrations`
-- 11.2 Config criptografado
-- 11.3 `IntegrationResource` no Filament
-- 11.4 `IntegrationFactory`
-- 11.5 Drivers base: SMTP, Office 365, OneDrive, DocuSign, Videoconferência
-- 11.6 Testar conexão
-- 11.7 Logs de integração
+- 11.1 Criar `integrations` + `integration_logs` — **feito**
+- 11.2 Config criptografado (`encrypted:array`) — **feito**
+- 11.3 `IntegrationResource` no Filament — **feito**
+- 11.4 Drivers base (fake): SMTP, Office 365, OneDrive, DocuSign, Teams, Zoom, Looker Studio — **feito**
+- 11.5 Testar conexão (validação de obrigatórios) — **feito**
+- 11.6 Logs de integração (sanitizados) — **feito**
 
-Ficha: a criar (`features/integrations.md`) quando a fase iniciar.
+Ficha: [`features/integrations.md`](features/integrations.md).
 
 ### Fase 12 — Assinatura digital
 
