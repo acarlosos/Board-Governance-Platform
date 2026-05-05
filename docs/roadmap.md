@@ -17,7 +17,8 @@
 - **Fase 4 — auditoria global concluída**: tabela `audit_logs`, `AuditLoggerService`, observers (Tenant/User), `AuditLogPolicy`, `AuditLogResource` (somente leitura) + traduções e testes.
 - **Fase 5 — boards (conselhos) concluída**: `boards`, `board_members`, enums, models com `BelongsToTenant`, policies, `BoardResource` + RelationManager, auditoria (observers) e testes de isolamento/autorização.
 - **Fase 6 — reuniões concluída**: `meetings`, `meeting_participants`, `meeting_agenda_items`, enums, models com `BelongsToTenant`, policies, actions (transições de status), `MeetingResource` + RelationManagers, auditoria (observers) e testes.
-- **Fases 7–18 — pendentes** (salvo itens já marcados como concluídos por fase).
+- **Fase 7 — documentos concluída**: `documents`, `document_versions`, `document_access_logs`, enums, models com `BelongsToTenant`, policies, actions (upload privado + versionamento + logs de acesso), `DocumentResource` + RelationManagers, auditoria (observers) e testes.
+- **Fases 8–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
 
