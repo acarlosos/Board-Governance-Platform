@@ -42,7 +42,7 @@ Criar uma base central de **notificações internas** (canal `database`) e **tem
 ## Actions
 
 - `PersistNotificationTemplateAction` — cria/edita template (tenant_admin não cria/edita global)
-- `CreateNotificationAction` — cria notificação para utilizador do tenant; valida `related`
+- `CreateNotificationAction` — cria notificação para utilizador do tenant; valida `related` contra whitelist (`Task`, `SignatureRequest`, `Minute`, `Vote`, `Document`, `Meeting`)
 - `SendNotificationAction` — envia (fake) e grava log sanitizado
 - `MarkNotificationAsReadAction` — utilizador marca a própria como lida
 - `RecordNotificationLogAction` — log append-only com sanitização
@@ -51,7 +51,7 @@ Criar uma base central de **notificações internas** (canal `database`) e **tem
 
 - Notificação (`notifications_center`) **sempre** pertence a um tenant.
 - `user_id` deve ser do **mesmo tenant**.
-- `related_type/related_id` (se informado) deve ser do **mesmo tenant**.
+- `related_type/related_id` (se informado) deve ser do **mesmo tenant** e `related_type` só aceita classes na whitelist: `Task`, `SignatureRequest`, `Minute`, `Vote`, `Document`, `Meeting` (caso contrário `ValidationException`).
 - Templates globais (`tenant_id = null`) funcionam como **fallback**, mas `tenant_admin` **não edita** templates globais.
 - Override: template do tenant sobrescreve global por `key + locale + channel`.
 - Nesta fase **não envia e-mail real** e **não dispara automaticamente** eventos a partir de Tasks/Signatures/Minutes/Votes.

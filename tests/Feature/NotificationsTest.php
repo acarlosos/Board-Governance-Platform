@@ -161,6 +161,34 @@ class NotificationsTest extends TestCase
         ]);
     }
 
+    public function test_create_notification_blocks_invalid_related_type_and_allows_whitelisted(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $document = Document::factory()->create(['tenant_id' => $tenant->id]);
+
+        $notification = app(CreateNotificationAction::class)->create($admin, [
+            'user_id' => $user->id,
+            'title' => 'Relacionado permitido',
+            'channel' => NotificationChannel::Database->value,
+            'related_type' => Document::class,
+            'related_id' => $document->id,
+        ]);
+        $this->assertNotNull($notification->id);
+        $this->assertSame(Document::class, $notification->related_type);
+
+        $this->expectException(ValidationException::class);
+        app(CreateNotificationAction::class)->create($admin, [
+            'user_id' => $user->id,
+            'title' => 'Relacionado inválido',
+            'channel' => NotificationChannel::Database->value,
+            'related_type' => Tenant::class,
+            'related_id' => $tenant->id,
+        ]);
+    }
+
     public function test_send_database_funciona_e_send_email_fake_cria_log_sem_envio_real(): void
     {
         $tenant = Tenant::factory()->create();

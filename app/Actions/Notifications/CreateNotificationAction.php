@@ -4,9 +4,15 @@ namespace App\Actions\Notifications;
 
 use App\Enums\NotificationChannel;
 use App\Enums\NotificationStatus;
+use App\Models\Document;
+use App\Models\Meeting;
+use App\Models\Minute;
 use App\Models\NotificationCenter;
 use App\Models\NotificationTemplate;
+use App\Models\SignatureRequest;
+use App\Models\Task;
 use App\Models\User;
+use App\Models\Vote;
 use App\Services\Notifications\NotificationTemplateRenderer;
 use App\Services\Notifications\NotificationTemplateResolver;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +23,16 @@ use Illuminate\Validation\ValidationException;
 
 final class CreateNotificationAction
 {
+    /** @var array<int, class-string<Model>> */
+    private const RELATED_WHITELIST = [
+        Task::class,
+        SignatureRequest::class,
+        Minute::class,
+        Vote::class,
+        Document::class,
+        Meeting::class,
+    ];
+
     /**
      * @param  array<string, mixed>  $data
      * @param  array<string, mixed>  $templateData
@@ -77,7 +93,7 @@ final class CreateNotificationAction
             'status' => ['nullable', 'string'],
             'template_key' => ['nullable', 'string', 'max:128'],
             'locale' => ['nullable', 'string', 'max:16'],
-            'related_type' => ['nullable', 'string'],
+            'related_type' => ['nullable', 'string', Rule::in(self::RELATED_WHITELIST)],
             'related_id' => ['nullable', 'integer'],
             'metadata' => ['nullable', 'array'],
         ]);
@@ -97,6 +113,16 @@ final class CreateNotificationAction
             $relatedType = $safe->related_type ?? null;
             $relatedId = $safe->related_id ?? null;
             if ($relatedType || $relatedId) {
+                if (! $relatedType || ! $relatedId) {
+                    $v->errors()->add('related_id', __('notifications.validation.related_must_belong_to_tenant'));
+
+                    return;
+                }
+
+                if (! in_array($relatedType, self::RELATED_WHITELIST, true)) {
+                    return;
+                }
+
                 $related = $this->resolveRelated($relatedType, $relatedId);
                 if (! $related || (int) $related->getAttribute('tenant_id') !== (int) $tenantId) {
                     $v->errors()->add('related_id', __('notifications.validation.related_must_belong_to_tenant'));
@@ -132,11 +158,11 @@ final class CreateNotificationAction
             return null;
         }
 
-        /** @var class-string<Model> $relatedType */
-        if (! class_exists($relatedType)) {
+        if (! in_array($relatedType, self::RELATED_WHITELIST, true)) {
             return null;
         }
 
+        /** @var class-string<Model> $relatedType */
         // lookup interno sem scope, mas sempre validando tenant_id depois
         return $relatedType::query()->withoutGlobalScopes()->find((int) $relatedId);
     }
