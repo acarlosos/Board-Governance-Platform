@@ -16,7 +16,10 @@
 - **Fase 3 — painel admin inicial (tenants/users) concluída**: `TenantResource`, `UserResource`, `PersistPanelUserAction`, traduções `tenants` / `users` / `roles` / `actions`, testes `FilamentAdminResourcesTest` (incl. UX de secções, `super_admin` só via toggle, preservação de slug em edição, Livewire no tenant). Pendências no roadmap da Fase 3: perfis na UI (3.3), auditoria em recursos (adiada à Fase 4).
 - **Fase 4 — auditoria global concluída**: tabela `audit_logs`, `AuditLoggerService`, observers (Tenant/User), `AuditLogPolicy`, `AuditLogResource` (somente leitura) + traduções e testes.
 - **Fase 5 — boards (conselhos) concluída**: `boards`, `board_members`, enums, models com `BelongsToTenant`, policies, `BoardResource` + RelationManager, auditoria (observers) e testes de isolamento/autorização.
-- **Fases 6–18 — pendentes** (salvo itens já marcados como concluídos por fase).
+- **Fase 6 — reuniões concluída**: `meetings`, `meeting_participants`, `meeting_agenda_items`, enums, models com `BelongsToTenant`, policies, actions (transições de status), `MeetingResource` + RelationManagers, auditoria (observers) e testes.
+- **Fase 7 — documentos concluída**: `documents`, `document_versions`, `document_access_logs`, enums, models com `BelongsToTenant`, policies, actions (upload privado + versionamento + logs de acesso), `DocumentResource` + RelationManagers, auditoria (observers) e testes.
+- **Fase 8 — atas concluída**: `minutes`, `minute_versions`, `minute_approvals`, enums, models com `BelongsToTenant`, policies, actions (workflow e aprovações), `MinuteResource` + RelationManagers, auditoria (observers) e testes.
+- **Fases 9–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
 

@@ -6,6 +6,14 @@ use App\Observers\TenantObserver;
 use App\Observers\UserObserver;
 use App\Observers\BoardObserver;
 use App\Observers\BoardMemberObserver;
+use App\Observers\MeetingObserver;
+use App\Observers\MeetingParticipantObserver;
+use App\Observers\MeetingAgendaItemObserver;
+use App\Observers\DocumentObserver;
+use App\Observers\DocumentVersionObserver;
+use App\Observers\MinuteObserver;
+use App\Observers\MinuteVersionObserver;
+use App\Observers\MinuteApprovalObserver;
 use App\Services\Tenancy\TenantResolver;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,5 +36,13 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\User::observe(UserObserver::class);
         \App\Models\Board::observe(BoardObserver::class);
         \App\Models\BoardMember::observe(BoardMemberObserver::class);
+        \App\Models\Meeting::observe(MeetingObserver::class);
+        \App\Models\MeetingParticipant::observe(MeetingParticipantObserver::class);
+        \App\Models\MeetingAgendaItem::observe(MeetingAgendaItemObserver::class);
+        \App\Models\Document::observe(DocumentObserver::class);
+        \App\Models\DocumentVersion::observe(DocumentVersionObserver::class);
+        \App\Models\Minute::observe(MinuteObserver::class);
+        \App\Models\MinuteVersion::observe(MinuteVersionObserver::class);
+        \App\Models\MinuteApproval::observe(MinuteApprovalObserver::class);
     }
 }

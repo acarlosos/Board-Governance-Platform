@@ -53,19 +53,18 @@ abstract class TestCase extends BaseTestCase
         $database = $app['config']->get('database.connections.sqlite.database');
 
         Assert::assertIsString($database);
-        Assert::assertStringEndsWith(
-            'testing.sqlite',
-            $database,
-            'Use apenas database/testing.sqlite para dados de teste.'
-        );
+
+        // Permitimos SQLite em memória para estabilidade/performance dos testes.
+        if ($database === ':memory:') {
+            return;
+        }
+
+        Assert::assertStringEndsWith('testing.sqlite', $database, 'Use apenas database/testing.sqlite ou :memory: para dados de teste.');
 
         $resolved = str_starts_with($database, DIRECTORY_SEPARATOR)
             ? $database
             : $app->basePath().DIRECTORY_SEPARATOR.$database;
 
-        Assert::assertFileExists(
-            $resolved,
-            'Crie o ficheiro vazio: touch database/testing.sqlite'
-        );
+        Assert::assertFileExists($resolved, 'Crie o ficheiro vazio: touch database/testing.sqlite');
     }
 }
