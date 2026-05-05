@@ -11,6 +11,16 @@ use Illuminate\Http\Request;
 
 final class RecordDocumentAccessAction
 {
+    public static function run(Document $document, ?DocumentVersion $version, string $action): DocumentAccessLog
+    {
+        $enum = match ($action) {
+            'download', 'downloaded' => DocumentAccessAction::Downloaded,
+            default => DocumentAccessAction::Viewed,
+        };
+
+        return app(self::class)->record(auth()->user(), $document, $enum, $version);
+    }
+
     public function record(?User $actor, Document $document, DocumentAccessAction $action, ?DocumentVersion $version = null, ?Request $request = null): DocumentAccessLog
     {
         $request ??= request();

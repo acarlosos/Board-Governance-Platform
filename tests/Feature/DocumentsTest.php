@@ -219,5 +219,77 @@ class DocumentsTest extends TestCase
         $this->assertStringNotContainsString('file_path', $flat);
         $this->assertStringNotContainsString($version->file_path, $flat);
     }
+
+    public function test_download_autorizado_funciona_e_registra_log(): void
+    {
+        Storage::fake('local');
+        Config::set('board.documents.disk', 'local');
+
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+        $this->actingAs($admin);
+
+        $document = Document::factory()->create(['tenant_id' => $tenant->id]);
+        $file = $this->makeUploadedFile('a.pdf', 'application/pdf', 1);
+        app(UploadDocumentVersionAction::class)->upload($admin, $document, $file);
+
+        $response = $this->get(route('documents.download', $document));
+
+        $response->assertOk();
+        $this->assertGreaterThanOrEqual(1, DocumentAccessLog::query()->where('document_id', $document->id)->where('action', 'downloaded')->count());
+    }
+
+    public function test_download_nao_autorizado_retorna_403(): void
+    {
+        Storage::fake('local');
+        Config::set('board.documents.disk', 'local');
+
+        $tenantA = Tenant::factory()->create();
+        $tenantB = Tenant::factory()->create();
+
+        $adminA = User::factory()->create(['tenant_id' => $tenantA->id]);
+        $adminA->assignRole('tenant_admin');
+        $this->actingAs($adminA);
+
+        $documentB = Document::factory()->create(['tenant_id' => $tenantB->id]);
+
+        $this->get(route('documents.download', $documentB))->assertForbidden();
+    }
+
+    public function test_download_sem_versao_retorna_404(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+        $this->actingAs($admin);
+
+        $document = Document::factory()->create(['tenant_id' => $tenant->id, 'current_version_id' => null]);
+
+        $this->get(route('documents.download', $document))->assertNotFound();
+    }
+
+    public function test_download_nao_expoe_file_path_na_resposta_de_erro(): void
+    {
+        Storage::fake('local');
+        Config::set('board.documents.disk', 'local');
+
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+        $this->actingAs($admin);
+
+        $document = Document::factory()->create(['tenant_id' => $tenant->id]);
+        $file = $this->makeUploadedFile('a.pdf', 'application/pdf', 1);
+        $version = app(UploadDocumentVersionAction::class)->upload($admin, $document, $file);
+
+        // Simula arquivo ausente para forçar exception no download.
+        Storage::disk('local')->delete($version->file_path);
+
+        $response = $this->get(route('documents.download', $document));
+        $response->assertStatus(500);
+        $response->assertSeeText('Erro ao processar o arquivo.');
+        $response->assertDontSee('private/tenants');
+    }
 }
 

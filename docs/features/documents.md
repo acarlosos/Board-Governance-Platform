@@ -49,6 +49,7 @@ Gestão de documentos **com upload privado**, **storage separado por tenant**, *
   - `UploadDocumentVersionAction` valida tenant do documento.
   - Policies + `DocumentResource::getEloquentQuery()` garantem listagens/leituras seguras.
 - **Auditoria sem path sensível**: `DocumentVersionObserver` não registra `file_path` em `audit_logs`.
+- **Download seguro**: endpoint autenticado aplica `DocumentPolicy::view`, registra `DocumentAccessLog` e suporta streaming para arquivos grandes.
 
 ## Testes relacionados
 
@@ -59,6 +60,7 @@ Gestão de documentos **com upload privado**, **storage separado por tenant**, *
   - bloqueio de upload em documento de outro tenant
   - logs de acesso (view/download)
   - auditoria sem expor `file_path`
+  - endpoint `/documents/{document}/download` (200/403/404 + mensagem genérica sem path)
 
 ## Pendências futuras
 
