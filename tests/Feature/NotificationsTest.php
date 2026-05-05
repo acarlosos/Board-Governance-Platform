@@ -124,7 +124,7 @@ class NotificationsTest extends TestCase
         $this->assertSame('Task: Revisar pauta', $r['body']);
     }
 
-    public function test_cria_notificacao_para_usuario_do_mesmo_tenant_e_bloqueia_outro_tenant_e_related_cross_tenant(): void
+    public function test_bloqueia_usuario_de_outro_tenant_ao_criar_notificacao(): void
     {
         $tA = Tenant::factory()->create();
         $tB = Tenant::factory()->create();
@@ -134,8 +134,6 @@ class NotificationsTest extends TestCase
 
         $userA = User::factory()->create(['tenant_id' => $tA->id]);
         $userB = User::factory()->create(['tenant_id' => $tB->id]);
-
-        $docB = Document::factory()->create(['tenant_id' => $tB->id]);
 
         $ok = app(CreateNotificationAction::class)->create($admin, [
             'user_id' => $userA->id,
@@ -150,6 +148,18 @@ class NotificationsTest extends TestCase
             'title' => 'Teste',
             'channel' => NotificationChannel::Database->value,
         ]);
+    }
+
+    public function test_bloqueia_related_de_outro_tenant_ao_criar_notificacao(): void
+    {
+        $tA = Tenant::factory()->create();
+        $tB = Tenant::factory()->create();
+
+        $admin = User::factory()->create(['tenant_id' => $tA->id]);
+        $admin->assignRole('tenant_admin');
+
+        $userA = User::factory()->create(['tenant_id' => $tA->id]);
+        $docB = Document::factory()->create(['tenant_id' => $tB->id]);
 
         $this->expectException(ValidationException::class);
         app(CreateNotificationAction::class)->create($admin, [
@@ -158,6 +168,34 @@ class NotificationsTest extends TestCase
             'channel' => NotificationChannel::Database->value,
             'related_type' => Document::class,
             'related_id' => $docB->id,
+        ]);
+    }
+
+    public function test_create_notification_blocks_invalid_related_type_and_allows_whitelisted(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $document = Document::factory()->create(['tenant_id' => $tenant->id]);
+
+        $notification = app(CreateNotificationAction::class)->create($admin, [
+            'user_id' => $user->id,
+            'title' => 'Relacionado permitido',
+            'channel' => NotificationChannel::Database->value,
+            'related_type' => Document::class,
+            'related_id' => $document->id,
+        ]);
+        $this->assertNotNull($notification->id);
+        $this->assertSame(Document::class, $notification->related_type);
+
+        $this->expectException(ValidationException::class);
+        app(CreateNotificationAction::class)->create($admin, [
+            'user_id' => $user->id,
+            'title' => 'Relacionado inválido',
+            'channel' => NotificationChannel::Database->value,
+            'related_type' => Tenant::class,
+            'related_id' => $tenant->id,
         ]);
     }
 
