@@ -167,14 +167,14 @@ Ficha: [`features/integrations.md`](features/integrations.md).
 
 ### Fase 12 — Assinatura digital
 
-- 12.1 Fluxo interno de solicitação
-- 12.2 Integração DocuSign
-- 12.3 Status de assinatura
-- 12.4 Webhook de retorno
-- 12.5 Auditoria
-- 12.6 Testes
+- 12.1 Fluxo interno de solicitação (Document/Minute) — **feito**
+- 12.2 Integração DocuSign (fake, sem chamada externa) — **feito**
+- 12.3 Status de assinatura + state machine — **feito**
+- 12.4 Webhook de retorno — pendente (fase futura)
+- 12.5 Auditoria (sem metadata/segredos) — **feito**
+- 12.6 Testes — **feito**
 
-Ficha: a criar (`features/signatures.md`) quando a fase iniciar.
+Ficha: [`features/signatures.md`](features/signatures.md).
 
 ### Fase 13 — Notificações
 

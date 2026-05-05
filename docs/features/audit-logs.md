@@ -52,6 +52,8 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
 - **VoteOption:** registrar eventos `option_created` / `option_updated` (metadados).
 - **VoteResponse:** registrar evento `vote_cast` com `vote_option_id` e `voted_at` (nunca `comment`).
 - **Integration:** auditar `type`, `provider`, `name`, `status`, `last_test_*` (nunca `config`). Se config mudar, registrar apenas `config_changed` e `config_changed_keys` (sem secrets).
+- **SignatureRequest:** auditar `signable_type`, `signable_id`, `provider`, `integration_id`, `title`, `status`, `requested_*`, `external_id` (nunca `message` nem `metadata` completos).
+- **SignatureRequestSigner:** auditar `signature_request_id`, `user_id`, `name`, `email`, `status`, `signing_order`, `signed_at`, `rejected_at`, `external_id` (nunca `metadata` completo).
 
 ## Regras de segurança
 
