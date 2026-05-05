@@ -40,6 +40,8 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
 - Conteúdo do log: metadados suficientes sem gravar dados pessoais ou segredos desnecessários.
 - **Tenant:** auditar alterações de `name`, `slug`, `document`, `status`.
 - **User:** auditar alterações de `name`, `email`, `tenant_id`, `locale`, `status`, `is_super_admin` (nunca `password`).
+- **Board:** auditar alterações de `name`, `description`, `status`, `tenant_id`, `created_by`.
+- **BoardMember:** auditar alterações de `board_id`, `user_id`, `role`, `status`, `joined_at`, `left_at` (e `tenant_id`).
 
 ## Regras de segurança
 
