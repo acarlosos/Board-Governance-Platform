@@ -19,6 +19,7 @@
 - [tasks.md](tasks.md)
 - [integrations.md](integrations.md)
 - [signatures.md](signatures.md)
+- [notifications.md](notifications.md)
 
 ## Painel administrativo
 

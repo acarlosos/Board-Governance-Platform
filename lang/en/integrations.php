@@ -14,6 +14,9 @@ return [
     ],
 
     'fields' => [
+        'tenant' => 'Organization',
+        'created_at' => 'Created at',
+        'updated_at' => 'Updated at',
         'name' => 'Name',
         'type' => 'Type',
         'provider' => 'Provider',

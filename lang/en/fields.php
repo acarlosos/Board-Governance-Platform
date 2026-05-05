@@ -4,6 +4,10 @@
 
 return [
 
+    'tenant' => 'Organization',
+    'created_at' => 'Created at',
+    'updated_at' => 'Updated at',
+
     'user' => [
         'model_label' => 'User',
         'plural_label' => 'Users',

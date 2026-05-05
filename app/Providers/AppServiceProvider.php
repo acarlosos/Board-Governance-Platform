@@ -22,6 +22,8 @@ use App\Observers\TaskCommentObserver;
 use App\Observers\IntegrationObserver;
 use App\Observers\SignatureRequestObserver;
 use App\Observers\SignatureRequestSignerObserver;
+use App\Observers\NotificationTemplateObserver;
+use App\Observers\NotificationCenterObserver;
 use App\Services\Tenancy\TenantResolver;
 use Illuminate\Support\ServiceProvider;
 
@@ -60,5 +62,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Integration::observe(IntegrationObserver::class);
         \App\Models\SignatureRequest::observe(SignatureRequestObserver::class);
         \App\Models\SignatureRequestSigner::observe(SignatureRequestSignerObserver::class);
+        \App\Models\NotificationTemplate::observe(NotificationTemplateObserver::class);
+        \App\Models\NotificationCenter::observe(NotificationCenterObserver::class);
     }
 }
