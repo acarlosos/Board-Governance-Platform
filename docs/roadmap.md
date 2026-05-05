@@ -15,7 +15,8 @@
 - **Fase 2 — base concluída**: Spatie Permission (migrations + `config/permission.php`), roles e permissões iniciais, `RolesAndPermissionsSeeder`, `User` com `HasRoles` / `isSuperAdmin()`, `TenantPolicy` e `UserPolicy`, testes em `AuthPermissionsTest`. Pendências: 2FA, refinamento de permissões por módulo.
 - **Fase 3 — painel admin inicial (tenants/users) concluída**: `TenantResource`, `UserResource`, `PersistPanelUserAction`, traduções `tenants` / `users` / `roles` / `actions`, testes `FilamentAdminResourcesTest` (incl. UX de secções, `super_admin` só via toggle, preservação de slug em edição, Livewire no tenant). Pendências no roadmap da Fase 3: perfis na UI (3.3), auditoria em recursos (adiada à Fase 4).
 - **Fase 4 — auditoria global concluída**: tabela `audit_logs`, `AuditLoggerService`, observers (Tenant/User), `AuditLogPolicy`, `AuditLogResource` (somente leitura) + traduções e testes.
-- **Fases 5–18 — pendentes** (salvo itens já marcados como concluídos por fase).
+- **Fase 5 — boards (conselhos) concluída**: `boards`, `board_members`, enums, models com `BelongsToTenant`, policies, `BoardResource` + RelationManager, auditoria (observers) e testes de isolamento/autorização.
+- **Fases 6–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
 
