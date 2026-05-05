@@ -23,6 +23,7 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 |----------|--------|----------------------|
 | `App\Filament\Admin\Resources\Tenants\TenantResource` | `Tenant` | Só quem passa `TenantPolicy` (`isSuperAdmin()`). **Sem** `BelongsToTenant` no model `Tenant`. |
 | `App\Filament\Admin\Resources\Users\UserResource` | `User` | `UserPolicy` + `manage_users`. `getEloquentQuery()` restringe a `tenant_id` do actor se **não** for super-admin. **Sem** trait `BelongsToTenant` no `User`. |
+| `App\Filament\Admin\Resources\AuditLogs\AuditLogResource` | `AuditLog` | **Somente leitura**. `AuditLogPolicy` + `getEloquentQuery()` restringe por `tenant_id` para não super-admin. |
 
 ### Tenants
 
@@ -51,6 +52,7 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 
 - `TenantPolicy` — ligada ao `TenantResource` (incl. acções em massa / restore quando aplicável).
 - `UserPolicy` — `viewAny` / `view` / `create` / `update` / `delete` / `restore` e variantes em massa conforme `manage_users` e `tenant_id`.
+- `AuditLogPolicy` — leitura global para `super_admin`; leitura por tenant para `tenant_admin`; mutações negadas.
 
 ## Services / Actions envolvidos
 

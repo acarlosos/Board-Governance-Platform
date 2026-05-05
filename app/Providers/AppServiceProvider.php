@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Observers\TenantObserver;
+use App\Observers\UserObserver;
 use App\Services\Tenancy\TenantResolver;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \App\Models\Tenant::observe(TenantObserver::class);
+        \App\Models\User::observe(UserObserver::class);
     }
 }

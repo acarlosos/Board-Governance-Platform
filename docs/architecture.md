@@ -40,7 +40,7 @@ Idiomas suportados (**pt_BR**, **en**, **es**), middleware `SetLocale`, ficheiro
 - **HTTP / Filament:** finos; validação via Form Requests; autorização via Policies/Gates.
 - **Negócio:** Actions, Services; lógica complexa fora de Models quando deixar de caber com clareza.
 - **Modelos:** relacionamentos Eloquent, casts, scopes simples; observers quando fizer sentido.
-- **Auditoria:** eventos críticos registados (ver [features/audit-logs.md](features/audit-logs.md)).
+- **Auditoria:** eventos críticos registados em `audit_logs` (ver [features/audit-logs.md](features/audit-logs.md)) via `AuditLoggerService` + observers (Tenant/User nesta fase), com valores filtrados por allowlist e sem dados sensíveis.
 
 ## Segurança (resumo)
 
