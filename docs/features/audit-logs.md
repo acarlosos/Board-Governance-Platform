@@ -42,6 +42,9 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
 - **User:** auditar alterações de `name`, `email`, `tenant_id`, `locale`, `status`, `is_super_admin` (nunca `password`).
 - **Board:** auditar alterações de `name`, `description`, `status`, `tenant_id`, `created_by`.
 - **BoardMember:** auditar alterações de `board_id`, `user_id`, `role`, `status`, `joined_at`, `left_at` (e `tenant_id`).
+- **Meeting:** auditar alterações de `board_id`, `title`, `description`, `scheduled_at`, `starts_at`, `ends_at`, `video_conference_url`, `status`, `tenant_id`, `created_by`.
+- **MeetingParticipant:** auditar alterações de `meeting_id`, `user_id`, `role`, `status`, `responded_at` (e `tenant_id`).
+- **MeetingAgendaItem:** auditar alterações de `meeting_id`, `title`, `description`, `order_column`, `status` (e `tenant_id`).
 
 ## Regras de segurança
 

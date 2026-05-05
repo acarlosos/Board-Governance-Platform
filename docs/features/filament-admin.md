@@ -25,6 +25,7 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 | `App\Filament\Admin\Resources\Users\UserResource` | `User` | `UserPolicy` + `manage_users`. `getEloquentQuery()` restringe a `tenant_id` do actor se **não** for super-admin. **Sem** trait `BelongsToTenant` no `User`. |
 | `App\Filament\Admin\Resources\AuditLogs\AuditLogResource` | `AuditLog` | **Somente leitura**. `AuditLogPolicy` + `getEloquentQuery()` restringe por `tenant_id` para não super-admin. |
 | `App\Filament\Admin\Resources\Boards\BoardResource` | `Board` | `BoardPolicy` + `BelongsToTenant`. Para `board_member`, listagem restringe aos boards onde participa como membro ativo. |
+| `App\Filament\Admin\Resources\Meetings\MeetingResource` | `Meeting` | `MeetingPolicy` + `BelongsToTenant`. Para `board_member`/participante, listagem restringe por vínculo ao board/participação. |
 
 ### Tenants
 
@@ -56,6 +57,9 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 - `AuditLogPolicy` — leitura global para `super_admin`; leitura por tenant para `tenant_admin`; mutações negadas.
 - `BoardPolicy` — gestão por `tenant_admin` / `manage_boards`; leitura para `board_member` apenas nos boards onde participa.
 - `BoardMemberPolicy` — gestão por `tenant_admin` / `manage_boards`; leitura para `board_member` no contexto do board.
+- `MeetingPolicy` — gestão por `tenant_admin` / `manage_meetings`; leitura para `board_member`/participante no contexto do board/reunião.
+- `MeetingParticipantPolicy` — gestão por `tenant_admin` / `manage_meetings`; leitura para `board_member`/participante.
+- `MeetingAgendaItemPolicy` — gestão por `tenant_admin` / `manage_meetings`; leitura para `board_member`/participante.
 
 ## Services / Actions envolvidos
 
