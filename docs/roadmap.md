@@ -19,7 +19,8 @@
 - **Fase 6 — reuniões concluída**: `meetings`, `meeting_participants`, `meeting_agenda_items`, enums, models com `BelongsToTenant`, policies, actions (transições de status), `MeetingResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 7 — documentos concluída**: `documents`, `document_versions`, `document_access_logs`, enums, models com `BelongsToTenant`, policies, actions (upload privado + versionamento + logs de acesso), `DocumentResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 8 — atas concluída**: `minutes`, `minute_versions`, `minute_approvals`, enums, models com `BelongsToTenant`, policies, actions (workflow e aprovações), `MinuteResource` + RelationManagers, auditoria (observers) e testes.
-- **Fases 9–18 — pendentes** (salvo itens já marcados como concluídos por fase).
+- **Fase 9 — votações concluída**: `votes`, `vote_options`, `vote_responses`, enums, models com `BelongsToTenant`, policies, actions (máquina de estados e voto), `VoteResource` + RelationManagers, auditoria (observers) e testes.
+- **Fases 10–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
 

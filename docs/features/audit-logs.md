@@ -48,6 +48,9 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
 - **Minute:** auditar alterações de `meeting_id`, `title`, `status`, `current_version_id`, `created_by` (nunca `content`).
 - **MinuteVersion:** registrar evento `version_created` com `version_number` e `changes_summary` (nunca `content`).
 - **MinuteApproval:** registrar evento `approval_created` / `approval_updated` com `user_id`, `status`, `approved_at`/`rejected_at`.
+- **Vote:** auditar alterações de `meeting_id`, `title`, `description`, `type`, `status`, `quorum_required`, `starts_at`, `ends_at`, `created_by`.
+- **VoteOption:** registrar eventos `option_created` / `option_updated` (metadados).
+- **VoteResponse:** registrar evento `vote_cast` com `vote_option_id` e `voted_at` (nunca `comment`).
 
 ## Regras de segurança
 
