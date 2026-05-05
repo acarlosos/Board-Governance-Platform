@@ -75,4 +75,5 @@ Permitir que cada **tenant** configure integrações externas (por provedor) no 
 - Separar `manage_integrations` por tipo (email/storage/signature/etc) se necessário.
 - Implementar chamadas reais por provider (somente quando a fase abrir).
 - Endpoint/API pública para integração (quando Fase 16 abrir).
+- Assinatura digital: `provider=docusign` pode ser usado por `signature_requests` (Fase 12).
 
