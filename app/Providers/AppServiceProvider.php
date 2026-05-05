@@ -11,6 +11,9 @@ use App\Observers\MeetingParticipantObserver;
 use App\Observers\MeetingAgendaItemObserver;
 use App\Observers\DocumentObserver;
 use App\Observers\DocumentVersionObserver;
+use App\Observers\MinuteObserver;
+use App\Observers\MinuteVersionObserver;
+use App\Observers\MinuteApprovalObserver;
 use App\Services\Tenancy\TenantResolver;
 use Illuminate\Support\ServiceProvider;
 
@@ -38,5 +41,8 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\MeetingAgendaItem::observe(MeetingAgendaItemObserver::class);
         \App\Models\Document::observe(DocumentObserver::class);
         \App\Models\DocumentVersion::observe(DocumentVersionObserver::class);
+        \App\Models\Minute::observe(MinuteObserver::class);
+        \App\Models\MinuteVersion::observe(MinuteVersionObserver::class);
+        \App\Models\MinuteApproval::observe(MinuteApprovalObserver::class);
     }
 }

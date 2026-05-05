@@ -27,6 +27,7 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 | `App\Filament\Admin\Resources\Boards\BoardResource` | `Board` | `BoardPolicy` + `BelongsToTenant`. Para `board_member`, listagem restringe aos boards onde participa como membro ativo. |
 | `App\Filament\Admin\Resources\Meetings\MeetingResource` | `Meeting` | `MeetingPolicy` + `BelongsToTenant`. Para `board_member`/participante, listagem restringe por vínculo ao board/participação. |
 | `App\Filament\Admin\Resources\Documents\DocumentResource` | `Document` | `DocumentPolicy` + `BelongsToTenant`. Para `board_member`/participante, listagem restringe ao board/reunião onde tem vínculo. Versions e logs via relation managers. |
+| `App\Filament\Admin\Resources\Minutes\MinuteResource` | `Minute` | `MinutePolicy` + `BelongsToTenant`. Para participante, listagem restringe às reuniões onde participa. Versions e aprovações via relation managers. |
 
 ### Tenants
 

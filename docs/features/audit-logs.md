@@ -45,6 +45,9 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
 - **Meeting:** auditar alterações de `board_id`, `title`, `description`, `scheduled_at`, `starts_at`, `ends_at`, `video_conference_url`, `status`, `tenant_id`, `created_by`.
 - **MeetingParticipant:** auditar alterações de `meeting_id`, `user_id`, `role`, `status`, `responded_at` (e `tenant_id`).
 - **MeetingAgendaItem:** auditar alterações de `meeting_id`, `title`, `description`, `order_column`, `status` (e `tenant_id`).
+- **Minute:** auditar alterações de `meeting_id`, `title`, `status`, `current_version_id`, `created_by` (nunca `content`).
+- **MinuteVersion:** registrar evento `version_created` com `version_number` e `changes_summary` (nunca `content`).
+- **MinuteApproval:** registrar evento `approval_created` / `approval_updated` com `user_id`, `status`, `approved_at`/`rejected_at`.
 
 ## Regras de segurança
 

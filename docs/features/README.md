@@ -14,6 +14,7 @@
 - [boards.md](boards.md)
 - [meetings.md](meetings.md)
 - [documents.md](documents.md)
+- [minutes.md](minutes.md)
 - [votes.md](votes.md)
 
 ## Painel administrativo
