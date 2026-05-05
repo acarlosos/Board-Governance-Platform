@@ -232,7 +232,7 @@ class IntegrationResource extends Resource
                 $sectionLayout(Section::make(__('integrations.sections.organization')))
                     ->components([
                         Select::make('tenant_id')
-                            ->label(__('fields.tenant'))
+                            ->label(__('integrations.fields.tenant'))
                             ->relationship('tenant', 'name')
                             ->searchable()
                             ->preload()
@@ -262,7 +262,7 @@ class IntegrationResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn ($state): string => __('integrations.status.'.((string) $state))),
                 TextColumn::make('tenant.name')
-                    ->label(__('fields.tenant'))
+                    ->label(__('integrations.fields.tenant'))
                     ->toggleable()
                     ->visible(fn (): bool => auth()->user()?->isSuperAdmin() === true),
                 TextColumn::make('last_test_status')
@@ -273,7 +273,7 @@ class IntegrationResource extends Resource
                     ->dateTime()
                     ->toggleable(),
                 TextColumn::make('created_at')
-                    ->label(__('fields.created_at'))
+                    ->label(__('integrations.fields.created_at'))
                     ->dateTime()
                     ->sortable(),
             ])

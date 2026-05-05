@@ -54,6 +54,8 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
 - **Integration:** auditar `type`, `provider`, `name`, `status`, `last_test_*` (nunca `config`). Se config mudar, registrar apenas `config_changed` e `config_changed_keys` (sem secrets).
 - **SignatureRequest:** auditar `signable_type`, `signable_id`, `provider`, `integration_id`, `title`, `status`, `requested_*`, `external_id` (nunca `message` nem `metadata` completos).
 - **SignatureRequestSigner:** auditar `signature_request_id`, `user_id`, `name`, `email`, `status`, `signing_order`, `signed_at`, `rejected_at`, `external_id` (nunca `metadata` completo).
+- **NotificationTemplate:** auditar `key`, `locale`, `channel`, `status` e flags de alteração (nunca `body` completo; usar `content_changed`).
+- **NotificationCenter:** auditar `user_id`, `channel`, `status`, `read_at`, `sent_at`, `related_*` (nunca `title/body/metadata` completos).
 
 ## Regras de segurança
 

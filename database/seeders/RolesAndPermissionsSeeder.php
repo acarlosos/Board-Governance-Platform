@@ -22,6 +22,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'manage_tasks',
         'manage_integrations',
         'manage_signatures',
+        'manage_notifications',
         'view_reports',
         'manage_settings',
     ];

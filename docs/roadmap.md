@@ -178,14 +178,14 @@ Ficha: [`features/signatures.md`](features/signatures.md).
 
 ### Fase 13 — Notificações
 
-- 13.1 Notificação por e-mail
-- 13.2 Notificação interna
-- 13.3 Pendências documentais
-- 13.4 Convites de reunião
-- 13.5 Lembretes
-- 13.6 Templates multi-idioma
+- 13.1 Notificação por e-mail (fake, sem SMTP) — **feito**
+- 13.2 Notificação interna — **feito**
+- 13.3 Pendências documentais — pendente (gatilhos futuros)
+- 13.4 Convites de reunião — pendente (gatilhos futuros)
+- 13.5 Lembretes — pendente (gatilhos futuros)
+- 13.6 Templates multi-idioma (fallback global + override por tenant) — **feito**
 
-Ficha: a criar (`features/notifications.md`) quando a fase iniciar.
+Ficha: [`features/notifications.md`](features/notifications.md).
 
 ### Fase 14 — Relatórios
 

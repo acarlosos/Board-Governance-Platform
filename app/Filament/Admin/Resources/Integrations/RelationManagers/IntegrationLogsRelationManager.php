@@ -36,7 +36,7 @@ class IntegrationLogsRelationManager extends RelationManager
                     ->label(__('integration-logs.fields.user'))
                     ->toggleable(),
                 TextColumn::make('created_at')
-                    ->label(__('fields.created_at'))
+                    ->label(__('integrations.fields.created_at'))
                     ->dateTime()
                     ->sortable(),
             ])
