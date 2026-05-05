@@ -17,6 +17,7 @@
 - [minutes.md](minutes.md)
 - [votes.md](votes.md)
 - [tasks.md](tasks.md)
+- [integrations.md](integrations.md)
 
 ## Painel administrativo
 

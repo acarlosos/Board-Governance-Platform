@@ -156,15 +156,14 @@ Ficha: [`features/tasks.md`](features/tasks.md).
 
 ### Fase 11 — Integrações configuráveis via Admin
 
-- 11.1 Criar `integrations`
-- 11.2 Config criptografado
-- 11.3 `IntegrationResource` no Filament
-- 11.4 `IntegrationFactory`
-- 11.5 Drivers base: SMTP, Office 365, OneDrive, DocuSign, Videoconferência
-- 11.6 Testar conexão
-- 11.7 Logs de integração
+- 11.1 Criar `integrations` + `integration_logs` — **feito**
+- 11.2 Config criptografado (`encrypted:array`) — **feito**
+- 11.3 `IntegrationResource` no Filament — **feito**
+- 11.4 Drivers base (fake): SMTP, Office 365, OneDrive, DocuSign, Teams, Zoom, Looker Studio — **feito**
+- 11.5 Testar conexão (validação de obrigatórios) — **feito**
+- 11.6 Logs de integração (sanitizados) — **feito**
 
-Ficha: a criar (`features/integrations.md`) quando a fase iniciar.
+Ficha: [`features/integrations.md`](features/integrations.md).
 
 ### Fase 12 — Assinatura digital
 

@@ -51,6 +51,7 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
 - **Vote:** auditar alterações de `meeting_id`, `title`, `description`, `type`, `status`, `quorum_required`, `starts_at`, `ends_at`, `created_by`.
 - **VoteOption:** registrar eventos `option_created` / `option_updated` (metadados).
 - **VoteResponse:** registrar evento `vote_cast` com `vote_option_id` e `voted_at` (nunca `comment`).
+- **Integration:** auditar `type`, `provider`, `name`, `status`, `last_test_*` (nunca `config`). Se config mudar, registrar apenas `config_changed` e `config_changed_keys` (sem secrets).
 
 ## Regras de segurança
 
