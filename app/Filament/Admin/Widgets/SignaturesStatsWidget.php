@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Filament\Admin\Widgets;
+
+use App\Enums\DashboardMetricsPeriod;
+use App\Services\Dashboard\DashboardMetricsService;
+use Filament\Widgets\StatsOverviewWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
+
+class SignaturesStatsWidget extends StatsOverviewWidget
+{
+    protected static ?int $sort = 24;
+
+    protected int | string | array $columnSpan = 1;
+
+    public static function canView(): bool
+    {
+        return auth()->check()
+            && auth()->user()?->can('view_reports');
+    }
+
+    protected function getHeading(): ?string
+    {
+        return __('dashboard.widgets.signatures.heading');
+    }
+
+    protected function getDescription(): ?string
+    {
+        return __('dashboard.widgets.period_caption');
+    }
+
+    /**
+     * @return array<Stat>
+     */
+    protected function getStats(): array
+    {
+        $user = auth()->user();
+        if ($user === null) {
+            return [];
+        }
+
+        $m = app(DashboardMetricsService::class)
+            ->getMetrics($user, DashboardMetricsPeriod::ThisMonth)['signatures'];
+
+        return [
+            Stat::make(__('dashboard.widgets.signatures.total'), $m['total_signature_requests']),
+            Stat::make(__('dashboard.widgets.signatures.pending'), $m['signatures_pending']),
+            Stat::make(__('dashboard.widgets.signatures.completed'), $m['signatures_completed']),
+        ];
+    }
+}
