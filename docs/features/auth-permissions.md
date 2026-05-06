@@ -30,7 +30,7 @@ Controlar **quem** pode fazer **o quê** com **Spatie Laravel Permission** (`rol
 
 ## Permissões iniciais
 
-`manage_tenants`, `manage_users`, `manage_boards`, `manage_meetings`, `manage_documents`, `manage_votes`, `manage_minutes`, `manage_tasks`, `manage_integrations`, `view_reports`, `manage_settings`.
+`manage_tenants`, `manage_users`, `manage_boards`, `manage_meetings`, `manage_documents`, `manage_votes`, `manage_minutes`, `manage_tasks`, `manage_integrations`, `manage_signatures`, `manage_notifications`, `manage_security`, `view_reports`, `manage_settings`.
 
 Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 
@@ -68,7 +68,12 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 - `UserResource` — `UserPolicy` + query por `tenant_id` para não super-admin; criação/edição via `PersistPanelUserAction` com validação de roles e `is_super_admin`.
 - **Role `super_admin` vs flag:** a CheckboxList de papéis **não** inclui `super_admin`. Super-admin de plataforma gere a role `super_admin` **apenas** via toggle `is_super_admin` (sincronização em `PersistPanelUserAction::syncRolesFromCheckboxAndSuperFlag`). `tenant_admin` não pode definir a flag nem enviar `super_admin` no array de roles (guards + `Rule::in`).
 
+## Segurança avançada
+
+A Fase 15 adicionou 2FA TOTP nativo (Filament `AppAuthentication`), sessões auditáveis com revogação remota, política de senha e a permissão `manage_security`. Detalhes em [security.md](security.md).
+
 ## Pendências futuras
 
-- 2FA, SSO se requisito.
+- SSO (SAML/OIDC) se requisito.
+- WebAuthn / passkeys.
 - Opcional: remover dependência da coluna `is_super_admin` quando só roles bastarem.

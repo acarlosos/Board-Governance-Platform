@@ -15,7 +15,7 @@ SaaS **multi-tenant** de **governança corporativa**: organizações (tenants), 
 | Backend | Laravel |
 | Painel administrativo | Filament v5 (Livewire v4) — pacote instalado; painel a configurar |
 | UI reativa (onde aplicável) | Livewire |
-| Base de dados | MySQL |
+| Base de dados | **SQLite** por defeito no `.env.example` (dev) e em testes (`.env.testing`); suporte a **MySQL** e **PostgreSQL** via `config/database.php` |
 | Roles / permissões | Spatie Laravel Permission (roles globais; `teams` off — ver [features/auth-permissions.md](features/auth-permissions.md)) |
 | API (quando existir) | Laravel + Sanctum (tokens com abilities) |
 
@@ -29,7 +29,7 @@ Idiomas suportados (**pt_BR**, **en**, **es**), middleware `SetLocale`, ficheiro
 
 ## Multi-tenancy
 
-- Modelo alvo: **uma base MySQL**, dados de negócio com **`tenant_id`**, isolamento por **`TenantScope`** / trait **`BelongsToTenant`** e **resolução por utilizador autenticado** (`TenantResolver`; subdomínio fica para evolução futura). Detalhe em [features/multitenancy.md](features/multitenancy.md).
+- Modelo alvo: **uma base única** (MySQL/PostgreSQL conforme ambiente), dados de negócio com **`tenant_id`**, isolamento por **`TenantScope`** / trait **`BelongsToTenant`** e **resolução por utilizador autenticado** (`TenantResolver`; subdomínio fica para evolução futura). Detalhe em [features/multitenancy.md](features/multitenancy.md).
 - Tabela `tenants`; `users.tenant_id` (nullable durante transição); `users.is_super_admin` ignora o scope como flag bootstrap até existir role `super_admin` via Spatie (ver ficha).
 - Seed inicial: `InitialTenantSeeder` + variáveis `SEED_ADMIN_*` (ver ficha).
 - Perfis: **`super_admin`** (acesso global explícito), **`tenant_admin`** e utilizadores do tenant apenas no seu contexto.

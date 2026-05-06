@@ -10,7 +10,7 @@
 
 ## Estado actual
 
-- **Fase 0 — concluída**: regras `.cursor/`, `docs/`, **Laravel 13**, MySQL no `.env`, ambiente de testes isolado em SQLite (`.env.testing`), **Filament v5** com painel `admin` (`->default()`), i18n **pt_BR / en / es** com middleware `SetLocale` e `users.locale`.
+- **Fase 0 — concluída**: regras `.cursor/`, `docs/`, **Laravel 13**, `.env.example` com **SQLite** por defeito (dev), ambiente de testes isolado em SQLite (`.env.testing`), suporte a **MySQL**/**PostgreSQL** via `config/database.php`, **Filament v5** com painel `admin` (`->default()`), i18n **pt_BR / en / es** com middleware `SetLocale` e `users.locale`.
 - **Fase 1 — base concluída**: tabela `tenants`, `users` com `tenant_id` / `status` / `is_super_admin` (bootstrap até Spatie) / soft deletes, enums, `TenantScope`, trait `BelongsToTenant`, `TenantResolver`, seed `InitialTenantSeeder`, testes de isolamento (modelo só em `tests/Support`). Pendências: middleware/UI de troca de tenant (multi-tenant “switch” avançado).
 - **Fase 2 — base concluída**: Spatie Permission (migrations + `config/permission.php`), roles e permissões iniciais, `RolesAndPermissionsSeeder`, `User` com `HasRoles` / `isSuperAdmin()`, `TenantPolicy` e `UserPolicy`, testes em `AuthPermissionsTest`. Pendências: 2FA, refinamento de permissões por módulo.
 - **Fase 3 — painel admin inicial (tenants/users) concluída**: `TenantResource`, `UserResource`, `PersistPanelUserAction`, traduções `tenants` / `users` / `roles` / `actions`, testes `FilamentAdminResourcesTest` (incl. UX de secções, `super_admin` só via toggle, preservação de slug em edição, Livewire no tenant). Pendências no roadmap da Fase 3: perfis na UI (3.3), auditoria em recursos (adiada à Fase 4).
@@ -21,11 +21,12 @@
 - **Fase 8 — atas concluída**: `minutes`, `minute_versions`, `minute_approvals`, enums, models com `BelongsToTenant`, policies, actions (workflow e aprovações), `MinuteResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 9 — votações concluída**: `votes`, `vote_options`, `vote_responses`, enums, models com `BelongsToTenant`, policies, actions (máquina de estados e voto), `VoteResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 14 — dashboard e relatórios operacionais (parcial)**: `DashboardMetricsService` + `ReportsService` (agregações por tenant/global com `super_admin`), cache curto por tenant, widgets no painel, página `OperationalReports`, testes em `DashboardTest`. Pendências: export, gráficos, invalidação fina de cache, BI.
+- **Fase 15 — segurança avançada concluída**: 2FA TOTP nativo do Filament, `auth_sessions` auditáveis, revogação remota com `SESSION_DRIVER=database`, listeners de login/logout/failed, `PasswordPolicyService`, `SecuritySettings` page e permissão `manage_security`. Ficha: [`features/security.md`](features/security.md).
 - **Fases 10–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
 
-- **Multi-tenancy:** uma base MySQL, dados de negócio com `tenant_id`, isolamento por global scope + trait `BelongsToTenant`. **Resolução do tenant activo por sessão após login** (subdomínio/domínio customizado fica como evolução futura). Ver [`features/multitenancy.md`](features/multitenancy.md).
+- **Multi-tenancy:** uma base única (MySQL/PostgreSQL conforme ambiente), dados de negócio com `tenant_id`, isolamento por global scope + trait `BelongsToTenant`. **Resolução do tenant activo por sessão após login** (subdomínio/domínio customizado fica como evolução futura). Ver [`features/multitenancy.md`](features/multitenancy.md).
 - **i18n:** `pt_BR` padrão, `en` fallback, `es` suportado; traduções da app em `lang/{locale}/`; vendor (Filament) só com override pontual. Ver [`features/localization.md`](features/localization.md).
 - **Painel administrativo:** Filament v5 em `/admin` (painel `admin`, `->default()`). Ver [`features/filament-admin.md`](features/filament-admin.md).
 
@@ -36,7 +37,7 @@
 - 0.1 Criar regras `.cursor`
 - 0.2 Criar docs internos
 - 0.3 Instalar Laravel
-- 0.4 Configurar `.env` com MySQL
+- 0.4 Configurar `.env` e drivers de DB (SQLite por defeito no `.env.example`; MySQL/PostgreSQL suportados)
 - 0.5 Configurar ambiente de testes isolado
 - 0.6 Instalar Filament
 - 0.7 Configurar i18n pt_BR, en, es
@@ -201,14 +202,14 @@ Ficha: [`features/dashboard.md`](features/dashboard.md).
 
 ### Fase 15 — Segurança avançada
 
-- 15.1 2FA
-- 15.2 Sessões ativas
-- 15.3 Logs de login
-- 15.4 Rate limiting
-- 15.5 Políticas de senha
-- 15.6 Revisão OWASP
+- 15.1 2FA — **feito** (Filament `AppAuthentication`, `users.two_factor_*` encriptados, contratos `HasAppAuthentication`/`HasAppAuthenticationRecovery`)
+- 15.2 Sessões ativas — **feito** (`auth_sessions` + `SESSION_DRIVER=database`, revogação remota via `RevokeAuthSessionAction`)
+- 15.3 Logs de login — **feito** (`AuditAction::Login/Logout/FailedLogin/SessionRevoked/SessionExpired/TwoFactorEnabled/TwoFactorDisabled/PasswordChanged`)
+- 15.4 Rate limiting — **feito** (login Filament + `UpdateOwnPasswordAction` 5/min + `RevokeAuthSessionAction` 30/min)
+- 15.5 Políticas de senha — **feito** (`PasswordPolicyService`)
+- 15.6 Revisão OWASP — **feito** (headers de segurança, CSP report-only, hardening de cookies/sessão, sanitização de auditoria, dependency scan documentado, testes)
 
-Ficha: a criar (`features/security-hardening.md`) quando a fase iniciar; ver também `.cursor/rules/security.mdc`.
+Ficha: [`features/security.md`](features/security.md); ver também `.cursor/rules/security.mdc`.
 
 ### Fase 16 — API REST
 
@@ -224,7 +225,7 @@ Ficha: a criar (`features/api.md`) quando a fase iniciar.
 ### Fase 17 — Refinamento final
 
 - 17.1 Revisão de performance
-- 17.2 Índices MySQL
+- 17.2 Índices e performance (MySQL/PostgreSQL)
 - 17.3 Revisão de queries
 - 17.4 Revisão de policies
 - 17.5 Revisão de logs

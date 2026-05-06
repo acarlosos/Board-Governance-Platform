@@ -33,6 +33,9 @@ final class UserObserver
 
     public function updated(User $user): void
     {
+        $this->logTwoFactorTransitions($user);
+        $this->logPasswordChange($user);
+
         $changes = $this->onlyAllowed($user->getChanges());
         if ($changes === []) {
             return;
@@ -86,5 +89,49 @@ final class UserObserver
     {
         return array_intersect_key($values, array_flip(self::AUDITABLE_FIELDS));
     }
-}
 
+    private function logTwoFactorTransitions(User $user): void
+    {
+        $changes = $user->getChanges();
+
+        if (! array_key_exists('two_factor_secret', $changes)) {
+            return;
+        }
+
+        $previous = $user->getOriginal('two_factor_secret');
+        $current = $changes['two_factor_secret'] ?? null;
+
+        if (blank($previous) && filled($current)) {
+            $action = AuditAction::TwoFactorEnabled;
+        } elseif (filled($previous) && blank($current)) {
+            $action = AuditAction::TwoFactorDisabled;
+        } else {
+            return;
+        }
+
+        app(AuditLoggerService::class)->log(
+            $action,
+            $user,
+            oldValues: [],
+            newValues: ['two_factor_changed' => true],
+            tenantId: $user->tenant_id,
+        );
+    }
+
+    private function logPasswordChange(User $user): void
+    {
+        $changes = $user->getChanges();
+
+        if (! array_key_exists('password', $changes)) {
+            return;
+        }
+
+        app(AuditLoggerService::class)->log(
+            AuditAction::PasswordChanged,
+            $user,
+            oldValues: [],
+            newValues: ['password_changed' => true],
+            tenantId: $user->tenant_id,
+        );
+    }
+}

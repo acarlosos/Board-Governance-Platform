@@ -11,5 +11,11 @@ enum AuditAction: string
     case StatusChanged = 'status_changed';
     case Login = 'login';
     case Logout = 'logout';
+    case FailedLogin = 'failed_login';
+    case TwoFactorEnabled = 'two_factor_enabled';
+    case TwoFactorDisabled = 'two_factor_disabled';
+    case SessionRevoked = 'session_revoked';
+    case SessionExpired = 'session_expired';
+    case PasswordChanged = 'password_changed';
 }
 

@@ -21,6 +21,7 @@
 - [signatures.md](signatures.md)
 - [notifications.md](notifications.md)
 - [dashboard.md](dashboard.md)
+- [security.md](security.md)
 
 ## Painel administrativo
 

@@ -8,7 +8,10 @@ use App\Filament\Admin\Widgets\NotificationsStatsWidget;
 use App\Filament\Admin\Widgets\SignaturesStatsWidget;
 use App\Filament\Admin\Widgets\TasksStatsWidget;
 use App\Filament\Admin\Widgets\VotesStatsWidget;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\TouchAuthSessionActivity;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -32,6 +35,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->multiFactorAuthentication([
+                AppAuthentication::make()
+                    ->recoverable(),
+            ])
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -55,6 +62,8 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 SetLocale::class,
+                SecurityHeadersMiddleware::class,
+                TouchAuthSessionActivity::class,
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
