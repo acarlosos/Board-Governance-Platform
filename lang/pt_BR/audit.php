@@ -9,7 +9,7 @@ return [
     'fields' => [
         'action' => 'Ação',
         'tenant' => 'Tenant',
-        'user' => 'Utilizador',
+        'user' => 'Usuário',
         'auditable_type' => 'Recurso',
         'auditable_id' => 'ID do recurso',
         'ip_address' => 'IP',
@@ -18,7 +18,7 @@ return [
 
     'filters' => [
         'tenant' => 'Tenant',
-        'user' => 'Utilizador',
+        'user' => 'Usuário',
         'action' => 'Ação',
         'auditable_type' => 'Recurso',
         'period' => 'Período',
@@ -28,8 +28,8 @@ return [
 
     'actions' => [
         'created' => 'Criado',
-        'updated' => 'Actualizado',
-        'deleted' => 'Eliminado',
+        'updated' => 'Atualizado',
+        'deleted' => 'Excluído',
         'restored' => 'Restaurado',
         'status_changed' => 'Status alterado',
         'login' => 'Login',
@@ -38,7 +38,7 @@ return [
 
     'auditable_types' => [
         'App\\Models\\Tenant' => 'Tenant',
-        'App\\Models\\User' => 'Utilizador',
+        'App\\Models\\User' => 'Usuário',
     ],
 ];
 

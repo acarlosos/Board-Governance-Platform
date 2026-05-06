@@ -4,7 +4,7 @@ return [
     'section_main' => 'Membros',
 
     'fields' => [
-        'user' => 'Utilizador',
+        'user' => 'Usuário',
         'role' => 'Papel',
         'status' => 'Estado',
         'joined_at' => 'Entrou em',
@@ -24,10 +24,10 @@ return [
     ],
 
     'validation' => [
-        'user_must_belong_to_board_tenant' => 'O utilizador deve pertencer ao mesmo tenant do conselho.',
-        'duplicate_active_member' => 'Este utilizador já é um membro ativo deste conselho.',
+        'user_must_belong_to_board_tenant' => 'O usuário deve pertencer ao mesmo tenant do conselho.',
+        'duplicate_active_member' => 'Este usuário já é um membro ativo deste conselho.',
         'attributes' => [
-            'user' => 'utilizador',
+            'user' => 'usuário',
             'role' => 'papel',
             'status' => 'estado',
             'joined_at' => 'data de entrada',

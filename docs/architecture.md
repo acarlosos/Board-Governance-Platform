@@ -50,7 +50,14 @@ Idiomas suportados (**pt_BR**, **en**, **es**), middleware `SetLocale`, ficheiro
 
 ## API REST
 
-Estrutura preparada para **`/api/v1`** (versionamento), mesmo tenant e policies que o painel. Detalhes por recurso nas respetivas fichas em `docs/features/`.
+Estrutura preparada para **`/api/v1`** (versionamento) com **Laravel Sanctum** e tokens por dispositivo.
+
+- **Tenancy (v1):** tenant sempre derivado de `auth()->user()->tenant_id` (sem `tenant_id` em header/path; sem switch tenant nesta fase).
+- **Autorização:** interseção entre **Policies/Spatie** do utilizador e **abilities** do token (abilities limitam, nunca ampliam).
+- **Anti-vazamento:** Actions/Policies validam explicitamente `tenant_id`/ownership; é proibido resolver recursos por `find(id)` antes de aplicar escopo/autorização.
+- **Respostas:** envelope JSON consistente (success/data/error/meta) definido na ficha da API.
+
+Detalhes e contratos: ver [features/api.md](features/api.md).
 
 ## Decisões técnicas pendentes de fixação
 

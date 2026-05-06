@@ -11,6 +11,7 @@
 - [multitenancy.md](multitenancy.md)
 - [auth-permissions.md](auth-permissions.md)
 - [audit-logs.md](audit-logs.md)
+- [api.md](api.md)
 - [boards.md](boards.md)
 - [meetings.md](meetings.md)
 - [documents.md](documents.md)

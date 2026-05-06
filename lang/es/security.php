@@ -41,6 +41,8 @@ return [
         'not_found' => 'Sesión inválida.',
         'revoked' => 'Sesión cerrada.',
         'empty' => 'No hay sesiones activas registradas.',
+        'empty_heading' => 'No hay sesiones activas',
+        'empty_description' => 'Cuando haya sesiones activas, aparecerán aquí para que pueda cerrarlas rápidamente.',
     ],
     'password' => [
         'rate_limited' => 'Demasiados intentos de cambio de contraseña. Inténtelo más tarde.',
@@ -49,6 +51,7 @@ return [
         'attributes' => [
             'current_password' => 'contraseña actual',
             'password' => 'nueva contraseña',
+            'password_confirmation' => 'confirmar nueva contraseña',
         ],
     ],
 ];

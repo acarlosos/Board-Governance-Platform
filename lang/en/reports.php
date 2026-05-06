@@ -11,6 +11,10 @@ return [
         'month' => 'Month',
     ],
 
+    'helpers' => [
+        'period' => 'Choose a period to refresh totals and breakdowns.',
+    ],
+
     'periods' => [
         'this_month' => 'Current month',
         'last_30_days' => 'Last 30 days',
@@ -24,7 +28,13 @@ return [
         'signatures_by_status' => 'Signatures by status',
     ],
 
+    'meetings' => [
+        'unit' => 'meetings',
+    ],
+
     'empty' => [
+        'heading' => 'No data for this period',
+        'description' => 'We couldn’t find enough records to display reports for this period. Try changing the filter.',
         'no_rows' => 'No records for this period.',
     ],
 ];

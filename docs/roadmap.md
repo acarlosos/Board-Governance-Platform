@@ -220,7 +220,7 @@ Ficha: [`features/security.md`](features/security.md); ver também `.cursor/rule
 - 16.5 Documentação
 - 16.6 Testes de API
 
-Ficha: a criar (`features/api.md`) quando a fase iniciar.
+Fase 16 iniciada com especificação antes de código. Ficha: [`features/api.md`](features/api.md).
 
 ### Fase 17 — Refinamento final
 

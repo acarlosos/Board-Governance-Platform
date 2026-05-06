@@ -41,6 +41,8 @@ return [
         'not_found' => 'Invalid session.',
         'revoked' => 'Session revoked.',
         'empty' => 'No active sessions on record.',
+        'empty_heading' => 'No active sessions',
+        'empty_description' => 'When there are active sessions, they will show up here so you can revoke them quickly.',
     ],
     'password' => [
         'rate_limited' => 'Too many password change attempts. Try again shortly.',
@@ -49,6 +51,7 @@ return [
         'attributes' => [
             'current_password' => 'current password',
             'password' => 'new password',
+            'password_confirmation' => 'confirm new password',
         ],
     ],
 ];

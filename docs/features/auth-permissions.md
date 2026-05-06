@@ -52,6 +52,19 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 - Autorização no servidor (Policies + `can()`); UI não substitui checagens.
 - Roles são **globais**; o limite por tenant em listagens vem de **queries** (`UserResource::getEloquentQuery()`) + `UserPolicy` no painel Filament.
 
+## API v1 (Fase 16) — abilities (Sanctum) e minimização de dados
+
+A API v1 usa **Sanctum** (Personal Access Tokens) com **abilities** para limitar o que um token pode fazer.
+
+- **Regra de ouro:** permissões do utilizador (Policies/Spatie) **e** abilities do token devem permitir a operação. Abilities **limitam**, nunca ampliam.
+- **Minimização:** o endpoint `GET /api/v1/auth/me` não deve expor a lista completa de permissões internas por padrão. Preferir:
+  - dados básicos do utilizador e tenant
+  - roles (se necessário)
+  - abilities do token atual
+  - `capabilities` pequenas (flags de UX) calculadas via Policies/Spatie
+
+Especificação e matriz de abilities: ver [`docs/features/api.md`](api.md).
+
 ## Regras de segurança
 
 - Não enumerar utilizadores de outro tenant: `UserPolicy::view` / `update` / `delete` validam `tenant_id`.

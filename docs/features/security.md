@@ -10,6 +10,7 @@ Camada corporativa de segurança da Board Governance Platform: 2FA TOTP, sessõe
 - **Sessões**: `SESSION_DRIVER=database` (tabela `sessions` padrão do Laravel). Permite **invalidação remota** real ao apagar a row da `sessions`. A tabela `auth_sessions` é o histórico auditável associado por `session_id`.
 - **Auditoria**: estendemos `AuditAction` com `failed_login`, `two_factor_enabled`, `two_factor_disabled`, `session_revoked`, `session_expired`, `password_changed`. Listeners auto-descobertos pelo Laravel 11+ (sem `Event::listen` manual para evitar registos duplicados).
 - **Política de senha**: mínimo 8 caracteres, com letras maiúsculas e minúsculas, números e símbolos.
+- **API (Fase 16)**: a API v1 usa Sanctum (PAT) e audita `api_login`, `api_logout`, `token_created`, `token_revoked` sem expor token/`Authorization`. Especificação: `docs/features/api.md`.
 
 ## Tabelas envolvidas
 

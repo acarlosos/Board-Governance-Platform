@@ -107,7 +107,7 @@ class SecuritySettings extends Page
                     ->required()
                     ->confirmed(),
                 TextInput::make('password_confirmation')
-                    ->label(__('security.password.attributes.password') . ' (confirm)')
+                    ->label(__('security.password.attributes.password_confirmation'))
                     ->password()
                     ->revealable()
                     ->required(),

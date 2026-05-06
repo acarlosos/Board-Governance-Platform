@@ -16,7 +16,7 @@ return [
     ],
     'fields' => [
         'session_id' => 'Sessão',
-        'user' => 'Utilizador',
+        'user' => 'Usuário',
         'tenant' => 'Organização',
         'ip_address' => 'IP',
         'user_agent' => 'Navegador',
@@ -40,7 +40,9 @@ return [
         'unauthorized' => 'Você não pode encerrar esta sessão.',
         'not_found' => 'Sessão inválida.',
         'revoked' => 'Sessão encerrada.',
-        'empty' => 'Nenhuma sessão ativa registada.',
+        'empty' => 'Nenhuma sessão ativa registrada.',
+        'empty_heading' => 'Nenhuma sessão ativa',
+        'empty_description' => 'Quando houver sessões ativas, elas aparecerão aqui para você encerrar rapidamente.',
     ],
     'password' => [
         'rate_limited' => 'Muitas tentativas de troca de senha. Tente novamente em alguns instantes.',
@@ -49,6 +51,7 @@ return [
         'attributes' => [
             'current_password' => 'senha atual',
             'password' => 'nova senha',
+            'password_confirmation' => 'confirmar nova senha',
         ],
     ],
 ];

@@ -4,7 +4,7 @@ return [
     'section_main' => 'Participantes',
 
     'fields' => [
-        'user' => 'Utilizador',
+        'user' => 'Usuário',
         'role' => 'Papel',
         'status' => 'Estado',
         'responded_at' => 'Respondido em',
@@ -25,10 +25,10 @@ return [
     ],
 
     'validation' => [
-        'user_must_belong_to_meeting_tenant' => 'O utilizador deve pertencer ao mesmo tenant da reunião.',
-        'duplicate_active_participant' => 'Este utilizador já é um participante ativo desta reunião.',
+        'user_must_belong_to_meeting_tenant' => 'O usuário deve pertencer ao mesmo tenant da reunião.',
+        'duplicate_active_participant' => 'Este usuário já é um participante ativo desta reunião.',
         'attributes' => [
-            'user' => 'utilizador',
+            'user' => 'usuário',
             'role' => 'papel',
             'status' => 'estado',
             'responded_at' => 'respondido em',

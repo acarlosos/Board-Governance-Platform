@@ -17,5 +17,9 @@ enum AuditAction: string
     case SessionRevoked = 'session_revoked';
     case SessionExpired = 'session_expired';
     case PasswordChanged = 'password_changed';
+    case ApiLogin = 'api_login';
+    case ApiLogout = 'api_logout';
+    case TokenCreated = 'token_created';
+    case TokenRevoked = 'token_revoked';
 }
 

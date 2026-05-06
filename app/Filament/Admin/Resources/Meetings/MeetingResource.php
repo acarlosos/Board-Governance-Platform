@@ -200,14 +200,16 @@ class MeetingResource extends Resource
                     ->sortable(),
                 TextColumn::make('participants_count')
                     ->label(__('meetings.fields.participants'))
-                    ->getStateUsing(fn (Meeting $record): int => $record->participants()->count())
-                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->withCount('participants')->orderBy('participants_count', $direction)),
+                    ->counts('participants')
+                    ->alignEnd()
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('meetings.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('scheduled_at', 'desc')
             ->filters([
                 SelectFilter::make('tenant_id')
                     ->label(__('meetings.filters.tenant'))
