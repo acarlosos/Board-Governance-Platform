@@ -20,6 +20,7 @@
 - **Fase 7 — documentos concluída**: `documents`, `document_versions`, `document_access_logs`, enums, models com `BelongsToTenant`, policies, actions (upload privado + versionamento + logs de acesso), `DocumentResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 8 — atas concluída**: `minutes`, `minute_versions`, `minute_approvals`, enums, models com `BelongsToTenant`, policies, actions (workflow e aprovações), `MinuteResource` + RelationManagers, auditoria (observers) e testes.
 - **Fase 9 — votações concluída**: `votes`, `vote_options`, `vote_responses`, enums, models com `BelongsToTenant`, policies, actions (máquina de estados e voto), `VoteResource` + RelationManagers, auditoria (observers) e testes.
+- **Fase 14 — dashboard e relatórios operacionais (parcial)**: `DashboardMetricsService` + `ReportsService` (agregações por tenant/global com `super_admin`), cache curto por tenant, widgets no painel, página `OperationalReports`, testes em `DashboardTest`. Pendências: export, gráficos, invalidação fina de cache, BI.
 - **Fases 10–18 — pendentes** (salvo itens já marcados como concluídos por fase).
 
 ## Decisões já fixadas
@@ -187,16 +188,16 @@ Ficha: [`features/signatures.md`](features/signatures.md).
 
 Ficha: [`features/notifications.md`](features/notifications.md).
 
-### Fase 14 — Relatórios
+### Fase 14 — Relatórios e dashboard
 
-- 14.1 Dashboard interno
-- 14.2 Indicadores de reuniões
-- 14.3 Indicadores de documentos
-- 14.4 Indicadores de votações
-- 14.5 Exportação
-- 14.6 Preparação para Looker Studio
+- 14.1 Dashboard interno — **feito** (`DashboardMetricsService`, widgets Filament, permissão `view_reports`)
+- 14.2 Indicadores por módulo — **feito** (tasks, meetings, minutes, votes, signatures, notifications); documentos agregados ficam para refinamento futuro
+- 14.3 Página de relatórios operacionais (`OperationalReports`) — **feito**
+- 14.4 Exportação — pendente
+- 14.5 Gráficos — pendente (fase futura)
+- 14.6 Preparação Looker Studio — pendente
 
-Ficha: a criar (`features/reports.md`) quando a fase iniciar.
+Ficha: [`features/dashboard.md`](features/dashboard.md).
 
 ### Fase 15 — Segurança avançada
 

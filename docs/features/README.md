@@ -20,6 +20,7 @@
 - [integrations.md](integrations.md)
 - [signatures.md](signatures.md)
 - [notifications.md](notifications.md)
+- [dashboard.md](dashboard.md)
 
 ## Painel administrativo
 
