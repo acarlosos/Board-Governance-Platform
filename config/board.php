@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'api' => [
+        'token_expiration_days' => (int) env('BOARD_API_TOKEN_EXPIRATION_DAYS', 30),
+    ],
     'documents' => [
         'disk' => env('BOARD_DOCUMENTS_DISK', 'local'),
         'base_path' => 'private/tenants',

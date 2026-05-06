@@ -11,6 +11,10 @@ return [
         'month' => 'Mês',
     ],
 
+    'helpers' => [
+        'period' => 'Selecione um período para atualizar os totais e agrupamentos.',
+    ],
+
     'periods' => [
         'this_month' => 'Mês corrente',
         'last_30_days' => 'Últimos 30 dias',
@@ -24,7 +28,13 @@ return [
         'signatures_by_status' => 'Assinaturas por status',
     ],
 
+    'meetings' => [
+        'unit' => 'reuniões',
+    ],
+
     'empty' => [
-        'no_rows' => 'Sem registos neste período.',
+        'heading' => 'Sem dados para este período',
+        'description' => 'Não encontramos registros suficientes para exibir relatórios neste período. Tente alterar o filtro.',
+        'no_rows' => 'Sem registros neste período.',
     ],
 ];

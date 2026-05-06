@@ -16,8 +16,8 @@ return [
         'created_at' => 'Criado em',
     ],
     'status' => [
-        'active' => 'Activo',
-        'inactive' => 'Inactivo',
+        'active' => 'Ativo',
+        'inactive' => 'Inativo',
         'suspended' => 'Suspenso',
     ],
     'filters' => [

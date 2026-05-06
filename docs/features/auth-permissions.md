@@ -30,7 +30,7 @@ Controlar **quem** pode fazer **o quê** com **Spatie Laravel Permission** (`rol
 
 ## Permissões iniciais
 
-`manage_tenants`, `manage_users`, `manage_boards`, `manage_meetings`, `manage_documents`, `manage_votes`, `manage_minutes`, `manage_tasks`, `manage_integrations`, `view_reports`, `manage_settings`.
+`manage_tenants`, `manage_users`, `manage_boards`, `manage_meetings`, `manage_documents`, `manage_votes`, `manage_minutes`, `manage_tasks`, `manage_integrations`, `manage_signatures`, `manage_notifications`, `manage_security`, `view_reports`, `manage_settings`.
 
 Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 
@@ -52,6 +52,19 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 - Autorização no servidor (Policies + `can()`); UI não substitui checagens.
 - Roles são **globais**; o limite por tenant em listagens vem de **queries** (`UserResource::getEloquentQuery()`) + `UserPolicy` no painel Filament.
 
+## API v1 (Fase 16) — abilities (Sanctum) e minimização de dados
+
+A API v1 usa **Sanctum** (Personal Access Tokens) com **abilities** para limitar o que um token pode fazer.
+
+- **Regra de ouro:** permissões do utilizador (Policies/Spatie) **e** abilities do token devem permitir a operação. Abilities **limitam**, nunca ampliam.
+- **Minimização:** o endpoint `GET /api/v1/auth/me` não deve expor a lista completa de permissões internas por padrão. Preferir:
+  - dados básicos do utilizador e tenant
+  - roles (se necessário)
+  - abilities do token atual
+  - `capabilities` pequenas (flags de UX) calculadas via Policies/Spatie
+
+Especificação e matriz de abilities: ver [`docs/features/api.md`](api.md).
+
 ## Regras de segurança
 
 - Não enumerar utilizadores de outro tenant: `UserPolicy::view` / `update` / `delete` validam `tenant_id`.
@@ -68,7 +81,12 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 - `UserResource` — `UserPolicy` + query por `tenant_id` para não super-admin; criação/edição via `PersistPanelUserAction` com validação de roles e `is_super_admin`.
 - **Role `super_admin` vs flag:** a CheckboxList de papéis **não** inclui `super_admin`. Super-admin de plataforma gere a role `super_admin` **apenas** via toggle `is_super_admin` (sincronização em `PersistPanelUserAction::syncRolesFromCheckboxAndSuperFlag`). `tenant_admin` não pode definir a flag nem enviar `super_admin` no array de roles (guards + `Rule::in`).
 
+## Segurança avançada
+
+A Fase 15 adicionou 2FA TOTP nativo (Filament `AppAuthentication`), sessões auditáveis com revogação remota, política de senha e a permissão `manage_security`. Detalhes em [security.md](security.md).
+
 ## Pendências futuras
 
-- 2FA, SSO se requisito.
+- SSO (SAML/OIDC) se requisito.
+- WebAuthn / passkeys.
 - Opcional: remover dependência da coluna `is_super_admin` quando só roles bastarem.

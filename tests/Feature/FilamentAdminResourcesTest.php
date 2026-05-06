@@ -97,7 +97,7 @@ class FilamentAdminResourcesTest extends TestCase
         $created = app(PersistPanelUserAction::class)->create($admin, [
             'name' => 'Novo utilizador',
             'email' => 'novo@example.test',
-            'password' => 'password123',
+            'password' => 'StrongPass!1',
             'locale' => 'pt_BR',
             'status' => UserStatus::Active->value,
             'tenant_id' => $tb->id,
@@ -121,7 +121,7 @@ class FilamentAdminResourcesTest extends TestCase
         app(PersistPanelUserAction::class)->create($admin, [
             'name' => 'X',
             'email' => 'x@example.test',
-            'password' => 'password123',
+            'password' => 'StrongPass!1',
             'locale' => 'pt_BR',
             'status' => UserStatus::Active->value,
             'roles' => ['super_admin'],
@@ -137,7 +137,7 @@ class FilamentAdminResourcesTest extends TestCase
         $created = app(PersistPanelUserAction::class)->create($admin, [
             'name' => 'Y',
             'email' => 'y@example.test',
-            'password' => 'password123',
+            'password' => 'StrongPass!1',
             'locale' => 'pt_BR',
             'status' => UserStatus::Active->value,
             'is_super_admin' => true,
@@ -153,7 +153,7 @@ class FilamentAdminResourcesTest extends TestCase
         $admin = User::factory()->create(['tenant_id' => $tenant->id]);
         $admin->assignRole('tenant_admin');
 
-        $plain = 'MySecret123';
+        $plain = 'MySecret!123';
 
         $created = app(PersistPanelUserAction::class)->create($admin, [
             'name' => 'Z',
@@ -230,7 +230,7 @@ class FilamentAdminResourcesTest extends TestCase
         $created = app(PersistPanelUserAction::class)->create($super, [
             'name' => 'Plataforma',
             'email' => 'plat@example.test',
-            'password' => 'password123',
+            'password' => 'StrongPass!1',
             'tenant_id' => $tenant->id,
             'locale' => 'pt_BR',
             'status' => UserStatus::Active->value,

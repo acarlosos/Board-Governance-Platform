@@ -11,6 +11,7 @@
 - [multitenancy.md](multitenancy.md)
 - [auth-permissions.md](auth-permissions.md)
 - [audit-logs.md](audit-logs.md)
+- [api.md](api.md)
 - [boards.md](boards.md)
 - [meetings.md](meetings.md)
 - [documents.md](documents.md)
@@ -21,6 +22,7 @@
 - [signatures.md](signatures.md)
 - [notifications.md](notifications.md)
 - [dashboard.md](dashboard.md)
+- [security.md](security.md)
 
 ## Painel administrativo
 

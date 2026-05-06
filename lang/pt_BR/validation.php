@@ -2,7 +2,7 @@
 
 /**
  * Mensagens de validação em pt_BR.
- * Chaves omitidas utilizam o ficheiro de fallback (en) em lang/en/validation.php.
+ * Chaves omitidas utilizam o arquivo de fallback (en) em lang/en/validation.php.
  */
 return [
 
@@ -25,17 +25,17 @@ return [
     ],
     'boolean' => 'O campo :attribute deve ser verdadeiro ou falso.',
     'confirmed' => 'A confirmação do campo :attribute não confere.',
-    'current_password' => 'A palavra-passe está incorrecta.',
+    'current_password' => 'A senha está incorreta.',
     'date' => 'O campo :attribute deve ser uma data válida.',
     'date_format' => 'O campo :attribute deve corresponder ao formato :format.',
     'different' => 'Os campos :attribute e :other devem ser diferentes.',
     'digits' => 'O campo :attribute deve ter :digits dígitos.',
     'digits_between' => 'O campo :attribute deve ter entre :min e :max dígitos.',
     'email' => 'O campo :attribute deve ser um endereço de e-mail válido.',
-    'exists' => 'O :attribute seleccionado é inválido.',
+    'exists' => 'O :attribute selecionado é inválido.',
     'filled' => 'O campo :attribute deve ter um valor.',
     'image' => 'O campo :attribute deve ser uma imagem.',
-    'in' => 'O :attribute seleccionado é inválido.',
+    'in' => 'O :attribute selecionado é inválido.',
     'integer' => 'O campo :attribute deve ser um número inteiro.',
     'json' => 'O campo :attribute deve ser uma string JSON válida.',
     'max' => [
@@ -50,7 +50,7 @@ return [
         'numeric' => 'O campo :attribute deve ser pelo menos :min.',
         'string' => 'O campo :attribute deve ter pelo menos :min caracteres.',
     ],
-    'not_in' => 'O :attribute seleccionado é inválido.',
+    'not_in' => 'O :attribute selecionado é inválido.',
     'numeric' => 'O campo :attribute deve ser um número.',
     'password' => [
         'letters' => 'O campo :attribute deve conter pelo menos uma letra.',
@@ -77,7 +77,7 @@ return [
     ],
     'string' => 'O campo :attribute deve ser uma string.',
     'timezone' => 'O campo :attribute deve ser um fuso horário válido.',
-    'unique' => 'O :attribute já está a ser utilizado.',
+    'unique' => 'O :attribute já está sendo utilizado.',
     'uploaded' => 'O envio do campo :attribute falhou.',
     'url' => 'O campo :attribute deve ser uma URL válida.',
 

@@ -86,7 +86,7 @@ Fornecer a **UI administrativa** da Board com **Filament v5**, **autorização**
 
 ## Traduções
 
-- Chaves em `lang/{pt_BR,en,es}/`: `tenants.php`, `users.php`, `roles.php` (rótulos dos nomes de role Spatie), `actions.php`; ver [localization.md](localization.md).
+- Chaves em `lang/{pt_BR,en,es}/`: `tenants.php`, `users.php`, `roles.php` (rótulos dos nomes de role Spatie), `actions.php`, `security.php`, `reports.php`; ver [localization.md](localization.md).
 
 ## Pendências futuras
 

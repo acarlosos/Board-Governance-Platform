@@ -96,6 +96,7 @@ class DocumentResource extends Resource
                         Select::make('status')
                             ->label(__('documents.fields.status'))
                             ->required()
+                            ->native(false)
                             ->options([
                                 DocumentStatus::Draft->value => __('documents.statuses.draft'),
                                 DocumentStatus::Published->value => __('documents.statuses.published'),
@@ -149,11 +150,15 @@ class DocumentResource extends Resource
                 $sectionLayout(Section::make(__('documents.sections.organization')))
                     ->visible(fn (): bool => auth()->user()?->isSuperAdmin() === true)
                     ->components([
-                        TextInput::make('tenant_id')
+                        Select::make('tenant_id')
                             ->label(__('fields.tenant'))
-                            ->numeric()
+                            ->relationship('tenant', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
                             ->required()
-                            ->helperText(__('documents.helpers.tenant_only_super_admin')),
+                            ->helperText(__('documents.helpers.tenant_only_super_admin'))
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
@@ -186,6 +191,7 @@ class DocumentResource extends Resource
                     ->dateTime()
                     ->sortable(),
             ])
+            ->defaultSort('updated_at', 'desc')
             ->filters([
                 SelectFilter::make('status')
                     ->label(__('documents.filters.status'))

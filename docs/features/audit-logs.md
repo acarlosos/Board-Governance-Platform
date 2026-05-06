@@ -72,7 +72,18 @@ Manter **trilho imutável** (ou append-only) das ações críticas de governanç
   - política bloqueia mutações
   - `AuditLog` não gera loop
 
+## Eventos de autenticação (Fase 15)
+
+A camada de Segurança Avançada introduz listeners auto-descobertos que escrevem audit logs de:
+
+- `login` / `logout` — por `LogSuccessfulLogin` / `LogSuccessfulLogout` (também alimentam `auth_sessions`).
+- `failed_login` — por `LogFailedLogin` (apenas `email` informado, **nunca** a password).
+- `two_factor_enabled` / `two_factor_disabled` — detectados em `UserObserver` ao mudar `users.two_factor_secret`.
+- `password_changed` — detectado em `UserObserver` ao mudar `users.password`.
+- `session_revoked` / `session_expired` — `AuthSessionService::revoke/expire`.
+
+Detalhes em [security.md](security.md).
+
 ## Pendências futuras
 
-- Log de `login` / `logout`: preparado no enum (`AuditAction`) mas só activar quando o acoplamento estiver definido (listeners de auth, Filament login, etc.).
 - Exportação/retention conforme requisitos legais (GDPR/LGPD, etc.) — documentar quando houver ticket.

@@ -12,14 +12,14 @@ return [
     'updated_at' => 'Atualizado em',
 
     'user' => [
-        'model_label' => 'Utilizador',
-        'plural_label' => 'Utilizadores',
-        'navigation_label' => 'Utilizadores',
+        'model_label' => 'Usuário',
+        'plural_label' => 'Usuários',
+        'navigation_label' => 'Usuários',
         'section_profile' => 'Perfil',
         'name' => 'Nome',
         'email' => 'Endereço de e-mail',
         'locale' => 'Idioma da interface',
-        'password' => 'Palavra-passe',
+        'password' => 'Senha',
         'email_verified_at' => 'E-mail verificado em',
     ],
 

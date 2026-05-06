@@ -3,6 +3,7 @@
 namespace App\Actions\Filament;
 
 use App\Models\User;
+use App\Services\Security\PasswordPolicyService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -37,7 +38,7 @@ final class PersistPanelUserAction
             [
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-                'password' => ['required', 'string', 'min:8'],
+                'password' => array_merge(['required'], app(PasswordPolicyService::class)->rules()),
                 'tenant_id' => ['nullable', 'integer', 'exists:tenants,id'],
                 'locale' => ['required', 'string', 'max:10'],
                 'status' => ['required', 'string'],
@@ -100,7 +101,7 @@ final class PersistPanelUserAction
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['sometimes', 'string', 'min:8'],
+            'password' => array_merge(['sometimes'], app(PasswordPolicyService::class)->rules()),
             'tenant_id' => ['nullable', 'integer', 'exists:tenants,id'],
             'locale' => ['required', 'string', 'max:10'],
             'status' => ['required', 'string'],
