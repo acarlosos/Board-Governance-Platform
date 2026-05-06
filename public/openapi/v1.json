@@ -1,0 +1,242 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Board Governance Platform API",
+    "version": "v1"
+  },
+  "servers": [
+    { "url": "/api/v1" }
+  ],
+  "tags": [
+    { "name": "Auth" },
+    { "name": "Boards" },
+    { "name": "Meetings" },
+    { "name": "Tasks" },
+    { "name": "Notifications" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Token"
+      }
+    },
+    "schemas": {
+      "Meta": {
+        "type": "object",
+        "properties": {
+          "request_id": { "type": "string" },
+          "api_version": { "type": "string", "example": "v1" },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": { "type": "integer" },
+              "per_page": { "type": "integer" },
+              "total": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "fields": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "EnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": {},
+          "meta": { "$ref": "#/components/schemas/Meta" }
+        }
+      },
+      "EnvelopeError": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": { "$ref": "#/components/schemas/Error" },
+          "meta": { "$ref": "#/components/schemas/Meta" }
+        }
+      }
+    }
+  },
+  "security": [
+    { "bearerAuth": [] }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login (criar token)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "device_name"],
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "device_name": { "type": "string" },
+                  "abilities": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "422": { "description": "Validation", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } },
+          "429": { "description": "Rate limited", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout (revogar token atual)",
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Contexto do utilizador/token",
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    },
+    "/boards": {
+      "get": {
+        "tags": ["Boards"],
+        "summary": "Listar boards visíveis",
+        "parameters": [
+          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
+          { "in": "query", "name": "q", "schema": { "type": "string" } },
+          { "in": "query", "name": "status", "schema": { "type": "string" } },
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["name", "created_at"] } },
+          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    },
+    "/boards/{id}": {
+      "get": {
+        "tags": ["Boards"],
+        "summary": "Ver board",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    },
+    "/meetings": {
+      "get": {
+        "tags": ["Meetings"],
+        "summary": "Listar meetings visíveis",
+        "parameters": [
+          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
+          { "in": "query", "name": "q", "schema": { "type": "string" } },
+          { "in": "query", "name": "status", "schema": { "type": "string" } },
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["scheduled_at", "created_at"] } },
+          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
+        }
+      }
+    },
+    "/meetings/{id}": {
+      "get": {
+        "tags": ["Meetings"],
+        "summary": "Ver meeting",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Listar tasks visíveis",
+        "parameters": [
+          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
+          { "in": "query", "name": "assigned_to", "schema": { "type": "string" } },
+          { "in": "query", "name": "status", "schema": { "type": "string" } },
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["created_at", "due_date", "priority", "status"] } },
+          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
+        }
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Ver task",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Listar notificações visíveis",
+        "parameters": [
+          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
+          { "in": "query", "name": "unread", "schema": { "type": "boolean" } },
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["created_at", "read_at", "sent_at"] } },
+          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
+        }
+      }
+    },
+    "/notifications/{id}": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Ver notificação",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
+          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        }
+      }
+    }
+  }
+}
+

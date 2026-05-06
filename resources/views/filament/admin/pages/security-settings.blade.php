@@ -33,7 +33,7 @@
                                 <div class="[&_.fi-fo-field-wrp]:!gap-y-2 [&_.fi-fo-component-ctn]:!mt-1 [&_.fi-fo-field-wrp:not(:last-child)]:!mb-5">
                                     {{ $this->passwordForm }}
                                 </div>
-                                <div class="mt-6">
+                                <div style="margin-top: 1.25rem;">
                                     <x-filament::button type="submit">
                                         {{ __('security.actions.update_password') }}
                                     </x-filament::button>

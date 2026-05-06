@@ -17,8 +17,8 @@ class TaskPolicy
             return false;
         }
 
-        return $user->hasRole('tenant_admin')
-            || $user->can('manage_tasks');
+        // Self-service: usuários do tenant podem listar as próprias tasks (API/UI aplica escopo).
+        return true;
     }
 
     public function view(User $user, Task $task): bool

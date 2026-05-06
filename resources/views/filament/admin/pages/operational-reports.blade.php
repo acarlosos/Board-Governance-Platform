@@ -28,8 +28,6 @@
         @php($hasAnyRows = ! empty($summary['tasks_by_status']) || ! empty($summary['meetings_by_month']) || ! empty($summary['votes_by_status']) || ! empty($summary['signatures_by_status']))
 
         @if (! $hasAnyRows)
-            <div aria-hidden="true" style="height: 3rem;"></div>
-
             <div>
             <x-filament::section :heading="__('reports.empty.heading')">
                 <div class="p-8">

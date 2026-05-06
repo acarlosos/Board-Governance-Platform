@@ -17,9 +17,8 @@ class NotificationCenterPolicy
             return false;
         }
 
-        return $user->hasRole('tenant_admin')
-            || $user->can('manage_notifications')
-            || $user->can('manage_settings');
+        // Self-service: usuários do tenant podem listar as próprias notificações (API/UI aplica escopo).
+        return true;
     }
 
     public function view(User $user, NotificationCenter $notification): bool

@@ -9,6 +9,10 @@ final class TokenAbilityService
     public const AUTH_READ = 'auth:read';
     public const TOKENS_READ_SELF = 'tokens:read:self';
     public const TOKENS_MANAGE_SELF = 'tokens:manage:self';
+    public const BOARDS_READ = 'boards:read';
+    public const MEETINGS_READ = 'meetings:read';
+    public const TASKS_READ = 'tasks:read';
+    public const NOTIFICATIONS_READ = 'notifications:read';
 
     /**
      * @return list<string>
@@ -30,6 +34,10 @@ final class TokenAbilityService
             self::AUTH_READ,
             self::TOKENS_READ_SELF,
             self::TOKENS_MANAGE_SELF,
+            self::BOARDS_READ,
+            self::MEETINGS_READ,
+            self::TASKS_READ,
+            self::NOTIFICATIONS_READ,
         ];
     }
 
