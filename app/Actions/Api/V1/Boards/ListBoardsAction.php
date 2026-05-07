@@ -4,12 +4,13 @@ namespace App\Actions\Api\V1\Boards;
 
 use App\Models\Board;
 use App\Models\User;
+use App\Support\Api\ApiSortParameter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class ListBoardsAction
 {
     /**
-     * @param  array{per_page?: int, q?: string, status?: string, sort?: string, direction?: string}  $filters
+     * @param  array{per_page?: int, page?: int, q?: string, status?: string, sort?: string}  $filters
      */
     public function execute(User $actor, array $filters): LengthAwarePaginator
     {
@@ -17,9 +18,15 @@ final class ListBoardsAction
         $perPage = max(1, min(100, $perPage));
 
         $q = trim((string) ($filters['q'] ?? ''));
-        $status = trim((string) ($filters['status'] ?? ''));
-        $sort = (string) ($filters['sort'] ?? 'created_at');
-        $direction = strtolower((string) ($filters['direction'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+        $status = isset($filters['status']) ? (string) $filters['status'] : '';
+        $sortRaw = isset($filters['sort']) ? (string) $filters['sort'] : '';
+
+        [$sortField, $direction] = ApiSortParameter::parse(
+            $sortRaw !== '' ? $sortRaw : null,
+            ['name', 'created_at'],
+            'created_at',
+            'desc'
+        );
 
         $builder = Board::query()->withoutGlobalScopes();
 
@@ -48,14 +55,8 @@ final class ListBoardsAction
             $builder->where($builder->qualifyColumn('status'), $status);
         }
 
-        $allowedSort = ['name', 'created_at'];
-        if (! in_array($sort, $allowedSort, true)) {
-            $sort = 'created_at';
-        }
-
-        $builder->orderBy($builder->qualifyColumn($sort), $direction);
+        $builder->orderBy($builder->qualifyColumn($sortField), $direction);
 
         return $builder->paginate($perPage);
     }
 }
-

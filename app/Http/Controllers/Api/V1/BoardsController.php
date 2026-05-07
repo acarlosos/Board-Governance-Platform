@@ -27,7 +27,7 @@ final class BoardsController extends Controller
             return $this->responder->unauthorized();
         }
 
-        Gate::forUser($actor)->authorize('viewAny', Board::class);
+        Gate::forUser($actor)->authorize('viewAnyInApi', Board::class);
 
         $paginator = $action->execute($actor, $request->validated());
 

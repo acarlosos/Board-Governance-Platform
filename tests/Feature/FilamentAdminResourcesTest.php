@@ -7,6 +7,8 @@ namespace Tests\Feature;
 use App\Actions\Filament\PersistPanelUserAction;
 use App\Enums\TenantStatus;
 use App\Enums\UserStatus;
+use App\Filament\Admin\Resources\Notifications\NotificationCenterResource;
+use App\Filament\Admin\Resources\Tasks\TaskResource;
 use App\Filament\Admin\Resources\Tenants\Pages\ManageTenants;
 use App\Filament\Admin\Resources\Tenants\TenantResource;
 use App\Filament\Admin\Resources\Users\UserResource;
@@ -29,6 +31,48 @@ class FilamentAdminResourcesTest extends TestCase
         parent::setUp();
 
         $this->seed(RolesAndPermissionsSeeder::class);
+
+        // Evita dependência do Vite manifest nos testes de rotas Filament.
+        if (method_exists($this, 'withoutVite')) {
+            $this->withoutVite();
+        }
+    }
+
+    public function test_board_member_nao_acessa_listagem_administrativa_de_tasks_no_filament(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $user->assignRole('board_member');
+
+        $this->actingAs($user)
+            ->get(TaskResource::getUrl())
+            ->assertForbidden();
+    }
+
+    public function test_board_member_nao_acessa_listagem_administrativa_de_notifications_no_filament(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $user->assignRole('board_member');
+
+        $this->actingAs($user)
+            ->get(NotificationCenterResource::getUrl())
+            ->assertForbidden();
+    }
+
+    public function test_tenant_admin_acessa_listagem_administrativa_de_tasks_e_notifications_no_filament(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+
+        $this->actingAs($admin)
+            ->get(TaskResource::getUrl())
+            ->assertSuccessful();
+
+        $this->actingAs($admin)
+            ->get(NotificationCenterResource::getUrl())
+            ->assertSuccessful();
     }
 
     public function test_super_admin_acessa_rota_do_tenant_resource(): void

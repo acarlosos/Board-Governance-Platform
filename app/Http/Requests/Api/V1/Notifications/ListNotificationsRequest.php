@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Api\V1\Notifications;
 
+use App\Enums\NotificationChannel;
+use App\Enums\NotificationStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,9 +23,18 @@ final class ListNotificationsRequest extends FormRequest
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
             'unread' => ['sometimes', 'boolean'],
-            'sort' => ['sometimes', 'string', Rule::in(['created_at', 'read_at', 'sent_at'])],
-            'direction' => ['sometimes', 'string', Rule::in(['asc', 'desc'])],
+            'status' => ['sometimes', Rule::enum(NotificationStatus::class)],
+            'channel' => ['sometimes', Rule::enum(NotificationChannel::class)],
+            'sort' => [
+                'sometimes',
+                'string',
+                'max:32',
+                Rule::in([
+                    'created_at', '-created_at',
+                    'read_at', '-read_at',
+                    'sent_at', '-sent_at',
+                ]),
+            ],
         ];
     }
 }
-

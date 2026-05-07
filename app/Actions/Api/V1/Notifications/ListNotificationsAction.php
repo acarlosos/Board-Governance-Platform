@@ -4,12 +4,20 @@ namespace App\Actions\Api\V1\Notifications;
 
 use App\Models\NotificationCenter;
 use App\Models\User;
+use App\Support\Api\ApiSortParameter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class ListNotificationsAction
 {
     /**
-     * @param  array{per_page?: int, unread?: bool, sort?: string, direction?: string}  $filters
+     * @param  array{
+     *     per_page?: int,
+     *     page?: int,
+     *     unread?: bool,
+     *     status?: string,
+     *     channel?: string,
+     *     sort?: string
+     * }  $filters
      */
     public function execute(User $actor, array $filters): LengthAwarePaginator
     {
@@ -17,8 +25,16 @@ final class ListNotificationsAction
         $perPage = max(1, min(100, $perPage));
 
         $unread = array_key_exists('unread', $filters) ? (bool) $filters['unread'] : null;
-        $sort = (string) ($filters['sort'] ?? 'created_at');
-        $direction = strtolower((string) ($filters['direction'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+        $status = isset($filters['status']) ? (string) $filters['status'] : '';
+        $channel = isset($filters['channel']) ? (string) $filters['channel'] : '';
+        $sortRaw = isset($filters['sort']) ? (string) $filters['sort'] : '';
+
+        [$sortField, $direction] = ApiSortParameter::parse(
+            $sortRaw !== '' ? $sortRaw : null,
+            ['created_at', 'read_at', 'sent_at'],
+            'created_at',
+            'desc'
+        );
 
         $builder = NotificationCenter::query()->withoutGlobalScopes();
 
@@ -39,18 +55,20 @@ final class ListNotificationsAction
             $builder->where($builder->qualifyColumn('user_id'), $actor->getKey());
         }
 
-        if ($unread === true) {
+        if ($unread === true && $status === '') {
             $builder->whereNull($builder->qualifyColumn('read_at'));
         }
 
-        $allowedSort = ['created_at', 'read_at', 'sent_at'];
-        if (! in_array($sort, $allowedSort, true)) {
-            $sort = 'created_at';
+        if ($status !== '') {
+            $builder->where($builder->qualifyColumn('status'), $status);
         }
 
-        $builder->orderBy($builder->qualifyColumn($sort), $direction);
+        if ($channel !== '') {
+            $builder->where($builder->qualifyColumn('channel'), $channel);
+        }
+
+        $builder->orderBy($builder->qualifyColumn($sortField), $direction);
 
         return $builder->paginate($perPage);
     }
 }
-

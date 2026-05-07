@@ -27,7 +27,7 @@ final class MeetingsController extends Controller
             return $this->responder->unauthorized();
         }
 
-        Gate::forUser($actor)->authorize('viewAny', Meeting::class);
+        Gate::forUser($actor)->authorize('viewAnyInApi', Meeting::class);
 
         $paginator = $action->execute($actor, $request->validated());
 

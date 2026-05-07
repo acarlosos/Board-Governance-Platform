@@ -21,6 +21,18 @@ class MeetingPolicy
         return $user->hasRole('tenant_admin') || $user->can('manage_meetings') || $user->hasRole('board_member');
     }
 
+    /**
+     * API v1: endpoint GET /meetings — escopo de listagem aplicado na Action.
+     */
+    public function viewAnyInApi(User $user): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->tenant_id !== null;
+    }
+
     public function view(User $user, Meeting $meeting): bool
     {
         if ($user->isSuperAdmin()) {

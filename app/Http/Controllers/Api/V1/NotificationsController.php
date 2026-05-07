@@ -27,7 +27,7 @@ final class NotificationsController extends Controller
             return $this->responder->unauthorized();
         }
 
-        Gate::forUser($actor)->authorize('viewAny', NotificationCenter::class);
+        Gate::forUser($actor)->authorize('viewAnyInApi', NotificationCenter::class);
 
         $paginator = $action->execute($actor, $request->validated());
 

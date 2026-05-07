@@ -124,9 +124,13 @@
           { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
           { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
           { "in": "query", "name": "q", "schema": { "type": "string" } },
-          { "in": "query", "name": "status", "schema": { "type": "string" } },
-          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["name", "created_at"] } },
-          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+          { "in": "query", "name": "status", "schema": { "type": "string", "enum": ["active", "inactive", "archived"] } },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "Ordenação; prefixo `-` para descendente (ex.: `-created_at`).",
+            "schema": { "type": "string", "enum": ["name", "-name", "created_at", "-created_at"] }
+          }
         ],
         "responses": {
           "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
@@ -156,9 +160,20 @@
           { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
           { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
           { "in": "query", "name": "q", "schema": { "type": "string" } },
-          { "in": "query", "name": "status", "schema": { "type": "string" } },
-          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["scheduled_at", "created_at"] } },
-          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+          { "in": "query", "name": "board_id", "schema": { "type": "integer" } },
+          { "in": "query", "name": "date_from", "schema": { "type": "string", "format": "date" } },
+          { "in": "query", "name": "date_to", "schema": { "type": "string", "format": "date" } },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": { "type": "string", "enum": ["draft", "scheduled", "in_progress", "completed", "cancelled"] }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "Ordenação; prefixo `-` para descendente (ex.: `-scheduled_at`).",
+            "schema": { "type": "string", "enum": ["scheduled_at", "-scheduled_at", "created_at", "-created_at"] }
+          }
         ],
         "responses": {
           "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
@@ -186,9 +201,20 @@
           { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
           { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
           { "in": "query", "name": "assigned_to", "schema": { "type": "string" } },
-          { "in": "query", "name": "status", "schema": { "type": "string" } },
-          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["created_at", "due_date", "priority", "status"] } },
-          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+          {
+            "in": "query",
+            "name": "status",
+            "schema": { "type": "string", "enum": ["pending", "in_progress", "completed", "cancelled"] }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "Ordenação; prefixo `-` para descendente.",
+            "schema": {
+              "type": "string",
+              "enum": ["created_at", "-created_at", "due_date", "-due_date", "priority", "-priority", "status", "-status"]
+            }
+          }
         ],
         "responses": {
           "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
@@ -215,9 +241,23 @@
         "parameters": [
           { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
           { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
-          { "in": "query", "name": "unread", "schema": { "type": "boolean" } },
-          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["created_at", "read_at", "sent_at"] } },
-          { "in": "query", "name": "direction", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+          {
+            "in": "query",
+            "name": "unread",
+            "description": "Atalho para não lidas (read_at nulo); preferir `status` quando possível.",
+            "schema": { "type": "boolean" }
+          },
+          { "in": "query", "name": "status", "schema": { "type": "string", "enum": ["unread", "read", "sent", "failed"] } },
+          { "in": "query", "name": "channel", "schema": { "type": "string", "enum": ["database", "email"] } },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "Ordenação; prefixo `-` para descendente.",
+            "schema": {
+              "type": "string",
+              "enum": ["created_at", "-created_at", "read_at", "-read_at", "sent_at", "-sent_at"]
+            }
+          }
         ],
         "responses": {
           "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }

@@ -4,12 +4,19 @@ namespace App\Actions\Api\V1\Tasks;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Support\Api\ApiSortParameter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class ListTasksAction
 {
     /**
-     * @param  array{per_page?: int, assigned_to?: string, status?: string, sort?: string, direction?: string}  $filters
+     * @param  array{
+     *     per_page?: int,
+     *     page?: int,
+     *     assigned_to?: string,
+     *     status?: string,
+     *     sort?: string
+     * }  $filters
      */
     public function execute(User $actor, array $filters): LengthAwarePaginator
     {
@@ -17,9 +24,15 @@ final class ListTasksAction
         $perPage = max(1, min(100, $perPage));
 
         $assignedTo = trim((string) ($filters['assigned_to'] ?? ''));
-        $status = trim((string) ($filters['status'] ?? ''));
-        $sort = (string) ($filters['sort'] ?? 'created_at');
-        $direction = strtolower((string) ($filters['direction'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+        $status = isset($filters['status']) ? (string) $filters['status'] : '';
+        $sortRaw = isset($filters['sort']) ? (string) $filters['sort'] : '';
+
+        [$sortField, $direction] = ApiSortParameter::parse(
+            $sortRaw !== '' ? $sortRaw : null,
+            ['created_at', 'due_date', 'priority', 'status'],
+            'created_at',
+            'desc'
+        );
 
         $builder = Task::query()->withoutGlobalScopes();
 
@@ -48,14 +61,8 @@ final class ListTasksAction
             $builder->where($builder->qualifyColumn('status'), $status);
         }
 
-        $allowedSort = ['created_at', 'due_date', 'priority', 'status'];
-        if (! in_array($sort, $allowedSort, true)) {
-            $sort = 'created_at';
-        }
-
-        $builder->orderBy($builder->qualifyColumn($sort), $direction);
+        $builder->orderBy($builder->qualifyColumn($sortField), $direction);
 
         return $builder->paginate($perPage);
     }
 }
-

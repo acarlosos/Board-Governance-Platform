@@ -27,7 +27,7 @@ final class TasksController extends Controller
             return $this->responder->unauthorized();
         }
 
-        Gate::forUser($actor)->authorize('viewAny', Task::class);
+        Gate::forUser($actor)->authorize('viewAnyInApi', Task::class);
 
         $paginator = $action->execute($actor, $request->validated());
 
