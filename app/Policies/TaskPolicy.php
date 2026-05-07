@@ -17,8 +17,20 @@ class TaskPolicy
             return false;
         }
 
-        return $user->hasRole('tenant_admin')
-            || $user->can('manage_tasks');
+        // Filament: listagem administrativa apenas para gestores de tarefas.
+        return $user->hasRole('tenant_admin') || $user->can('manage_tasks');
+    }
+
+    /**
+     * API v1 (self-service): permite o endpoint de listagem; o escopo (próprio vs tenant) fica na Action.
+     */
+    public function viewAnyInApi(User $user): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->tenant_id !== null;
     }
 
     public function view(User $user, Task $task): bool

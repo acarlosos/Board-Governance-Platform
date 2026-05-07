@@ -17,9 +17,22 @@ class NotificationCenterPolicy
             return false;
         }
 
+        // Filament: centro de notificações apenas para gestores.
         return $user->hasRole('tenant_admin')
             || $user->can('manage_notifications')
             || $user->can('manage_settings');
+    }
+
+    /**
+     * API v1 (self-service): permite o endpoint de listagem; o escopo fica na Action.
+     */
+    public function viewAnyInApi(User $user): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->tenant_id !== null;
     }
 
     public function view(User $user, NotificationCenter $notification): bool

@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div>
+    <div class="bgp-stack">
         <div>
             <x-filament::section>
                 <x-slot name="heading">
@@ -8,15 +8,13 @@
                 <x-slot name="description">
                     {{ __('security.descriptions.two_factor') }}
                 </x-slot>
-                <div class="p-8">
+                <div class="bgp-content">
                     <div class="max-w-3xl">
                         {{ $this->twoFactorForm }}
                     </div>
                 </div>
             </x-filament::section>
         </div>
-
-        <div aria-hidden="true" style="height: 3rem;"></div>
 
         <div>
             <x-filament::section>
@@ -26,14 +24,14 @@
                 <x-slot name="description">
                     {{ __('security.descriptions.password') }}
                 </x-slot>
-                <div class="p-8">
+                <div class="bgp-content">
                     <div class="max-w-3xl">
-                        <div class="rounded-xl border border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-900">
+                        <div class="bgp-form-card">
                             <form wire:submit="updatePassword" class="space-y-5">
                                 <div class="[&_.fi-fo-field-wrp]:!gap-y-2 [&_.fi-fo-component-ctn]:!mt-1 [&_.fi-fo-field-wrp:not(:last-child)]:!mb-5">
                                     {{ $this->passwordForm }}
                                 </div>
-                                <div class="mt-6">
+                                <div class="bgp-button-spacer">
                                     <x-filament::button type="submit">
                                         {{ __('security.actions.update_password') }}
                                     </x-filament::button>
@@ -44,8 +42,6 @@
                 </div>
             </x-filament::section>
         </div>
-
-        <div aria-hidden="true" style="height: 3rem;"></div>
 
         <div>
             <x-filament::section>
@@ -58,7 +54,7 @@
 
                 @php($sessions = $this->visibleSessions)
 
-                <div class="p-8">
+                <div class="bgp-content">
                     @if ($sessions->isEmpty())
                         <div class="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                             <div class="font-medium text-gray-950 dark:text-white">
@@ -69,59 +65,56 @@
                             </div>
                         </div>
                     @else
-                        <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                            <div class="overflow-x-auto">
-                                <table
-                                    style="width: 100%; min-width: 48rem; border-collapse: separate; border-spacing: 0;"
-                                    class="divide-y divide-gray-200 dark:divide-gray-700"
-                                >
+                        <div class="bgp-table-shell">
+                            <div class="bgp-table-scroll">
+                                <table class="bgp-table">
                                     <colgroup>
                                         <col>
-                                        <col style="width: 10rem;">
-                                        <col style="width: 12rem;">
-                                        <col style="width: 8rem;">
-                                        <col style="width: 12rem;">
+                                        <col width="160">
+                                        <col width="192">
+                                        <col width="128">
+                                        <col width="192">
                                     </colgroup>
-                                    <thead class="bg-gray-50 dark:bg-gray-800">
-                                        <tr>
-                                            <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;" class="text-gray-500 dark:text-gray-400">
+                                    <thead class="bgp-thead">
+                                        <tr class="bgp-tr">
+                                            <th class="bgp-th">
                                                 {{ __('security.fields.user') }}
                                             </th>
-                                            <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;" class="text-gray-500 dark:text-gray-400">
+                                            <th class="bgp-th">
                                                 {{ __('security.fields.ip_address') }}
                                             </th>
-                                            <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;" class="text-gray-500 dark:text-gray-400">
+                                            <th class="bgp-th">
                                                 {{ __('security.fields.last_activity_at') }}
                                             </th>
-                                            <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;" class="text-gray-500 dark:text-gray-400">
+                                            <th class="bgp-th">
                                                 {{ __('security.fields.status') }}
                                             </th>
-                                            <th style="padding: 0.75rem 1.5rem; text-align: right; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;" class="text-gray-500 dark:text-gray-400">
+                                            <th class="bgp-th bgp-th--right">
                                                 {{ __('security.actions.revoke') }}
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+                                    <tbody>
                                         @foreach ($sessions as $session)
-                                            <tr>
-                                                <td style="padding: 0.75rem 1.5rem; font-size: 0.875rem; font-weight: 600; max-width: 20rem;" class="text-gray-900 dark:text-gray-100">
-                                                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <tr class="bgp-tr">
+                                                <td class="bgp-td bgp-td--strong">
+                                                    <div class="bgp-ellipsis">
                                                         {{ $session->user?->name ?? '—' }}
                                                     </div>
                                                 </td>
-                                                <td style="padding: 0.75rem 1.5rem; font-size: 0.875rem; white-space: nowrap;" class="text-gray-700 dark:text-gray-300">
+                                                <td class="bgp-td">
                                                     {{ $session->ip_address ?? '—' }}
                                                 </td>
-                                                <td style="padding: 0.75rem 1.5rem; font-size: 0.875rem; white-space: nowrap;" class="text-gray-700 dark:text-gray-300">
+                                                <td class="bgp-td">
                                                     {{ optional($session->last_activity_at)->diffForHumans() }}
                                                 </td>
-                                                <td style="padding: 0.75rem 1.5rem; font-size: 0.875rem; white-space: nowrap;" class="text-gray-700 dark:text-gray-300">
+                                                <td class="bgp-td">
                                                     @php($status = (string) $session->status->value)
                                                     <x-filament::badge :color="$status === 'active' ? 'success' : 'gray'">
                                                         {{ __('security.status.' . $status) }}
                                                     </x-filament::badge>
                                                 </td>
-                                                <td style="padding: 0.75rem 1.5rem; text-align: right; white-space: nowrap;">
+                                                <td class="bgp-td bgp-td--right">
                                                     <x-filament::button
                                                         size="xs"
                                                         color="danger"
