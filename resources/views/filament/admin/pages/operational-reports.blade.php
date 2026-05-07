@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div class="fi-section-content-ctn">
+    <div class="fi-section-content-ctn bgp-stack">
         <div>
         <x-filament::section>
             <x-slot name="heading">
@@ -39,11 +39,9 @@
             </div>
         @endif
 
-        <div aria-hidden="true" style="height: 3rem;"></div>
-
         <div>
         <x-filament::section :heading="__('reports.sections.tasks_by_status')">
-            <div class="p-8">
+            <div class="bgp-content">
                 @php($rows = $summary['tasks_by_status'] ?? [])
 
                 @if (empty($rows))
@@ -84,11 +82,9 @@
         </x-filament::section>
         </div>
 
-        <div aria-hidden="true" style="height: 3rem;"></div>
-
         <div>
         <x-filament::section :heading="__('reports.sections.meetings_by_month')">
-            <div class="p-8">
+            <div class="bgp-content">
                 @php($rows = $summary['meetings_by_month'] ?? [])
 
                 @if (empty($rows))
@@ -96,36 +92,33 @@
                         {{ __('reports.empty.no_rows') }}
                     </div>
                 @else
-                    <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                        <div class="overflow-x-auto">
-                            <table
-                                style="width: 100%; min-width: 32rem; border-collapse: separate; border-spacing: 0;"
-                                class="divide-y divide-gray-200 dark:divide-gray-700"
-                            >
+                    <div class="bgp-table-shell">
+                        <div class="bgp-table-scroll">
+                            <table class="bgp-table bgp-table--compact">
                                 <colgroup>
                                     <col>
-                                    <col style="width: 10rem;">
+                                    <col width="160">
                                 </colgroup>
-                                <thead class="bg-gray-50 dark:bg-gray-800">
-                                    <tr>
-                                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;" class="text-gray-500 dark:text-gray-400">
+                                <thead class="bgp-thead">
+                                    <tr class="bgp-tr">
+                                        <th class="bgp-th">
                                             {{ __('reports.fields.month') }}
                                         </th>
-                                        <th style="padding: 0.75rem 1.5rem; text-align: right; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;" class="text-gray-500 dark:text-gray-400">
+                                        <th class="bgp-th bgp-th--right">
                                             {{ __('meetings.navigation_label') }}
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+                                <tbody>
                                     @foreach ($rows as $ym => $count)
                                         @php($parsed = \Illuminate\Support\Carbon::createFromFormat('Y-m', (string) $ym))
                                         @php($label = $parsed ? $parsed->translatedFormat('M/Y') : (string) $ym)
 
-                                        <tr>
-                                            <td style="padding: 0.75rem 1.5rem; font-size: 0.875rem; white-space: nowrap;" class="text-gray-700 dark:text-gray-300">
+                                        <tr class="bgp-tr">
+                                            <td class="bgp-td">
                                                 {{ $label }}
                                             </td>
-                                            <td style="padding: 0.75rem 1.5rem; text-align: right; font-size: 0.875rem; white-space: nowrap;" class="text-gray-700 dark:text-gray-300">
+                                            <td class="bgp-td bgp-td--right">
                                                 {{ $count }}
                                             </td>
                                         </tr>
@@ -139,11 +132,9 @@
         </x-filament::section>
         </div>
 
-        <div aria-hidden="true" style="height: 3rem;"></div>
-
         <div>
         <x-filament::section :heading="__('reports.sections.votes_by_status')">
-            <div class="p-8">
+            <div class="bgp-content">
                 @php($rows = $summary['votes_by_status'] ?? [])
 
                 @if (empty($rows))
@@ -184,11 +175,9 @@
         </x-filament::section>
         </div>
 
-        <div aria-hidden="true" style="height: 3rem;"></div>
-
         <div>
         <x-filament::section :heading="__('reports.sections.signatures_by_status')">
-            <div class="p-8">
+            <div class="bgp-content">
                 @php($rows = $summary['signatures_by_status'] ?? [])
 
                 @if (empty($rows))

@@ -1,0 +1,116 @@
+/* Board Governance Platform - Filament panel micro-UX helpers.
+   Scoped by the presence of .bgp-* wrappers in specific pages. */
+
+.bgp-stack > * + * {
+  margin-top: 3rem; /* 48px */
+}
+
+.bgp-content {
+  padding: 2rem; /* ~p-8 */
+}
+
+.bgp-form-card {
+  border: 1px solid rgba(17, 24, 39, 0.15);
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 2rem;
+}
+
+.dark .bgp-form-card {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgb(17, 24, 39);
+}
+
+.bgp-button-spacer {
+  margin-top: 1.25rem; /* 20px */
+}
+
+.bgp-table-shell {
+  overflow: hidden;
+  border: 1px solid rgba(17, 24, 39, 0.15);
+  border-radius: 0.75rem;
+}
+
+.dark .bgp-table-shell {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.bgp-table-scroll {
+  overflow-x: auto;
+}
+
+.bgp-table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.bgp-table--compact {
+  min-width: 32rem;
+}
+
+.bgp-thead {
+  background: rgb(249, 250, 251);
+}
+
+.dark .bgp-thead {
+  background: rgb(31, 41, 55);
+}
+
+.bgp-th,
+.bgp-td {
+  padding: 0.75rem 1.5rem;
+  white-space: nowrap;
+}
+
+.bgp-th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgb(107, 114, 128);
+}
+
+.dark .bgp-th {
+  color: rgba(156, 163, 175, 1);
+}
+
+.bgp-td {
+  font-size: 0.875rem;
+  color: rgb(55, 65, 81);
+}
+
+.dark .bgp-td {
+  color: rgba(209, 213, 219, 1);
+}
+
+.bgp-td--strong {
+  font-weight: 600;
+  color: rgb(17, 24, 39);
+}
+
+.dark .bgp-td--strong {
+  color: rgba(243, 244, 246, 1);
+}
+
+.bgp-td--right,
+.bgp-th--right {
+  text-align: right;
+}
+
+.bgp-tr + .bgp-tr .bgp-td {
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.dark .bgp-tr + .bgp-tr .bgp-td {
+  border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+.bgp-ellipsis {
+  max-width: 20rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
