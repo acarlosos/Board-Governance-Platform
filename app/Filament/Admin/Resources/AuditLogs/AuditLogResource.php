@@ -51,6 +51,7 @@ class AuditLogResource extends Resource
                     ->label(__('audit.fields.action'))
                     ->formatStateUsing(fn (?string $state): string => filled($state) ? __('audit.actions.'.$state) : '—')
                     ->badge()
+                    ->color('warning')
                     ->sortable(),
                 TextColumn::make('tenant.name')
                     ->label(__('audit.fields.tenant'))

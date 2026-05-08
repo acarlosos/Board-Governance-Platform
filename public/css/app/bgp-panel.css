@@ -114,3 +114,55 @@
   text-overflow: ellipsis;
 }
 
+/* Alinha botões "primary" do painel com o botão de Login (PG Trust).
+   Filament pode variar as classes/atributos de cor por versão/componente,
+   então mantemos um conjunto de seletores compatíveis. */
+.fi-btn.fi-color-primary,
+.fi-btn.fi-btn-color-primary,
+.fi-btn[data-color='primary'] {
+  background-color: #8b0a1f !important;
+  background: linear-gradient(135deg, #8b0a1f 0%, #6f0017 100%) !important;
+  background-image: linear-gradient(135deg, #8b0a1f 0%, #6f0017 100%) !important;
+  border-color: rgba(0, 0, 0, 0) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px rgba(111, 0, 23, 0.22) !important;
+}
+
+.fi-btn.fi-color-primary:hover,
+.fi-btn.fi-btn-color-primary:hover,
+.fi-btn[data-color='primary']:hover {
+  filter: brightness(0.98);
+  box-shadow: 0 14px 30px rgba(111, 0, 23, 0.28) !important;
+}
+
+.fi-btn.fi-color-primary:focus-visible,
+.fi-btn.fi-btn-color-primary:focus-visible,
+.fi-btn[data-color='primary']:focus-visible {
+  outline: none;
+  box-shadow:
+    0 14px 30px rgba(111, 0, 23, 0.28),
+    0 0 0 4px rgba(139, 10, 31, 0.25) !important;
+}
+
+.fi-btn.fi-color-primary svg,
+.fi-btn.fi-btn-color-primary svg,
+.fi-btn[data-color='primary'] svg {
+  color: #fff !important;
+}
+
+.fi-btn.fi-color-primary *,
+.fi-btn.fi-btn-color-primary *,
+.fi-btn[data-color='primary'] * {
+  color: inherit;
+}
+
+.fi-btn.fi-color-primary::before,
+.fi-btn.fi-btn-color-primary::before,
+.fi-btn[data-color='primary']::before,
+.fi-btn.fi-color-primary::after,
+.fi-btn.fi-btn-color-primary::after,
+.fi-btn[data-color='primary']::after {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+

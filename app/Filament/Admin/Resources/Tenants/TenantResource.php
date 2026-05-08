@@ -145,6 +145,11 @@ class TenantResource extends Resource
                     ->label(__('tenants.fields.status'))
                     ->formatStateUsing(fn (TenantStatus $state): string => __('tenants.status.'.$state->value))
                     ->badge()
+                    ->color(fn (TenantStatus $state): string => match ($state) {
+                        TenantStatus::Active => 'success',
+                        TenantStatus::Inactive => 'gray',
+                        TenantStatus::Suspended => 'danger',
+                    })
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('tenants.fields.created_at'))
