@@ -12,7 +12,9 @@ final class TokenAbilityService
     public const BOARDS_READ = 'boards:read';
     public const MEETINGS_READ = 'meetings:read';
     public const TASKS_READ = 'tasks:read';
+    public const TASKS_WRITE = 'tasks:write';
     public const NOTIFICATIONS_READ = 'notifications:read';
+    public const NOTIFICATIONS_WRITE = 'notifications:write';
 
     /**
      * @return list<string>
@@ -37,7 +39,9 @@ final class TokenAbilityService
             self::BOARDS_READ,
             self::MEETINGS_READ,
             self::TASKS_READ,
+            self::TASKS_WRITE,
             self::NOTIFICATIONS_READ,
+            self::NOTIFICATIONS_WRITE,
         ];
     }
 
@@ -55,6 +59,14 @@ final class TokenAbilityService
         // Ensure tokens:manage:self implies tokens:read:self.
         if (in_array(self::TOKENS_MANAGE_SELF, $allowed, true) && ! in_array(self::TOKENS_READ_SELF, $allowed, true)) {
             $allowed[] = self::TOKENS_READ_SELF;
+        }
+
+        // Ensure *:write implies *:read.
+        if (in_array(self::TASKS_WRITE, $allowed, true) && ! in_array(self::TASKS_READ, $allowed, true)) {
+            $allowed[] = self::TASKS_READ;
+        }
+        if (in_array(self::NOTIFICATIONS_WRITE, $allowed, true) && ! in_array(self::NOTIFICATIONS_READ, $allowed, true)) {
+            $allowed[] = self::NOTIFICATIONS_READ;
         }
 
         // Abilities do not grant privileges beyond user permissions; enforcement happens at route/action layer.

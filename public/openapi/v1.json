@@ -1,282 +1,1591 @@
 {
-  "openapi": "3.0.3",
-  "info": {
-    "title": "Board Governance Platform API",
-    "version": "v1"
-  },
-  "servers": [
-    { "url": "/api/v1" }
-  ],
-  "tags": [
-    { "name": "Auth" },
-    { "name": "Boards" },
-    { "name": "Meetings" },
-    { "name": "Tasks" },
-    { "name": "Notifications" }
-  ],
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "Token"
-      }
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Board Governance Platform API",
+        "version": "v1"
     },
-    "schemas": {
-      "Meta": {
-        "type": "object",
-        "properties": {
-          "request_id": { "type": "string" },
-          "api_version": { "type": "string", "example": "v1" },
-          "pagination": {
-            "type": "object",
-            "properties": {
-              "page": { "type": "integer" },
-              "per_page": { "type": "integer" },
-              "total": { "type": "integer" }
-            }
-          }
+    "servers": [
+        {
+            "url": "/api/v1"
         }
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "code": { "type": "string" },
-          "message": { "type": "string" },
-          "fields": { "type": "object", "additionalProperties": true }
-        }
-      },
-      "EnvelopeSuccess": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean", "example": true },
-          "data": {},
-          "meta": { "$ref": "#/components/schemas/Meta" }
-        }
-      },
-      "EnvelopeError": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean", "example": false },
-          "error": { "$ref": "#/components/schemas/Error" },
-          "meta": { "$ref": "#/components/schemas/Meta" }
-        }
-      }
-    }
-  },
-  "security": [
-    { "bearerAuth": [] }
-  ],
-  "paths": {
-    "/auth/login": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Login (criar token)",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["email", "password", "device_name"],
-                "properties": {
-                  "email": { "type": "string" },
-                  "password": { "type": "string" },
-                  "device_name": { "type": "string" },
-                  "abilities": { "type": "array", "items": { "type": "string" } }
-                }
-              }
-            }
-          }
+    ],
+    "tags": [
+        {
+            "name": "Auth"
         },
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "422": { "description": "Validation", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } },
-          "429": { "description": "Rate limited", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+        {
+            "name": "Boards"
+        },
+        {
+            "name": "Meetings"
+        },
+        {
+            "name": "Tasks"
+        },
+        {
+            "name": "Notifications"
         }
-      }
-    },
-    "/auth/logout": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Logout (revogar token atual)",
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
-        }
-      }
-    },
-    "/auth/me": {
-      "get": {
-        "tags": ["Auth"],
-        "summary": "Contexto do utilizador/token",
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
-        }
-      }
-    },
-    "/boards": {
-      "get": {
-        "tags": ["Boards"],
-        "summary": "Listar boards visíveis",
-        "parameters": [
-          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
-          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
-          { "in": "query", "name": "q", "schema": { "type": "string" } },
-          { "in": "query", "name": "status", "schema": { "type": "string", "enum": ["active", "inactive", "archived"] } },
-          {
-            "in": "query",
-            "name": "sort",
-            "description": "Ordenação; prefixo `-` para descendente (ex.: `-created_at`).",
-            "schema": { "type": "string", "enum": ["name", "-name", "created_at", "-created_at"] }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
-        }
-      }
-    },
-    "/boards/{id}": {
-      "get": {
-        "tags": ["Boards"],
-        "summary": "Ver board",
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
-        }
-      }
-    },
-    "/meetings": {
-      "get": {
-        "tags": ["Meetings"],
-        "summary": "Listar meetings visíveis",
-        "parameters": [
-          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
-          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
-          { "in": "query", "name": "q", "schema": { "type": "string" } },
-          { "in": "query", "name": "board_id", "schema": { "type": "integer" } },
-          { "in": "query", "name": "date_from", "schema": { "type": "string", "format": "date" } },
-          { "in": "query", "name": "date_to", "schema": { "type": "string", "format": "date" } },
-          {
-            "in": "query",
-            "name": "status",
-            "schema": { "type": "string", "enum": ["draft", "scheduled", "in_progress", "completed", "cancelled"] }
-          },
-          {
-            "in": "query",
-            "name": "sort",
-            "description": "Ordenação; prefixo `-` para descendente (ex.: `-scheduled_at`).",
-            "schema": { "type": "string", "enum": ["scheduled_at", "-scheduled_at", "created_at", "-created_at"] }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
-        }
-      }
-    },
-    "/meetings/{id}": {
-      "get": {
-        "tags": ["Meetings"],
-        "summary": "Ver meeting",
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
-        }
-      }
-    },
-    "/tasks": {
-      "get": {
-        "tags": ["Tasks"],
-        "summary": "Listar tasks visíveis",
-        "parameters": [
-          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
-          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
-          { "in": "query", "name": "assigned_to", "schema": { "type": "string" } },
-          {
-            "in": "query",
-            "name": "status",
-            "schema": { "type": "string", "enum": ["pending", "in_progress", "completed", "cancelled"] }
-          },
-          {
-            "in": "query",
-            "name": "sort",
-            "description": "Ordenação; prefixo `-` para descendente.",
-            "schema": {
-              "type": "string",
-              "enum": ["created_at", "-created_at", "due_date", "-due_date", "priority", "-priority", "status", "-status"]
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "Token"
             }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
-        }
-      }
-    },
-    "/tasks/{id}": {
-      "get": {
-        "tags": ["Tasks"],
-        "summary": "Ver task",
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
-        }
-      }
-    },
-    "/notifications": {
-      "get": {
-        "tags": ["Notifications"],
-        "summary": "Listar notificações visíveis",
-        "parameters": [
-          { "in": "query", "name": "per_page", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
-          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
-          {
-            "in": "query",
-            "name": "unread",
-            "description": "Atalho para não lidas (read_at nulo); preferir `status` quando possível.",
-            "schema": { "type": "boolean" }
-          },
-          { "in": "query", "name": "status", "schema": { "type": "string", "enum": ["unread", "read", "sent", "failed"] } },
-          { "in": "query", "name": "channel", "schema": { "type": "string", "enum": ["database", "email"] } },
-          {
-            "in": "query",
-            "name": "sort",
-            "description": "Ordenação; prefixo `-` para descendente.",
-            "schema": {
-              "type": "string",
-              "enum": ["created_at", "-created_at", "read_at", "-read_at", "sent_at", "-sent_at"]
+        },
+        "schemas": {
+            "Meta": {
+                "type": "object",
+                "properties": {
+                    "request_id": {
+                        "type": "string"
+                    },
+                    "api_version": {
+                        "type": "string",
+                        "example": "v1"
+                    },
+                    "pagination": {
+                        "type": "object",
+                        "properties": {
+                            "page": {
+                                "type": "integer"
+                            },
+                            "per_page": {
+                                "type": "integer"
+                            },
+                            "total": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            },
+            "Error": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "fields": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                }
+            },
+            "EnvelopeSuccess": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "nullable": true
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/Meta"
+                    }
+                }
+            },
+            "EnvelopeError": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "error": {
+                        "$ref": "#/components/schemas/Error"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/Meta"
+                    }
+                }
+            },
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "abilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "last_used_at": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "Board": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "Meeting": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "board_id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "scheduled_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "ends_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "video_conference_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "Task": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "priority": {
+                        "type": "string"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "assigned_to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "TaskCreate": {
+                "type": "object",
+                "required": [
+                    "title",
+                    "priority"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ]
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "assigned_to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "related_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "related_id": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
+            "TaskUpdate": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ]
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "assigned_to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "related_type": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "related_id": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
+            "TaskCommentCreate": {
+                "type": "object",
+                "required": [
+                    "comment"
+                ],
+                "properties": {
+                    "comment": {
+                        "type": "string",
+                        "maxLength": 5000
+                    }
+                }
+            },
+            "Notification": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "channel": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "read_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "sent_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "NotificationsReadAllResult": {
+                "type": "object",
+                "required": [
+                    "affected",
+                    "marked_at"
+                ],
+                "properties": {
+                    "affected": {
+                        "type": "integer"
+                    },
+                    "marked_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
             }
-          }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } }
         }
-      }
     },
-    "/notifications/{id}": {
-      "get": {
-        "tags": ["Notifications"],
-        "summary": "Ver notificação",
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }
-        ],
-        "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeSuccess" } } } },
-          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnvelopeError" } } } }
+    "security": [
+        {
+            "bearerAuth": []
         }
-      }
+    ],
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login (criar token)",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "email",
+                                    "password",
+                                    "device_name"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    },
+                                    "device_name": {
+                                        "type": "string"
+                                    },
+                                    "abilities": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout (revogar token atual)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Contexto do utilizador/token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/boards": {
+            "get": {
+                "tags": [
+                    "Boards"
+                ],
+                "summary": "Listar boards vis\u00edveis",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "archived"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "description": "Ordena\u00e7\u00e3o; prefixo `-` para descendente (ex.: `-created_at`).",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "name",
+                                "-name",
+                                "created_at",
+                                "-created_at"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/boards/{id}": {
+            "get": {
+                "tags": [
+                    "Boards"
+                ],
+                "summary": "Ver board",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings": {
+            "get": {
+                "tags": [
+                    "Meetings"
+                ],
+                "summary": "Listar meetings vis\u00edveis",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "board_id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "date_from",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "date_to",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "scheduled",
+                                "in_progress",
+                                "completed",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "description": "Ordena\u00e7\u00e3o; prefixo `-` para descendente (ex.: `-scheduled_at`).",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "scheduled_at",
+                                "-scheduled_at",
+                                "created_at",
+                                "-created_at"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}": {
+            "get": {
+                "tags": [
+                    "Meetings"
+                ],
+                "summary": "Ver meeting",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Listar tasks vis\u00edveis",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "assigned_to",
+                        "schema": {
+                            "type": "string",
+                            "description": "me ou user_id (apenas para gestores)"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "in_progress",
+                                "completed",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "description": "Ordena\u00e7\u00e3o; prefixo `-` para descendente.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created_at",
+                                "-created_at",
+                                "due_date",
+                                "-due_date",
+                                "priority",
+                                "-priority",
+                                "status",
+                                "-status"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Criar task",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TaskCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}": {
+            "get": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Ver task",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Atualizar task (sem alterar status)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TaskUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/start": {
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Iniciar task (pending \u2192 in_progress)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/complete": {
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Concluir task (in_progress \u2192 completed)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Cancelar task (pending/in_progress \u2192 cancelled)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/comments": {
+            "post": {
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Adicionar coment\u00e1rio na task",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TaskCommentCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Listar notifica\u00e7\u00f5es vis\u00edveis",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "unread",
+                        "description": "Atalho para n\u00e3o lidas (read_at nulo); preferir `status` quando poss\u00edvel.",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "unread",
+                                "read",
+                                "sent",
+                                "failed"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "channel",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "database",
+                                "email"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "description": "Ordena\u00e7\u00e3o; prefixo `-` para descendente.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created_at",
+                                "-created_at",
+                                "read_at",
+                                "-read_at",
+                                "sent_at",
+                                "-sent_at"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/{id}": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Ver notifica\u00e7\u00e3o",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/{id}/read": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Marcar notifica\u00e7\u00e3o como lida (idempotente)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/read-all": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Marcar todas as pr\u00f3prias notifica\u00e7\u00f5es (unread) como lidas",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeSuccess"
+                                },
+                                "examples": {
+                                    "example": {
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "affected": 3,
+                                                "marked_at": "2026-05-08T10:00:00Z"
+                                            },
+                                            "meta": {
+                                                "request_id": "req_123",
+                                                "api_version": "v1"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limited",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnvelopeError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-  }
 }
-
