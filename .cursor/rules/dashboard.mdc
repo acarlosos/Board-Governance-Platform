@@ -13,6 +13,8 @@ alwaysApply: false
 
 # Dashboard
 
+> Esta rule consolida as **Decisões Formais D1–D10** registadas em `docs/features/dashboard.md` (secção "Formal Decisions — Executive Dashboard (19A.1)") e `docs/architecture.md` (secção "Decisões formais (Fase 19A.1)"). Qualquer desvio exige aprovação arquitectural explícita e bump da chave `dashboard_snapshot:v{n}`.
+
 ## Separação obrigatória
 
 | Camada | Pergunta | Implementação |
@@ -29,41 +31,67 @@ alwaysApply: false
 - **`ExecutiveDashboardReadService`** = orquestrador. Compõe providers internos + `DashboardMetricsService`. **Não duplica queries**.
 - **`ReportsService`** = agregações para `OperationalReports`. Independente do executive.
 
-## Snapshot
+## Snapshot contract (D8)
 
-- DTO root **`final readonly`** (`ExecutiveDashboardSnapshot`) com sub-DTOs `final readonly` por bloco (`HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`).
-- **Shape estável e versionado**: qualquer mudança no shape obriga a bump do prefixo da chave de cache (`v1` → `v2`).
-- **Serializável para JSON** desde o início: datetimes ISO8601, enums como `->value`, sem objects Eloquent expostos.
-- Para tenant vazio, todas as keys obrigatórias presentes (defaults `0` / `[]`) — **nunca** ausentes.
+### Naming oficial (sub-DTOs + enum)
 
-## Widgets
+- **Root:** `ExecutiveDashboardSnapshot`
+- **Blocos:** `HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`
+- **Urgência (priorities):** `App\Services\Dashboard\Executive\Snapshot\Enums\PriorityUrgency`
 
-- **Máximo 4 widgets Livewire** no dashboard executivo. Consolidar antes de exceder.
+### Anti-Eloquent leakage no DTO (obrigatório)
+
+- DTOs **não importam** `App\Models\*` nem qualquer classe Eloquent.
+- DTOs **não aceitam** `Model`, `Builder`, `Relation` nem **`Illuminate\Support\Collection`** nos construtores; **não executam** queries.
+- DTOs aceitam **apenas**: escalares, `CarbonImmutable`, `BackedEnum` (ex.: `DashboardMetricsPeriod`, `PriorityUrgency`), **arrays tipados** e **DTOs irmãos**.
+- Futuro cache serializa o **objeto snapshot** (`serialize`/`unserialize` ou formato estável acordado), não um `array` solto substituto do contrato tipado — `toArray()` serve para boundaries JSON/API/UI.
+
+### Propriedades e serialização
+
+- Propriedades PHP em **camelCase** internamente; **`toArray()`** retorna **snake_case**.
+- **`toArray()`:** datetimes `CarbonImmutable` como **ISO8601** (`toIso8601String()`), enums como **`->value`**, `null` preservado.
+
+### Versionamento do snapshot (`snapshot_version`)
+
+- Mudanças de **shape** (estrutura/keys públicas): bump **`v1` → `v2`** (alinhar prefixo da chave de cache — ver `cache.mdc`).
+- Mudança de **tipo** de campo, **rename** de chave ou mudança **semântica** do mesmo nome: bump.
+- Ajustes de **`cache_ttl_seconds` / TTL** sem alteração de contrato JSON: **não** exigem bump de versão de snapshot.
+
+- DTO root **`final readonly`** com sub-DTOs `final readonly` por bloco (nomes na lista acima).
+- **Shape estável e versionado**: qualquer caso acima obriga bump; ver procedimento em `cache.mdc`.
+- **API-ready desde o início**: datetimes ISO8601, enums como `->value`, sem objects Eloquent expostos. Permite reuso pelo endpoint `GET /api/v1/dashboard/snapshot` (Fase 19B) sem reescrita.
+- Para tenant vazio, todas as keys obrigatórias presentes (defaults `0` / `[]`) — **nunca** ausentes (usar factory `ExecutiveDashboardSnapshot::emptyShape(...)` onde aplicável).
+
+## Widgets (D5, D6, D7)
+
+- **Máximo 4 widgets Livewire** (D6): Hero, KPI Strip, Operations, Priorities. **Activity** entra como sub-bloco de Operations OU consolidado em Priorities. **Não criar 5º widget** sem aprovação arquitectural.
 - Widgets **não consultam Eloquent**. Consomem o snapshot do `ExecutiveDashboardReadService`.
-- `Priorities` e `Activity` carregam com **`deferLoading()`**.
+- **`deferLoading()` obrigatório (D7)** em Priorities, Activity e qualquer bloco secundário. Hero e KPI Strip carregam imediatamente.
+- **Período partilhado (D5)**: estado único na page (`Dashboard::$period`); comunicação para os widgets via `dispatch('dashboard:period-changed', period: $this->period)` + `#[On('dashboard:period-changed')]`. Proibido manter `period` duplicado em cada widget.
 - `canView()` e `canAccess()` via **gate único** `view_executive_dashboard` (registado em `AuthServiceProvider`); proibido `can('view_reports')` inline para o executive.
 
-## Cache (resumo)
+## Cache split (D1, D2, D3)
 
-- Hero / KPI / Operations: **partilhado por tenant** + período, TTL 60 s, com **anti-stampede** (`Cache::flexible` ou `Cache::lock`).
-- Priorities / Activity: **per-user, NÃO cacheado partilhado** (depende de policies do utilizador; cache partilhado vazaria).
+- **Hero / KPI / Operations**: **partilhado por tenant** + período. **TTL 60 s lógico** via `Cache::flexible(stale=60, expire=120, …)` (D1). **Anti-stampede obrigatório** (D2): padrão `Cache::flexible`; `Cache::lock` apenas se `flexible` for insuficiente (cálculo > 30 s).
+- **Priorities / Activity**: **per-user, NÃO cacheado partilhado** (D3) — depende de policies do utilizador; cache partilhado vazaria. Caso de excepção (raro): cache per-user com chave `…:user_{id}` e TTL ≤ 30 s, documentado na ficha.
 - Convenção transversal: ver `.cursor/rules/cache.mdc`.
 
-## Tenancy (obrigatório)
+## Tenancy (obrigatório) + super_admin (D4)
 
 - Todas as queries: `Model::query()->withoutGlobalScopes()` + `App\Services\Reporting\ReportingContext::restrictToTenant($builder)`.
-- `super_admin` (bypass) recebe agregados globais em Hero/KPI/Operations; `Priorities`/`Activity` **desactivados** ou com `LIMIT` agressivo (evitar varrer milhões de rows em runtime).
+- **`super_admin` em modo global (D4)**: KPIs globais permitidos em Hero/KPI/Operations; **Priorities e Activity desactivados** (`isGlobalScope() === true` → providers retornam `[]`). Aceitável: super_admin é operacional, não decisor de negócio do tenant. Reavaliar em 19B se houver pedido formal.
 - Reforço: `.cursor/rules/multitenancy.mdc` e `.cursor/rules/tenant-leakage-critical.mdc`.
 
-## Filtragem por policy (anti-leak por item)
+## Filtragem por policy (D9 — anti-leak por item)
 
 - Cada item de `Priorities` e `Activity` passa por `Gate::forUser($user)->allows('view', $item)` **antes** de entrar no DTO ou na render.
 - Items omitidos **somem sem mensagem** (proibido "X items omitidos" — anti-enumeração).
+- Combinação D3 + D9 garante que dois utilizadores diferentes do mesmo tenant podem ter feeds diferentes sem cross-leak.
 
 ## Listas limitadas (N)
 
-- `PrioritiesProvider`: `take(N)` (configurável em `config/board.php`, default máx **10**).
-- `ActivityFeedProvider`: `take(N)` (default máx **15**).
+- `PrioritiesProvider`: `take(N)` com máximo `config('board.dashboard.priorities_max')` (default **10**).
+- `ActivityFeedProvider`: `take(N)` com máximo `config('board.dashboard.activity_max')` (default **15**).
 - **Sem paginação** no dashboard. Listas longas levam o utilizador para o Resource correspondente.
 
 ## Performance
@@ -71,14 +99,22 @@ alwaysApply: false
 - Apenas `COUNT(*)` / `SELECT … LIMIT N` / `GROUP BY` no read path; **sem coleções grandes**.
 - Índices DB exigidos para tabelas-fonte: `(tenant_id, status, created_at)` e índices específicos por bloco (`due_date`, `scheduled_at`). Ver ficha `docs/features/dashboard.md`.
 
+## Legacy widgets (D10)
+
+- Os 6 `*StatsWidget` da Fase 14 (`TasksStatsWidget`, `MeetingsStatsWidget`, `MinutesStatsWidget`, `VotesStatsWidget`, `SignaturesStatsWidget`, `NotificationsStatsWidget`) **mantêm-se como fallback** durante toda a Fase 19A. **Não apagar nem mover** sem aprovação.
+- Remoção apenas em **19B.5**, depois de validação em produção do dashboard executivo (mitiga risco de UX regression e permite rollback rápido).
+
 ## Anti-padrões (proibidos)
 
 - Widget que faz `Model::query()` ou `where('tenant_id', auth()->user()->tenant_id)` directo.
-- Snapshot devolvido como `array<string, mixed>` em produção (DTO obrigatório).
-- Cachear partilhadamente lista filtrada por policy do utilizador.
-- Mensagem "X items ocultos" ou "tem N items sem permissão".
-- Adicionar 5º widget Livewire ao dashboard executivo sem aprovação arquitectural.
+- Snapshot devolvido como `array<string, mixed>` em produção (D8: DTO obrigatório).
+- Cachear partilhadamente lista filtrada por policy do utilizador (viola D3).
+- Mensagem "X items ocultos" ou "tem N items sem permissão" (viola D9).
+- Adicionar 5º widget Livewire ao dashboard executivo sem aprovação arquitectural (viola D6).
 - Duplicar `COUNT(*)` num provider quando `DashboardMetricsService` já o tem.
+- Manter `period` como property duplicada em cada widget em vez de dispatch/On (viola D5).
+- TTL > 60 s no snapshot partilhado sem invalidação por evento (viola D1; reservado para 19B.1).
+- `super_admin` em modo global a popular Priorities/Activity (viola D4).
 
 ## Testes obrigatórios (`tests.mdc`)
 

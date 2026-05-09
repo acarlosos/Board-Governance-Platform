@@ -248,11 +248,11 @@ Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orient
 
 #### Fase 19A — Foundation + implementação
 
-- 19A.0 Documentação + rules arquitecturais (`docs/features/dashboard.md`, `docs/architecture.md`, `.cursor/rules/dashboard.mdc`, `.cursor/rules/cache.mdc`, `.cursor/rules/livewire.mdc`) — **em curso**
-- 19A.1 Decisões formais (TTL, anti-stampede, super_admin, per-user vs partilhado, naming)
-- 19A.2 Índices DB críticos (`tasks/meetings/votes/signatures/notifications` por `tenant_id, status, created_at` e `due_date`/`scheduled_at` quando aplicável)
-- 19A.3 DTOs imutáveis (`ExecutiveDashboardSnapshot`, `HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`) — `final readonly`
-- 19A.4 Providers internos (`HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`) com testes unitários
+- 19A.0 Documentação + rules arquitecturais (`docs/features/dashboard.md`, `docs/architecture.md`, `.cursor/rules/dashboard.mdc`, `.cursor/rules/cache.mdc`, `.cursor/rules/livewire.mdc`) — **concluída**
+- 19A.1 **Formal architecture decisions** (D1–D10: TTL/`Cache::flexible`, anti-stampede, cache split per-user/per-tenant, super_admin, período via dispatch/On, 4 widgets, deferLoading, snapshot DTO `final readonly` versionado, policy filtering item-a-item, legacy `*StatsWidget` como fallback) — **em curso**. Detalhe: [`features/dashboard.md`](features/dashboard.md) → "Formal Decisions" e [`architecture.md`](architecture.md) → "Decisões formais (Fase 19A.1)"
+- 19A.2 Índice DB para query **overdue** em `tasks` — **concluída**: `tasks_tenant_status_due_date_idx` (`tenant_id`, `status`, `due_date`). **Sem** índices adicionais em `meetings`, `votes`, `signature_requests`, `signature_request_signers`, `notifications_center`, `audit_logs`, `minutes`, `documents` nesta sub-fase (over-indexing evitado). Detalhe: [`features/dashboard.md`](features/dashboard.md) → Performance.
+- 19A.3 DTOs imutáveis (`ExecutiveDashboardSnapshot`, `HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`, enum `PriorityUrgency`) — `final readonly`, `config/board.php` (`dashboard.*`), testes em `tests/Unit/Dashboard/Executive/Snapshot/` — **concluída** (namespace `App\Services\Dashboard\Executive\Snapshot`)
+- 19A.4 Providers internos (`HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`) com testes unitários — **desbloqueada**
 - 19A.5 `ExecutiveDashboardReadService` orquestrador + cache `flexible` por tenant/período
 - 19A.6 Gate único `view_executive_dashboard` registado em `AuthServiceProvider`
 - 19A.7 4 widgets Livewire (`Hero`, `KpiStrip`, `Operations`, `Priorities` com `deferLoading`) + `Dashboard` page actualizada

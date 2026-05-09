@@ -27,5 +27,17 @@ return [
             'jpeg',
         ],
     ],
+
+    /*
+    | Executive Dashboard snapshot (Fase 19A) — TTL e versão alinham-se a D1/D8 em docs/features/dashboard.md
+    */
+    'dashboard' => [
+        'snapshot_version' => 'v1',
+        'cache_ttl_seconds' => 60,
+        'cache_stale_seconds' => 60,
+        'cache_expire_seconds' => 120,
+        'priorities_max' => 10,
+        'activity_max' => 15,
+    ],
 ];
 

@@ -93,6 +93,45 @@ Para tenants enterprise (> 50 k tasks/votes/notifications), prevê-se uma **proj
 
 Detalhe operacional: [`features/dashboard.md`](features/dashboard.md), secção "Executive Dashboard (Fase 19A)".
 
+### Decisões formais (Fase 19A.1)
+
+> Contrato arquitectural vinculativo para 19A.3 → 19A.7 e 19B. Detalhe completo (rationale, trade-offs, pré-condições) em [`features/dashboard.md`](features/dashboard.md), secção "Formal Decisions — Executive Dashboard (19A.1)".
+
+| ID | Tema | Decisão |
+|---|---|---|
+| **D1** | TTL snapshot | 60 s lógico via `Cache::flexible(stale=60, expire=120, …)` |
+| **D2** | Anti-stampede | Obrigatório; padrão `Cache::flexible`; `Cache::lock` apenas em fallback |
+| **D3** | Cache split | Hero/KPI/Operations partilhado por tenant; **Priorities/Activity per-user, NÃO partilhado** |
+| **D4** | super_admin global | KPIs globais OK; **Priorities/Activity desactivados** em modo global |
+| **D5** | Período | Estado único na page; comunicação `dispatch('dashboard:period-changed')` + `#[On(...)]` |
+| **D6** | Widgets Livewire | **Máximo 4** (Hero, KPI Strip, Operations, Priorities) |
+| **D7** | `deferLoading()` | Obrigatório em Priorities, Activity e blocos secundários |
+| **D8** | Snapshot contract | **Implementado (19A.3):** DTOs `final readonly` em `App\Services\Dashboard\Executive\Snapshot` — shape estável, versionado, **API-ready** (ISO8601 + enum `->value` em `toArray()`). |
+| **D9** | Policy filtering | Item-a-item via `Gate::forUser($user)->allows('view', $item)`; sem mensagem "X omitidos" |
+| **D10** | Legacy widgets | `*StatsWidget` mantidos como fallback durante 19A; remoção só em **19B.5** |
+
+#### Rationale e trade-offs (resumo)
+
+- **Latência ≤ 120 s entre PATCH e snapshot** (D1) é aceitável para fluxos executivos; trade-off explícito vs invalidação por evento (pendência 19B.1).
+- **Per-user sem cache** (D3) escala linearmente com utilizadores activos por tenant; mitigado por `take(N)` (D9) + `deferLoading()` (D7).
+- **super_admin sem feeds operacionais** (D4) perde informação accionável global, aceitável para o papel (operacional, não decisor de negócio).
+- **DTO versionado** (D8) obriga warm pós-deploy ao bump (`v1` → `v2`); procedimento em `.cursor/rules/cache.mdc`.
+- **4 widgets** (D6) força consolidação de Activity num bloco existente — alinha com direcção UX "menos widgets independentes".
+
+#### Riscos conhecidos pós-19A.1
+
+| Risco | Mitigação 19A | Pendência 19B |
+|---|---|---|
+| **L1** — queries **overdue tasks** (`status IN(pending, in_progress)` + `due_date` &lt; agora) para KPI/dashboard | **Mitigado na 19A.2** — índice composto `tasks_tenant_status_due_date_idx` (`tenant_id`, `status`, `due_date`) | — |
+| Stampede em cold start (4 widgets paralelos) | D2 (`flexible`) | Pre-warm por job (19B.4) |
+| Vazamento por item em feeds | D9 (policy item-a-item) | — |
+| Latência percebida em PATCH → snapshot | D1 (TTL 60 s aceite) | Invalidação por evento (19B.1) |
+| Tenants enterprise (> 50 k rows) | Índice overdue em `tasks` (19A.2); índices adicionais avaliados sem over-indexing | Projection model (19B.2) |
+| Bump de shape sem warm de cache | D8 (versionamento + procedimento documentado) | — |
+| Regressão UX vs Fase 14 | D10 (`*StatsWidget` fallback) | Remoção controlada em 19B.5 |
+
+Estas decisões são **pré-condição** para 19A.2 (índices) e 19A.3 (DTOs). Qualquer desvio futuro a D1–D10 exige alteração desta tabela e bump da chave `dashboard_snapshot:v{n}`.
+
 ## Decisões técnicas pendentes de fixação
 
 Registar aqui ou na feature correspondente quando forem tomadas (ex.: pacote de activity log vs. tabela `audit_logs` própria, estratégia exata de storage por tenant).
