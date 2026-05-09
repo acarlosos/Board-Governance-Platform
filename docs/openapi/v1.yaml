@@ -98,6 +98,32 @@ components:
         completed_at: { type: string, nullable: true }
         created_at: { type: string, nullable: true }
         updated_at: { type: string, nullable: true }
+    TaskCreate:
+      type: object
+      required: [title, priority]
+      properties:
+        title: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        due_date: { type: string, format: date, nullable: true }
+        assigned_to: { type: integer, nullable: true }
+        related_type: { type: string, nullable: true }
+        related_id: { type: integer, nullable: true }
+    TaskUpdate:
+      type: object
+      properties:
+        title: { type: string, maxLength: 255 }
+        description: { type: string, nullable: true }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        due_date: { type: string, format: date, nullable: true }
+        assigned_to: { type: integer, nullable: true }
+        related_type: { type: string, nullable: true }
+        related_id: { type: integer, nullable: true }
+    TaskCommentCreate:
+      type: object
+      required: [comment]
+      properties:
+        comment: { type: string, maxLength: 5000 }
     Notification:
       type: object
       properties:
@@ -112,6 +138,12 @@ components:
         sent_at: { type: string, nullable: true }
         created_at: { type: string, nullable: true }
         updated_at: { type: string, nullable: true }
+    NotificationsReadAllResult:
+      type: object
+      required: [affected, marked_at]
+      properties:
+        affected: { type: integer }
+        marked_at: { type: string, format: date-time }
 security:
   - bearerAuth: []
 paths:
@@ -275,6 +307,20 @@ paths:
               - "-status"
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+    post:
+      tags: [Tasks]
+      summary: Criar task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskCreate" }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+        "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "403": { description: Forbidden, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "422": { description: Validation, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
   /tasks/{id}:
     get:
       tags: [Tasks]
@@ -287,6 +333,85 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+    patch:
+      tags: [Tasks]
+      summary: Atualizar task (sem alterar status)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskUpdate" }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "422": { description: Validation, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+  /tasks/{id}/start:
+    post:
+      tags: [Tasks]
+      summary: Iniciar task (pending → in_progress)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "422": { description: Validation, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+  /tasks/{id}/complete:
+    post:
+      tags: [Tasks]
+      summary: Concluir task (in_progress → completed)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "422": { description: Validation, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+  /tasks/{id}/cancel:
+    post:
+      tags: [Tasks]
+      summary: Cancelar task (pending/in_progress → cancelled)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "422": { description: Validation, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+  /tasks/{id}/comments:
+    post:
+      tags: [Tasks]
+      summary: Adicionar comentário na task
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskCommentCreate" }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "422": { description: Validation, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
   /notifications:
     get:
       tags: [Notifications]
@@ -338,4 +463,38 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: Marcar notificação como lida (idempotente)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "403": { description: Forbidden, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeSuccess" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Marcar todas as próprias notificações (unread) como lidas
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnvelopeSuccess" }
+              examples:
+                example:
+                  value:
+                    success: true
+                    data: { affected: 3, marked_at: "2026-05-08T10:00:00Z" }
+                    meta: { request_id: "req_123", api_version: "v1" }
+        "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "403": { description: Forbidden, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
 

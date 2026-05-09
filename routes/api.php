@@ -52,14 +52,48 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.tasks.index');
         Route::get('tasks/{id}', [TasksController::class, 'show'])
             ->middleware('abilities:tasks:read')
-            ->name('api.v1.tasks.show');
+            ->name('api.v1.tasks.show')
+            ->whereNumber('id');
+
+        Route::post('tasks', [TasksController::class, 'store'])
+            ->middleware('abilities:tasks:write')
+            ->name('api.v1.tasks.store');
+        Route::patch('tasks/{id}', [TasksController::class, 'update'])
+            ->middleware('abilities:tasks:write')
+            ->name('api.v1.tasks.update')
+            ->whereNumber('id');
+        Route::post('tasks/{id}/start', [TasksController::class, 'start'])
+            ->middleware('abilities:tasks:write')
+            ->name('api.v1.tasks.start')
+            ->whereNumber('id');
+        Route::post('tasks/{id}/complete', [TasksController::class, 'complete'])
+            ->middleware('abilities:tasks:write')
+            ->name('api.v1.tasks.complete')
+            ->whereNumber('id');
+        Route::post('tasks/{id}/cancel', [TasksController::class, 'cancel'])
+            ->middleware('abilities:tasks:write')
+            ->name('api.v1.tasks.cancel')
+            ->whereNumber('id');
+        Route::post('tasks/{id}/comments', [TasksController::class, 'addComment'])
+            ->middleware('abilities:tasks:write')
+            ->name('api.v1.tasks.comments.store')
+            ->whereNumber('id');
 
         Route::get('notifications', [NotificationsController::class, 'index'])
             ->middleware('abilities:notifications:read')
             ->name('api.v1.notifications.index');
         Route::get('notifications/{id}', [NotificationsController::class, 'show'])
             ->middleware('abilities:notifications:read')
-            ->name('api.v1.notifications.show');
+            ->name('api.v1.notifications.show')
+            ->whereNumber('id');
+
+        Route::post('notifications/read-all', [NotificationsController::class, 'readAll'])
+            ->middleware('abilities:notifications:write')
+            ->name('api.v1.notifications.read_all');
+        Route::post('notifications/{id}/read', [NotificationsController::class, 'markRead'])
+            ->middleware('abilities:notifications:write')
+            ->name('api.v1.notifications.read')
+            ->whereNumber('id');
     });
 });
 

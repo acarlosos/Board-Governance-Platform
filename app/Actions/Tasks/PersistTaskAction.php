@@ -145,12 +145,16 @@ final class PersistTaskAction
 
         $validated = $validator->validate();
 
-        $old = $task->only(['title', 'description', 'priority', 'due_date', 'assigned_to', 'related_type', 'related_id']);
+        $old = $this->normalizeHistoryValues(
+            $task->only(['title', 'description', 'priority', 'due_date', 'assigned_to', 'related_type', 'related_id'])
+        );
 
         $task->fill(Arr::only($validated, ['tenant_id', 'title', 'description', 'priority', 'due_date', 'assigned_to', 'related_type', 'related_id']));
         $task->save();
 
-        $new = $task->only(['title', 'description', 'priority', 'due_date', 'assigned_to', 'related_type', 'related_id']);
+        $new = $this->normalizeHistoryValues(
+            $task->only(['title', 'description', 'priority', 'due_date', 'assigned_to', 'related_type', 'related_id'])
+        );
         $changes = array_diff_assoc($new, $old);
         if ($changes !== []) {
             app(RecordTaskHistoryAction::class)->record($actor, $task, 'updated', $old, $new);
@@ -205,6 +209,21 @@ final class PersistTaskAction
 
         /** @var class-string<Model> $relatedType */
         return $relatedType::query()->withoutGlobalScopes()->find((int) $relatedId);
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function normalizeHistoryValues(array $values): array
+    {
+        foreach ($values as $key => $value) {
+            if ($value instanceof \BackedEnum) {
+                $values[$key] = $value->value;
+            }
+        }
+
+        return $values;
     }
 }
 

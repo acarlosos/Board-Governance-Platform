@@ -4,12 +4,12 @@ namespace Tests\Feature\Api\V1;
 
 use App\Enums\MeetingStatus;
 use App\Models\Board;
-use Carbon\Carbon;
 use App\Models\Meeting;
 use App\Models\NotificationCenter;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
+use Carbon\Carbon;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -307,6 +307,27 @@ final class DomainReadOnlyApiTest extends TestCase
             ->assertOk();
 
         $this->assertGreaterThanOrEqual(2, count($res->json('data')));
+    }
+
+    public function test_tokens_de_outro_user_nao_vazam(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        $u1 = User::factory()->create(['tenant_id' => $tenant->id]);
+        $u1->assignRole('tenant_admin');
+        $u2 = User::factory()->create(['tenant_id' => $tenant->id]);
+        $u2->assignRole('tenant_admin');
+
+        $token1 = $u1->createToken('device', ['tokens:read:self']);
+        $u2->createToken('device-2', ['tokens:read:self']);
+        $pat2 = PersonalAccessToken::query()->where('tokenable_id', $u2->id)->first();
+
+        $this->assertNotNull($pat2);
+
+        // revoke de token de outro user deve parecer "not found" (não vazar existência)
+        $this->withHeader('Authorization', 'Bearer '.$token1->plainTextToken)
+            ->deleteJson('/api/v1/auth/tokens/'.$pat2->id)
+            ->assertStatus(403);
     }
 }
 
