@@ -28,8 +28,21 @@ alwaysApply: false
 ## Read services
 
 - **`DashboardMetricsService`** = KPIs estáveis por tenant/global (cache 90 s). Não tocar para Fase 19A; apenas consumir.
-- **`ExecutiveDashboardReadService`** = orquestrador. Compõe providers internos + `DashboardMetricsService`. **Não duplica queries**.
+- **`ExecutiveDashboardReadService`** = orquestrador (19A.5). Compõe providers; **só `KpiStripProvider`** deve chamar `DashboardMetricsService`.
 - **`ReportsService`** = agregações para `OperationalReports`. Independente do executive.
+
+## Providers internos (19A.4)
+
+- **Contrato único:** `build(User $actor, DashboardMetricsPeriod $period)` devolve o DTO do provider (ex.: `HeroSummary`, `KpiStrip`, `OperationsBlock`) ou `array<int, PriorityItem>` / `array<int, ActivityItem>` nos feeds per-user.
+- **Proibido** dentro dos providers: **`auth()`**, **`request()`**, **`session()`** — receber apenas `User` injectado pela assinatura (orquestrador/Laravel container).
+- **Per-user (`PrioritiesProvider`, `ActivityFeedProvider`):** não cacheiem (D3); curto-circuito **D4:** se `ReportingContext::fromUser($actor)->isGlobalScope()` ⇒ `[]` em ambos os feeds per-user.
+- **Feeds (`Priorities` / `Activity`):** filtro SQL de candidatos + **`Gate::forUser($actor)->allows('view', $itemOuAuditable)`** item-a-item (D9 ao nível aplicável ao modelo).
+- **Anti-enumeração:** não expor `count(candidatos) - count(visíveis)`, mensagens tipo "omitidos/ocultos" ou totais paralelos só para debug público (D9).
+- **Over-fetch antes do Gate:** `$buffer = (int) ceil($maxConfig * 0.5)` em cima de `board.dashboard.priorities_max` / `activity_max` (ex.: 10→15 linhas antes de política+corte).
+- **`KpiStripProvider` exclusivo:** é o único consumidor autorizado de `DashboardMetricsService` em `Executive/Providers`; demais (`HeroProvider`, `OperationsProvider`) fazem contagens/contexto do **seu** DTO mesmo que parte dos números coincida semanticamente com métricas gerais.
+- **`ActivityFeedProvider` entrada:** primeiro `Gate::forUser($actor)->allows('viewAny', AuditLog::class)` (`AuditLogPolicy`); se negar ⇒ `[]` — **sem** alterar a policy nem contornamentos.
+
+Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`.
 
 ## Snapshot contract (D8)
 
@@ -111,7 +124,7 @@ alwaysApply: false
 - Cachear partilhadamente lista filtrada por policy do utilizador (viola D3).
 - Mensagem "X items ocultos" ou "tem N items sem permissão" (viola D9).
 - Adicionar 5º widget Livewire ao dashboard executivo sem aprovação arquitectural (viola D6).
-- Duplicar `COUNT(*)` num provider quando `DashboardMetricsService` já o tem.
+- Ler `DashboardMetricsService` **fora** de `KpiStripProvider` (violando a regra da camada Executive `Providers`; Hero/Operations têm perguntas alinhadas ao **seu** DTO — não usar o service como «atalho KPI» dentro de outros providers).
 - Manter `period` como property duplicada em cada widget em vez de dispatch/On (viola D5).
 - TTL > 60 s no snapshot partilhado sem invalidação por evento (viola D1; reservado para 19B.1).
 - `super_admin` em modo global a popular Priorities/Activity (viola D4).

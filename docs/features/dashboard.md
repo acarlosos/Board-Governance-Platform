@@ -37,6 +37,8 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 ## Testes relacionados
 
 - `tests/Feature/DashboardTest.php`
+- `tests/Unit/Dashboard/Executive/Snapshot/` (19A.3)
+- `tests/Unit/Dashboard/Executive/Providers/` (19A.4)
 
 ## Pendências futuras
 
@@ -46,7 +48,7 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 
 ## Executive Dashboard (Fase 19A)
 
-> Estado: **19A.0 concluída**, **19A.1 em curso (formalização das decisões)**, **19A.2 concluída** (índice DB overdue em `tasks`), **19A.3 concluída** (DTOs imutáveis do snapshot em `App\Services\Dashboard\Executive\Snapshot`). Sem providers, read service, widgets nem cache runtime na 19A.3. Toda a Fase 14 actual (KPIs Filament + `OperationalReports`) **mantém-se intacta** até à fase 19A.7.
+> Estado: **19A.0 concluída**, **19A.1 em curso (formalização das decisões)**, **19A.2 concluída** (índice DB overdue em `tasks`), **19A.3 concluída** (DTOs do snapshot em `App\Services\Dashboard\Executive\Snapshot`), **19A.4 concluída** (providers em `App\Services\Dashboard\Executive\Providers`). Sem **read service** (19A.5), **widgets novos** nem cache de snapshot até essas sub-fases. Toda a Fase 14 actual (KPIs Filament + `OperationalReports`) **mantém-se intacta** até à fase 19A.7.
 
 ### Objectivo
 
@@ -93,7 +95,27 @@ Esta separação é **regra arquitectural** (ver [`.cursor/rules/dashboard.mdc`]
 | `PrioritiesProvider` | ❌ **per-user, não cacheado partilhado** | ✅ `Gate::forUser($user)->allows('view', $item)` |
 | `ActivityFeedProvider` | ❌ **per-user, não cacheado partilhado** | ✅ `Gate::forUser($user)->allows('view', $item)` |
 
-`ExecutiveDashboardReadService` é **orquestrador puro**: compõe os providers e devolve o DTO. **Não duplica queries** de KPI já feitas por `DashboardMetricsService`.
+`ExecutiveDashboardReadService` é **orquestrador puro** (19A.5): compõe providers e devolve o DTO. O mapeamento do **array KPI** já calculado só entra pela **`KpiStripProvider`** (delegação a `DashboardMetricsService`); Hero/Operations têm perguntas de agregação distintas ligadas aos respectivos sub-DTOs.
+
+### Providers internos — Fase 19A.4
+
+Classes em **`App\Services\Dashboard\Executive\Providers`**; cada uma expõe **um método público** `build(User $actor, DashboardMetricsPeriod $period): T`. Sem helpers globais **`auth()` / `request()` / `session()`** dentro dos providers. **Sem cache** dentro dos providers (19A.5).
+
+| Provider | Produto (`T`) | Per-tenant vs per-user | Cache partilhado (19A.5)? |
+|---|---|---|---|
+| `HeroProvider` | `HeroSummary` | Per-tenant (+ global `super_admin`) | ✅ banda snapshot partilhada |
+| `KpiStripProvider` | `KpiStrip` | Per-tenant (delega métricas) | ✅ via `DashboardMetricsService` existente |
+| `OperationsProvider` | `OperationsBlock` | Per-tenant (+ global) | ✅ banda snapshot partilhada |
+| `PrioritiesProvider` | `array<int, PriorityItem>` | **Per-user** (D9) | ❌ (D3) |
+| `ActivityFeedProvider` | `array<int, ActivityItem>` | **Per-user** (entrada **`AuditLogPolicy::viewAny`** + D9 sobre auditable) | ❌ (D3) |
+
+- **`HeroProvider`**: contagens de destaque (tasks em atraso, votos abertos, pedidos de assinatura pendentes, próxima reunião futura): `withoutGlobalScopes` + **`ReportingContext::restrictToTenant`**, ou agregação global se `super_admin`. **Sem** filtro por item.
+- **`KpiStripProvider`**: **único** consumidor autorizado de `DashboardMetricsService` nesta pasta; apenas mapeia o retorno (`tasks`, `meetings`, `votes`, `signatures`) para `KpiStrip`, sem queries adicionais.
+- **`OperationsProvider`**: atas em revisão, reuniões com `scheduled_at` no **mês calendário** corrente, notificações `unread` — alinhado ao contrato **`OperationsBlock`**, período aplicado aos blocos cronológicos que usam `created_at`.
+- **`PrioritiesProvider`**: **D4** — se `ReportingContext::isGlobalScope()`, retorna `[]`. Sobrefetch **`priorities_max + ceil(priorities_max * 0.5)`** (ex.: **15** com max 10). Fontes: `Task`, `SignatureRequestSigner` (`status` pending), `Vote` (`Open`) com filtros owners/managers conforme políticas efectivas; ordenação por urgência + data; **`Gate::forUser($actor)->allows('view', $item)`** antes do DTO; saída **cortada a `priorities_max`**. Anti-enumeração: não expor totais descartados.
+- **`ActivityFeedProvider`**: **D4** — global ⇒ `[]`. Se **`!Gate::forUser($actor)->allows('viewAny', AuditLog::class)`** ⇒ `[]` (mantém só alinhamento a `AuditLogPolicy`, não alarga permissões). Fetch **`activity_max + buffer`**; cada log pode custar até **uma** consulta ao auditable; órfão ⇒ `ActivityItem` com `resourceId = null`; após política **`view`** sobre o modelo resolvido, cortar a **`activity_max`**.
+
+Ver testes: `tests/Unit/Dashboard/Executive/Providers/*.php`.
 
 ### Limites de widgets (Filament/Livewire)
 
@@ -196,8 +218,8 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.1** (esta fase): decisões formais D1–D10 (acima); rules expandidas com referências contractuais.
 - **19A.2**: índices DB críticos (migration mínima).
 - **19A.3** (concluída): DTOs imutáveis (`ExecutiveDashboardSnapshot` + sub-DTOs + `PriorityUrgency`) + `config/board.php` (`dashboard.*`) + testes unitários de shape e serialização (`tests/Unit/Dashboard/Executive/Snapshot`).
-- **19A.4**: providers internos (5 classes) com testes unitários.
-- **19A.5**: `ExecutiveDashboardReadService` orquestrador + cache + anti-stampede.
+- **19A.4** (concluída): providers internos (5 classes em `App\Services\Dashboard\Executive\Providers`) + testes em `tests/Unit/Dashboard/Executive/Providers/`.
+- **19A.5** (em curso / desbloqueada): `ExecutiveDashboardReadService` orquestrador + cache snapshot + anti-stampede.
 - **19A.6**: gate `view_executive_dashboard` registado em `AuthServiceProvider`.
 - **19A.7**: 4 widgets Livewire + página `Dashboard` actualizada (mantém Fase 14 desactivada como fallback).
 - **19A.8**: testes obrigatórios (multi-tenancy + policies per-item + 4 cenários `tests.mdc`).

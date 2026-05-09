@@ -66,8 +66,8 @@ A camada de leitura para o **dashboard executivo** (Fase 19A) é desenhada para 
 | Camada | Responsabilidade | Cache |
 |---|---|---|
 | `App\Services\Dashboard\DashboardMetricsService` | KPIs **estáveis** por tenant/global (counters, agregações simples) | 90 s, chave `dashboard_metrics:v1:{seg}:{period}` |
-| `App\Services\Dashboard\Executive\ExecutiveDashboardReadService` | **Orquestrador** que compõe o snapshot executivo a partir de `DashboardMetricsService` + providers internos. **Não duplica** queries de KPI. | 60 s para a banda partilhada (Hero/KPI/Operations); per-user sem cache para Priorities/Activity |
-| `App\Services\Dashboard\Executive\Providers\*` | Providers pequenos com responsabilidade única (`HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`) | individual |
+| `App\Services\Dashboard\Executive\ExecutiveDashboardReadService` | **Orquestrador** (19A.5): compõe os 5 providers num `ExecutiveDashboardSnapshot` (a implementar). **KPI strip** entra só por `KpiStripProvider` → `DashboardMetricsService`. Implementação pendente até 19A.5. | 60 s snapshot partilhado (Hero/KPI/Operations — 19A.5); per-user sem cache para Priorities/Activity |
+| `App\Services\Dashboard\Executive\Providers\*` | **19A.4:** `HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`; um `build(User, DashboardMetricsPeriod)` cada; não usam auth()/request()/session(); sem cache próprio — ver `docs/features/dashboard.md` § Providers 19A.4. | só `KpiStripProvider` usa cache via `DashboardMetricsService` |
 | `App\Services\Dashboard\Executive\Snapshot\ExecutiveDashboardSnapshot` (+ sub-DTOs) | **DTO `final readonly`** consumido por widgets Livewire e (futuramente) pelo endpoint API. Shape estável, versionado. | — |
 | `App\Services\Reports\ReportsService` | Agregações por período para `OperationalReports` (sem cache) — **fora** do executive dashboard. | — |
 
