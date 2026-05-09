@@ -8,6 +8,8 @@ alwaysApply: false
 
 # Cache
 
+> Para o dashboard executivo, esta rule consolida as decisões D1 (TTL 60 s), D2 (anti-stampede via `Cache::flexible`), D3 (split per-user vs per-tenant) e D8 (versionamento de shape) registadas em `docs/features/dashboard.md` (secção "Formal Decisions — Executive Dashboard (19A.1)").
+
 ## Estrutura da chave (obrigatória)
 
 Formato: `{dominio}:v{n}:{tenancy_segment}[:{escopos_adicionais}]`
@@ -35,20 +37,35 @@ dashboard_snapshot:v1:global:last_30_days:shared
 
 TTL excedido sem invalidação por evento → discrepância visível para o utilizador. Documentar a latência na ficha da feature.
 
-## Anti-stampede (obrigatório)
+## Anti-stampede (obrigatório — D2 para snapshots executivos)
 
-Para qualquer chave consumida por **mais de um componente em paralelo** (ex.: 4 widgets Livewire no mesmo dashboard):
+Para qualquer chave consumida por **mais de um componente em paralelo** (ex.: 4 widgets Livewire no mesmo dashboard) o anti-stampede é **obrigatório**.
 
-- **Preferido**: `Cache::flexible($key, [$stale, $expire], fn () => …)` (Laravel 11+).
-- **Alternativa**: `Cache::lock($key.':lock', 5)->get(fn () => Cache::remember(...))`.
+- **Padrão (D2)**: `Cache::flexible($key, [$stale, $expire], fn () => …)` (Laravel 11+).
+- **Fallback**: `Cache::lock($key.':lock', 5)->get(fn () => Cache::remember(...))` — apenas se `flexible` for insuficiente (ex.: cálculo > 30 s onde a janela `stale` não basta).
 
-Sem isto, o primeiro cold start dispara N cálculos concorrentes e amplifica o problema que o cache devia resolver.
+Exemplo canónico do snapshot executivo (D1 + D2):
 
-## Per-user vs per-tenant
+```php
+// 60 s lógico, com stale window de 60 s e expire 120 s
+Cache::flexible(
+    key: 'dashboard_snapshot:v1:'.$ctx->cacheSegment().':'.$period->value.':shared',
+    ttl: [60, 120],
+    callback: fn () => $this->compute($ctx, $period),
+);
+```
 
-- **Cacheado partilhado por tenant**: dados que **não dependem das policies do utilizador** (KPIs agregados, contadores).
-- **NÃO cacheado partilhado**: dados filtrados item-a-item por policy (feeds, priorities, listas com gate `view` por item). Cachear partilhado **vazaria** dados entre utilizadores do mesmo tenant.
-- Caso de excepção (raro): cache per-user com chave `…:user_{id}` e TTL curto. Documentar na ficha.
+Sem `flexible`/`lock`, o primeiro cold start dispara N cálculos concorrentes e amplifica o problema que o cache devia resolver.
+
+## Per-user vs per-tenant (D3)
+
+- **Cacheado partilhado por tenant**: dados que **não dependem das policies do utilizador** (KPIs agregados, contadores). Ex.: Hero, KPI Strip, Operations do dashboard executivo.
+- **NÃO cacheado partilhado (D3, regra dura)**: dados filtrados item-a-item por policy (feeds, priorities, listas com gate `view` por item). Cachear partilhado **vazaria** dados entre utilizadores do mesmo tenant. Ex.: Priorities, Activity do dashboard executivo.
+- Excepção controlada (raro): cache per-user com chave `…:user_{id}` e TTL ≤ 30 s. Documentar na ficha da feature; nunca usar como atalho para colmatar performance.
+
+### Anti-padrão fatal
+
+Chave `dashboard_snapshot:v1:t_42:this_month` que contenha **lista de items filtrados por policy** é **proibida** — viola D3 e produz vazamento entre utilizadores do mesmo tenant. Listas filtradas vivem **fora** desta chave.
 
 ## Tags (Redis)
 
@@ -58,14 +75,27 @@ Sem isto, o primeiro cold start dispara N cálculos concorrentes e amplifica o p
 ## Invalidação
 
 - **Implícita por TTL**: regra geral nesta fase.
-- **Por evento (observers)**: pendência futura. Quando aplicada, registar em `docs/features/{feature}.md` quais eventos invalidam quais chaves.
+- **Por evento (observers)**: pendência futura (Fase 19B.1 para o dashboard executivo). Quando aplicada, registar em `docs/features/{feature}.md` quais eventos invalidam quais chaves.
 - **`Cache::forget`**: explícito, granular. Para flush por padrão usar tags (Redis) ou enumerar chaves conhecidas.
+
+## Versionamento de shape (D8)
+
+Quando o shape de um valor cacheado muda (DTO/array/structure):
+
+1. **Bump do segmento `v{n}`** na chave (`v1` → `v2`).
+2. **Não tentar migrar** valores antigos — deixar expirar pelo TTL natural.
+3. **Avaliar warm pós-deploy** se o cold start for sensível: invocar o computar uma vez por tenant activo (job ou comando).
+4. **Documentar o bump** em `docs/features/{feature}.md` com data e PR/commit.
+
+Skip do bump = `unserialize` de DTO antigo após deploy = fatal em produção.
 
 ## Anti-padrões (proibidos)
 
 - Chave sem prefixo de versão (`v1`/`v2`).
 - Chave sem segmento de tenancy num caminho user-facing.
 - TTL > 120 s em read path user-facing sem invalidação por evento.
-- Cachear partilhado dados filtrados por policy do utilizador.
+- Cachear partilhado dados filtrados por policy do utilizador (viola D3).
+- Snapshot executivo sem `Cache::flexible`/`lock` (viola D2).
+- Mudar shape sem bump de versão (viola D8).
 - Usar tags em código portátil entre drivers sem fallback.
 - "Re-cachear" o resultado de um service que já cacheia internamente (cache duplo).
