@@ -197,10 +197,16 @@ class UserResource extends Resource
                     ->label(__('users.fields.status'))
                     ->formatStateUsing(fn (UserStatus $state): string => __('users.status.'.$state->value))
                     ->badge()
+                    ->color(fn (UserStatus $state): string => match ($state) {
+                        UserStatus::Active => 'success',
+                        UserStatus::Inactive => 'gray',
+                        UserStatus::Suspended => 'danger',
+                    })
                     ->sortable(),
                 TextColumn::make('locale')
                     ->label(__('users.fields.locale'))
                     ->badge()
+                    ->color('gray')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('users.fields.created_at'))
