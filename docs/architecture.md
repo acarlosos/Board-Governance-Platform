@@ -59,6 +59,40 @@ Estrutura preparada para **`/api/v1`** (versionamento) com **Laravel Sanctum** e
 
 Detalhes e contratos: ver [features/api.md](features/api.md).
 
+## Executive Dashboard Read Architecture
+
+A camada de leitura para o **dashboard executivo** (Fase 19A) é desenhada para suportar evolução para um endpoint de API (Fase 19B) sem reescrita. As responsabilidades são separadas explicitamente:
+
+| Camada | Responsabilidade | Cache |
+|---|---|---|
+| `App\Services\Dashboard\DashboardMetricsService` | KPIs **estáveis** por tenant/global (counters, agregações simples) | 90 s, chave `dashboard_metrics:v1:{seg}:{period}` |
+| `App\Services\Dashboard\Executive\ExecutiveDashboardReadService` | **Orquestrador** que compõe o snapshot executivo a partir de `DashboardMetricsService` + providers internos. **Não duplica** queries de KPI. | 60 s para a banda partilhada (Hero/KPI/Operations); per-user sem cache para Priorities/Activity |
+| `App\Services\Dashboard\Executive\Providers\*` | Providers pequenos com responsabilidade única (`HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`) | individual |
+| `App\Services\Dashboard\Executive\Snapshot\ExecutiveDashboardSnapshot` (+ sub-DTOs) | **DTO `final readonly`** consumido por widgets Livewire e (futuramente) pelo endpoint API. Shape estável, versionado. | — |
+| `App\Services\Reports\ReportsService` | Agregações por período para `OperationalReports` (sem cache) — **fora** do executive dashboard. | — |
+
+### Princípios
+
+- **Dashboard ≠ OperationalReports ≠ BI.** Cada camada responde a uma pergunta distinta (ver [`features/dashboard.md`](features/dashboard.md)).
+- **Widgets não consultam Eloquent.** Consomem o DTO devolvido pelo orquestrador.
+- **Gate único** `view_executive_dashboard` (registado em `AuthServiceProvider`) controla acesso à page e a todos os widgets executivos. Mantém-se `view_reports` para `OperationalReports`.
+- **Tenancy explícita** via `ReportingContext`: `withoutGlobalScopes()` + `restrictToTenant()`. `super_admin` continua como único bypass.
+- **Anti-leak por item** em `Priorities` e `Activity`: cada candidato passa por `Gate::forUser($user)->allows('view', $item)` antes de entrar no DTO; items omitidos **somem sem mensagem** (anti-enumeração).
+- **Cache versionado** por chave (`v1` → `v2` ao mudar shape), com segmento de tenancy obrigatório, TTL ≤ 120 s e protecção anti-stampede (`Cache::flexible` ou `Cache::lock`). Convenção em [`.cursor/rules/cache.mdc`](../.cursor/rules/cache.mdc).
+- **Per-user data nunca cacheada partilhada.** Priorities/Activity dependem das policies do utilizador; cachear partilhado vazaria dados.
+- **Listas limitadas** (`take(N)`) em todos os feeds; sem paginação no dashboard.
+
+### Política para `super_admin`
+
+- Hero/KPI/Operations agregados globalmente (`isGlobalScope()`).
+- `Priorities` e `Activity` desactivados ou com `LIMIT` agressivo, para não varrer milhões de rows em runtime.
+
+### Pendência futura — projection model (Fase 19B)
+
+Para tenants enterprise (> 50 k tasks/votes/notifications), prevê-se uma **projection table** `tenant_dashboard_snapshots` populada por job a cada N minutos, evitando `COUNT(*)` em runtime. A camada `ExecutiveDashboardReadService` continuará como ponto de entrada — apenas a fonte de dados muda.
+
+Detalhe operacional: [`features/dashboard.md`](features/dashboard.md), secção "Executive Dashboard (Fase 19A)".
+
 ## Decisões técnicas pendentes de fixação
 
 Registar aqui ou na feature correspondente quando forem tomadas (ex.: pacote de activity log vs. tabela `audit_logs` própria, estratégia exata de storage por tenant).

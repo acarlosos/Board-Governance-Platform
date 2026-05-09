@@ -1,0 +1,57 @@
+---
+description: Performance e segurança em widgets Livewire/Filament — deferLoading, eventos, gates, sem Eloquent directo
+globs:
+  - app/Filament/**/*.php
+  - app/Livewire/**/*.php
+  - resources/views/filament/**/*.blade.php
+  - resources/views/livewire/**/*.blade.php
+alwaysApply: false
+---
+
+# Livewire / Filament
+
+## Composição (obrigatório)
+
+- **Widgets/components não consultam Eloquent directamente.** Consomem services e DTOs.
+  - Errado: `Task::query()->where('tenant_id', auth()->id())->count()` num widget.
+  - Certo: `app(ExecutiveDashboardReadService::class)->getSnapshot($user, $period)->kpis->openTasks`.
+- A camada de service aplica **tenancy explícita** (`ReportingContext`) e **policies por item** quando relevante.
+- Form Requests / validação continuam fora dos componentes Livewire (Filament Forms ou FormRequest).
+
+## Loading e performance
+
+- Componentes pesados ou de I/O lento: **`deferLoading()`** ou `wire:init` por defeito.
+  - Aplica-se a feeds (priorities, activity), listagens longas, agregações cross-table, chamadas a integrações.
+- **Polling proibido sem aprovação arquitectural.** Refresh por evento (`dispatch`) é preferido.
+- Componentes que aparecem em múltiplos pontos da mesma página devem consumir cache partilhado por tenant ou ser deferidos (ver `.cursor/rules/cache.mdc`).
+
+## Eventos e estado partilhado
+
+- Estado partilhado entre componentes Livewire da mesma página: **via dispatch/On**.
+  - Emissor: `$this->dispatch('period:changed', period: $this->period)`.
+  - Listener: `#[On('period:changed')] public function onPeriodChanged(string $period): void { ... }`.
+- **Não passar estado via session, query string ou propriedades públicas duplicadas.**
+- Nomes de evento em formato `{contexto}:{verbo}` (`period:changed`, `tenant:switched`, `notification:read`).
+
+## Autorização (obrigatório)
+
+- `canView()` (Widgets) e `canAccess()` (Pages) usam **Gate único** registado em `AuthServiceProvider`.
+  - Errado: `auth()->user()?->can('view_reports')` directo no widget.
+  - Certo: `Gate::allows('view_executive_dashboard')`.
+- Permite alterar a regra num único ponto sem grep no projecto inteiro.
+- `super_admin` continua único bypass global; o gate decide se aplica `LIMIT`/desactiva blocos.
+
+## Tenancy
+
+- Componentes Livewire correm no mesmo request stack que HTTP — `auth()->user()` + `ReportingContext::fromUser($user)` é a única origem de tenant.
+- **Proibido** aceitar `tenant_id` via property pública, query string, header ou hidden input.
+
+## Anti-padrões (proibidos)
+
+- Eloquent directo em widget/component.
+- Polling sem aprovação.
+- `wire:poll` em widget que dispare query agregada cara.
+- Estado partilhado via session entre widgets.
+- `canView()` com `can('permission')` inline em vez de Gate centralizado.
+- Componente com mais de 200 linhas de PHP — partir em sub-componentes ou mover lógica para service.
+- 5+ widgets Livewire na mesma página sem aprovação arquitectural.

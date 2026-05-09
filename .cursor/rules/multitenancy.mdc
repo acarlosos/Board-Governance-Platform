@@ -1,0 +1,19 @@
+---
+description: Isolamento multi-tenant — tenant_id, scopes, roles e storage
+globs:
+  - app/**/*.php
+  - database/migrations/**/*.php
+alwaysApply: false
+---
+
+# Multi-tenancy
+
+- Toda tabela com dado **sensível ou de negócio** deve ter **`tenant_id`** (e FK/index adequados).
+- **Proibição de vazamento:** nenhuma query pública (HTTP, jobs, comandos, Filament) pode retornar dados de outro tenant; revisar relacionamentos e `withoutGlobalScopes` com extremo cuidado.
+- **Models sensíveis:** usar trait **`BelongsToTenant`** (ou equivalente do projeto) para preencher `tenant_id` e aplicar escopo.
+- Usar **`TenantScope`** global (ou padrão aprovado no codebase) quando aplicável; documentar exceções pontuais (ex.: painel super admin).
+- **super_admin:** pode operar **globalmente** apenas onde o código e as policies explicitamente permitirem; nunca assumir por padrão.
+- **tenant_admin:** acesso **somente** ao próprio tenant; validar em Policies, Form Requests (ex.: `exists` com `where tenant_id`) e regras `unique` com escopo de tenant.
+- **Uploads / storage:** paths e discos separados por tenant (prefixo de diretório ou disco lógico); URLs assinadas sem expor chaves cruzadas.
+- Filas, notificações e eventos devem receber **tenant context** explícito (model, id, ou objeto de contexto).
+- **Checklist obrigatório antes de finalizar queries:** ver `.cursor/rules/tenant-leakage-critical.mdc` (CRÍTICO).

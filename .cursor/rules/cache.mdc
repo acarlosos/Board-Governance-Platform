@@ -1,0 +1,71 @@
+---
+description: Convenção de chaves, TTL, segmento de tenancy e protecção anti-stampede
+globs:
+  - app/**/*.php
+  - config/cache.php
+alwaysApply: false
+---
+
+# Cache
+
+## Estrutura da chave (obrigatória)
+
+Formato: `{dominio}:v{n}:{tenancy_segment}[:{escopos_adicionais}]`
+
+- **`{dominio}`**: namespace funcional curto (`dashboard_metrics`, `dashboard_snapshot`, `reports_summary`).
+- **`v{n}`**: versão da forma do valor cacheado. **Bump obrigatório** ao mudar shape (DTO/array). Sem bump, deploys produzem `unserialize` de dados antigos e fatal.
+- **`{tenancy_segment}`**: vem de `App\Services\Reporting\ReportingContext::cacheSegment()` (`t_{id}` / `global` / `none`). **Nunca** omitir — chave sem segmento de tenancy é proibida em qualquer caminho user-facing.
+- **`{escopos_adicionais}`**: período (`this_month`), variantes (`shared` vs `user_{id}`), modo (`light`/`full`).
+
+Exemplos:
+
+```text
+dashboard_metrics:v1:t_42:this_month
+dashboard_snapshot:v1:t_42:this_month:shared
+dashboard_snapshot:v1:global:last_30_days:shared
+```
+
+## TTL
+
+| Tipo | TTL | Notas |
+|---|---|---|
+| Read paths user-facing | **≤ 120 s** | Dashboards, headers, contadores |
+| Agregados administrativos | **≤ 600 s** | Listagens admin, relatórios operacionais |
+| Configurações estáveis | **> 600 s** | **Apenas** com invalidação por evento ou tag |
+
+TTL excedido sem invalidação por evento → discrepância visível para o utilizador. Documentar a latência na ficha da feature.
+
+## Anti-stampede (obrigatório)
+
+Para qualquer chave consumida por **mais de um componente em paralelo** (ex.: 4 widgets Livewire no mesmo dashboard):
+
+- **Preferido**: `Cache::flexible($key, [$stale, $expire], fn () => …)` (Laravel 11+).
+- **Alternativa**: `Cache::lock($key.':lock', 5)->get(fn () => Cache::remember(...))`.
+
+Sem isto, o primeiro cold start dispara N cálculos concorrentes e amplifica o problema que o cache devia resolver.
+
+## Per-user vs per-tenant
+
+- **Cacheado partilhado por tenant**: dados que **não dependem das policies do utilizador** (KPIs agregados, contadores).
+- **NÃO cacheado partilhado**: dados filtrados item-a-item por policy (feeds, priorities, listas com gate `view` por item). Cachear partilhado **vazaria** dados entre utilizadores do mesmo tenant.
+- Caso de excepção (raro): cache per-user com chave `…:user_{id}` e TTL curto. Documentar na ficha.
+
+## Tags (Redis)
+
+- Tags são úteis para invalidação granular (`Cache::tags(['tenant:'.$tid, 'dashboard'])->flush()`), **mas** requerem driver compatível (Redis/Memcached).
+- **Não usar tags em código que precise correr com driver `file`/`array`/`database`.** Detectar driver em runtime ou documentar requisito.
+
+## Invalidação
+
+- **Implícita por TTL**: regra geral nesta fase.
+- **Por evento (observers)**: pendência futura. Quando aplicada, registar em `docs/features/{feature}.md` quais eventos invalidam quais chaves.
+- **`Cache::forget`**: explícito, granular. Para flush por padrão usar tags (Redis) ou enumerar chaves conhecidas.
+
+## Anti-padrões (proibidos)
+
+- Chave sem prefixo de versão (`v1`/`v2`).
+- Chave sem segmento de tenancy num caminho user-facing.
+- TTL > 120 s em read path user-facing sem invalidação por evento.
+- Cachear partilhado dados filtrados por policy do utilizador.
+- Usar tags em código portátil entre drivers sem fallback.
+- "Re-cachear" o resultado de um service que já cacheia internamente (cache duplo).

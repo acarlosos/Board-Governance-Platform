@@ -1,0 +1,16 @@
+---
+description: Economia de tokens — respostas curtas, patches mínimos, sem ruído
+alwaysApply: true
+---
+
+# Economia de tokens (agente)
+
+- **Modo incremental** (pequenos passos, só o necessário, trechos em vez de ficheiros inteiros): ver **`incremental.mdc`**.
+- Respostas **objetivas**; evitar repetir contexto já definido nas rules do projeto.
+- **Não reescrever** arquivos inteiros quando um **trecho** basta; preferir edições incrementais (patch pequeno).
+- **Antes de alterar:** localizar exatamente os arquivos e símbolos necessários (grep/read), evitando leituras amplas sem uso.
+- Em revisões, listar **apenas** problemas reais e melhorias com impacto; sem sermão genérico.
+- Ao sugerir mudança, indicar **arquivo** e **trecho** (função/classe ou linhas) quando possível.
+- **Documentação interna** (`docs/`, sobretudo `docs/features/`): consultar antes e **atualizar depois** quando a funcionalidade mudar — isto **não** conta como “wiki extra”; manter fichas **objectivas** (ver `documentation.mdc`). Evitar documentação de marketing ou tutoriais genéricos longos salvo pedido explícito.
+- Não implementar **módulos futuros** (integrações Office 365, DocuSign, etc.) antes de existir requisito/ticket correspondente.
+- **Traduções e assets de vendor:** não publicar nem versionar em massa ficheiros de tradução de pacotes, stubs gerados ou assets sem pedido explícito do utilizador. Quando for preciso sobrescrever uma tradução de pacote, publicar **só** a tag/pacote necessário e manter no repositório **apenas** os ficheiros realmente alterados (não a árvore completa de todos os locales).

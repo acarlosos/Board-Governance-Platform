@@ -1,0 +1,17 @@
+---
+description: CRÍTICO — anti-vazamento de tenant em queries e acesso a dados
+alwaysApply: true
+---
+
+# Anti-vazamento de tenant (CRÍTICO)
+
+Antes de **finalizar qualquer query** (Eloquent, Query Builder, SQL raw, agregações, `with()` / relacionamentos, `modifyQueryUsing` no Filament, comandos e jobs):
+
+1. **Verificar** se existe risco de **vazamento entre tenants** (ex.: ID vindo do request sem filtro de tenant, `find`/`firstOrFail` sem scope, eager load que expõe filhos de outro tenant, `union`, subqueries, cache partilhada com chave errada).
+2. **Garantir** que:
+   - **`tenant_id`** está a ser aplicado de forma coerente com o padrão do projecto (scope global, trait `BelongsToTenant`, ou `where('tenant_id', …)` explícito quando necessário).
+   - **Policies** (e checagens equivalentes na API/Filament) **impedem** visualizar ou alterar recursos de outro tenant.
+   - **Validações** (`exists`, `unique`, regras custom) **restringem** por **`tenant_id`** quando o registo pertence a um tenant.
+3. Se houver **dúvida**, **assumir que há risco** e **corrigir** antes de dar a implementação por concluída (reforçar escopo, policy ou validação; rever `withoutGlobalScopes`).
+
+Esta regra **complementa** `multitenancy.mdc` e o code review em `code-review.mdc`.

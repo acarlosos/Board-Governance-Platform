@@ -242,6 +242,31 @@ Fase 16 iniciada com especificação antes de código. Ficha: [`features/api.md`
 - 18.6 Monitoramento
 - 18.7 Checklist de segurança
 
+### Fase 19 — Executive Dashboard
+
+Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orientado a decisão: 1 página, ≤ 4 widgets Livewire, **um único snapshot tipado**. Sub-dividida em **19A** (foundation + implementação) e **19B** (operacionalização avançada). Detalhe técnico: [`features/dashboard.md`](features/dashboard.md), secção "Executive Dashboard (Fase 19A)".
+
+#### Fase 19A — Foundation + implementação
+
+- 19A.0 Documentação + rules arquitecturais (`docs/features/dashboard.md`, `docs/architecture.md`, `.cursor/rules/dashboard.mdc`, `.cursor/rules/cache.mdc`, `.cursor/rules/livewire.mdc`) — **em curso**
+- 19A.1 Decisões formais (TTL, anti-stampede, super_admin, per-user vs partilhado, naming)
+- 19A.2 Índices DB críticos (`tasks/meetings/votes/signatures/notifications` por `tenant_id, status, created_at` e `due_date`/`scheduled_at` quando aplicável)
+- 19A.3 DTOs imutáveis (`ExecutiveDashboardSnapshot`, `HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`) — `final readonly`
+- 19A.4 Providers internos (`HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`) com testes unitários
+- 19A.5 `ExecutiveDashboardReadService` orquestrador + cache `flexible` por tenant/período
+- 19A.6 Gate único `view_executive_dashboard` registado em `AuthServiceProvider`
+- 19A.7 4 widgets Livewire (`Hero`, `KpiStrip`, `Operations`, `Priorities` com `deferLoading`) + `Dashboard` page actualizada
+- 19A.8 Testes obrigatórios (multi-tenancy, policies por item, anti-stampede, super_admin, shape estável)
+- 19A.9 Documentação final pós-implementação (sincronizar `features/dashboard.md`)
+
+#### Fase 19B — Operacionalização avançada
+
+- 19B.1 Invalidação de cache por evento (observers em `Task`/`Meeting`/`Vote`/`Signature`/`Notification`)
+- 19B.2 Projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
+- 19B.3 Endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
+- 19B.4 Pre-warm de cache por job em horário de pico
+- 19B.5 Remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
+
 ## Ordem obrigatória
 
 1. Base Laravel
@@ -262,4 +287,5 @@ Fase 16 iniciada com especificação antes de código. Ficha: [`features/api.md`
 16. Reports
 17. Security hardening
 18. API
-19. Deploy
+19. Executive Dashboard (19A → 19B)
+20. Deploy

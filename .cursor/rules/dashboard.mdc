@@ -1,0 +1,93 @@
+---
+description: Governança do Executive Dashboard — boundaries, snapshot, providers, filtragem por policy
+globs:
+  - app/Services/Dashboard/**/*.php
+  - app/Services/Reporting/**/*.php
+  - app/Services/Reports/**/*.php
+  - app/Filament/Admin/Pages/Dashboard.php
+  - app/Filament/Admin/Pages/OperationalReports.php
+  - app/Filament/Admin/Widgets/**/*.php
+  - resources/views/filament/admin/widgets/**/*.blade.php
+alwaysApply: false
+---
+
+# Dashboard
+
+## Separação obrigatória
+
+| Camada | Pergunta | Implementação |
+|---|---|---|
+| **Executive Dashboard** | "O que devo fazer agora?" | `App\Services\Dashboard\Executive\ExecutiveDashboardReadService` (snapshot ≤ 60 s) |
+| **OperationalReports** | "O que aconteceu nos últimos N?" | `App\Services\Reports\ReportsService` (GROUP BY por período, sem cache) |
+| **BI / Export** | Tendências, comparativos, dashboards externos | **fora do escopo** (Looker Studio / pendência futura) |
+
+**Nenhuma das três pode duplicar lógica das outras.** Se for preciso reaproveitar dados, usar **composição** (chamar o service da outra camada), nunca copiar queries.
+
+## Read services
+
+- **`DashboardMetricsService`** = KPIs estáveis por tenant/global (cache 90 s). Não tocar para Fase 19A; apenas consumir.
+- **`ExecutiveDashboardReadService`** = orquestrador. Compõe providers internos + `DashboardMetricsService`. **Não duplica queries**.
+- **`ReportsService`** = agregações para `OperationalReports`. Independente do executive.
+
+## Snapshot
+
+- DTO root **`final readonly`** (`ExecutiveDashboardSnapshot`) com sub-DTOs `final readonly` por bloco (`HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`).
+- **Shape estável e versionado**: qualquer mudança no shape obriga a bump do prefixo da chave de cache (`v1` → `v2`).
+- **Serializável para JSON** desde o início: datetimes ISO8601, enums como `->value`, sem objects Eloquent expostos.
+- Para tenant vazio, todas as keys obrigatórias presentes (defaults `0` / `[]`) — **nunca** ausentes.
+
+## Widgets
+
+- **Máximo 4 widgets Livewire** no dashboard executivo. Consolidar antes de exceder.
+- Widgets **não consultam Eloquent**. Consomem o snapshot do `ExecutiveDashboardReadService`.
+- `Priorities` e `Activity` carregam com **`deferLoading()`**.
+- `canView()` e `canAccess()` via **gate único** `view_executive_dashboard` (registado em `AuthServiceProvider`); proibido `can('view_reports')` inline para o executive.
+
+## Cache (resumo)
+
+- Hero / KPI / Operations: **partilhado por tenant** + período, TTL 60 s, com **anti-stampede** (`Cache::flexible` ou `Cache::lock`).
+- Priorities / Activity: **per-user, NÃO cacheado partilhado** (depende de policies do utilizador; cache partilhado vazaria).
+- Convenção transversal: ver `.cursor/rules/cache.mdc`.
+
+## Tenancy (obrigatório)
+
+- Todas as queries: `Model::query()->withoutGlobalScopes()` + `App\Services\Reporting\ReportingContext::restrictToTenant($builder)`.
+- `super_admin` (bypass) recebe agregados globais em Hero/KPI/Operations; `Priorities`/`Activity` **desactivados** ou com `LIMIT` agressivo (evitar varrer milhões de rows em runtime).
+- Reforço: `.cursor/rules/multitenancy.mdc` e `.cursor/rules/tenant-leakage-critical.mdc`.
+
+## Filtragem por policy (anti-leak por item)
+
+- Cada item de `Priorities` e `Activity` passa por `Gate::forUser($user)->allows('view', $item)` **antes** de entrar no DTO ou na render.
+- Items omitidos **somem sem mensagem** (proibido "X items omitidos" — anti-enumeração).
+
+## Listas limitadas (N)
+
+- `PrioritiesProvider`: `take(N)` (configurável em `config/board.php`, default máx **10**).
+- `ActivityFeedProvider`: `take(N)` (default máx **15**).
+- **Sem paginação** no dashboard. Listas longas levam o utilizador para o Resource correspondente.
+
+## Performance
+
+- Apenas `COUNT(*)` / `SELECT … LIMIT N` / `GROUP BY` no read path; **sem coleções grandes**.
+- Índices DB exigidos para tabelas-fonte: `(tenant_id, status, created_at)` e índices específicos por bloco (`due_date`, `scheduled_at`). Ver ficha `docs/features/dashboard.md`.
+
+## Anti-padrões (proibidos)
+
+- Widget que faz `Model::query()` ou `where('tenant_id', auth()->user()->tenant_id)` directo.
+- Snapshot devolvido como `array<string, mixed>` em produção (DTO obrigatório).
+- Cachear partilhadamente lista filtrada por policy do utilizador.
+- Mensagem "X items ocultos" ou "tem N items sem permissão".
+- Adicionar 5º widget Livewire ao dashboard executivo sem aprovação arquitectural.
+- Duplicar `COUNT(*)` num provider quando `DashboardMetricsService` já o tem.
+
+## Testes obrigatórios (`tests.mdc`)
+
+Quando a alteração tocar este domínio:
+
+1. Tenant A não vê snapshot do tenant B (cache keys distintas + dados isolados).
+2. `super_admin` global vê agregados; Priorities/Activity respeitam limite.
+3. User sem `view_executive_dashboard` recebe 403 / widgets vazios.
+4. Item filtrado por policy `view` **não aparece** no DTO/render.
+5. Shape do snapshot estável para tenant vazio.
+6. Cache hit-rate confirmado (1ª chamada calcula; 2ª dentro do TTL não bate no DB).
+7. Stampede: chamadas concorrentes ao mesmo key produzem 1 cálculo.
