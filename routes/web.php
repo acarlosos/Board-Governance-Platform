@@ -4,7 +4,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DocumentDownloadController;
 
 Route::get('/', function () {
-    return view('welcome');
+    // Sem "welcome": entrada do produto é o login do painel.
+    if (Route::has('filament.admin.auth.login')) {
+        return redirect()->route('filament.admin.auth.login');
+    }
+
+    return redirect('/admin/login');
 })->name('home');
 
 Route::get('/docs/api', function () {
