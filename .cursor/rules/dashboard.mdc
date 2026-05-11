@@ -95,6 +95,18 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
   - Proibido `can('view_reports')` inline no executive; o gate centraliza a regra.
   - Widgets legacy `*StatsWidget` (Fase 14, D10) **mantêm** `view_reports` directo até 19B.5.
 
+### Implementação UI (19A.7)
+
+- **4 widgets executivos** vivem em `App\Filament\Admin\Widgets\Executive\` e usam views em `resources/views/filament/admin/widgets/executive/` (prefixo CSS `bgp-dashboard__*` registado como asset `bgp-dashboard.css` no `AdminPanelProvider`).
+- **Ordem fixa A→B→C→D** (sort `10`/`11`/`12`/`13`), desktop/tablet/mobile: `ExecutiveHeroWidget` → `ExecutiveKpiStripWidget` → `ExecutiveOperationsWidget` → `ExecutivePrioritiesWidget`. Priorities e Activity ficam em **duas secções verticais** dentro do `ExecutivePrioritiesWidget` (consolida o 5º bloco mantendo D6).
+- **Owner do `period` selector = `ExecutiveHeroWidget`** (cabeça do painel, sempre visível). `updatedPeriod()` no Hero faz `dispatch('dashboard:period-changed', period: …)`; os outros 3 widgets recebem via `#[On]`. Page `Dashboard` **não duplica** `period`.
+- **`deferLoading` (D7)** activo em `Operations` e `Priorities` (`protected static bool $isLazy = true;`); `Hero` e `KpiStrip` são imediatos.
+- **i18n executivo** vive sob a key `dashboard.executive.*` em `lang/{pt_BR,en,es}/dashboard.php`. Manter o bloco legacy `dashboard.widgets.*` enquanto a flag puder ficar `false`.
+- **Coexistência widgets / feature flag**: `config('board.dashboard.use_executive_widgets')` (default `false` via env `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS`):
+  - `false` → 6 widgets legados `*StatsWidget` visíveis; 4 executivos ocultos; `Dashboard::canAccess()` mantém comportamento legacy (`Auth::check()`).
+  - `true`  → 4 executivos visíveis; 6 legados ocultos via `canView()`; `Dashboard::canAccess()` exige gate `view_executive_dashboard`.
+- **Remoção da flag + dos 6 legacy widgets**: planeada para **19B.5** (D10). Até lá, qualquer alteração à coexistência tem de actualizar **ambos** os caminhos (`*StatsWidget::canView()` e widgets executivos).
+
 ## Cache split (D1, D2, D3)
 
 - **Hero / KPI / Operations**: **partilhado por tenant** + período. **TTL 60 s lógico** via `Cache::flexible(stale=60, expire=120, …)` (D1). **Anti-stampede obrigatório** (D2): padrão `Cache::flexible`; `Cache::lock` apenas se `flexible` for insuficiente (cálculo > 30 s).

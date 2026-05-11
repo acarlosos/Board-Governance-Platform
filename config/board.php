@@ -38,6 +38,12 @@ return [
         'cache_expire_seconds' => 120,
         'priorities_max' => 10,
         'activity_max' => 15,
+
+        // Coexistência widgets executivos (19A.7) vs legados (Fase 14).
+        // false (default) → legados visíveis, executivos ocultos.
+        // true            → executivos visíveis, legados ocultos.
+        // Remover esta flag e os legados em 19B.5.
+        'use_executive_widgets' => env('BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS', false),
     ],
 ];
 

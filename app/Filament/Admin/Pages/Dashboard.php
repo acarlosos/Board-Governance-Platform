@@ -2,12 +2,34 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Models\User;
 use Filament\Pages\Dashboard as FilamentDashboard;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class Dashboard extends FilamentDashboard
 {
     protected static ?string $title = null;
+
+    /**
+     * Acesso à página do dashboard.
+     *
+     * 19A.7: quando o conjunto executivo está activo (`board.dashboard.use_executive_widgets`)
+     * exigimos o gate `view_executive_dashboard` (19A.6). Caso contrário, mantém-se o
+     * comportamento legado (qualquer utilizador autenticado do painel).
+     */
+    public static function canAccess(): bool
+    {
+        if (! (bool) config('board.dashboard.use_executive_widgets', false)) {
+            return Auth::check();
+        }
+
+        $user = Auth::user();
+
+        return $user instanceof User
+            && Gate::forUser($user)->allows('view_executive_dashboard');
+    }
 
     public static function getNavigationLabel(): string
     {

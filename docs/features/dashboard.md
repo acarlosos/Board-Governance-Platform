@@ -41,6 +41,9 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 - `tests/Unit/Dashboard/Executive/Providers/` (19A.4)
 - `tests/Feature/Dashboard/Executive/ExecutiveDashboardReadServiceTest.php` (19A.5)
 - `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest.php` (19A.5)
+- `tests/Feature/Filament/Dashboard/ExecutiveDashboardPageTest.php` (19A.7 — gate/flag/canView)
+- `tests/Feature/Filament/Dashboard/ExecutiveDashboardSmokeTest.php` (19A.7 — render Page com flag on/off)
+- `tests/Feature/Filament/Dashboard/Widgets/Executive{Hero,KpiStrip,Operations,Priorities}WidgetTest.php` (19A.7 — render Livewire + dispatch/On + empty state)
 
 ## Pendências futuras
 
@@ -169,6 +172,22 @@ Fluxo textual (determinístico):
 - `Priorities` e `Activity` carregam com **`deferLoading()`** para não bloquear a renderização inicial.
 - `canView()` de cada widget e `canAccess()` da page: **gate único** `view_executive_dashboard` (sem `can('view_reports')` inline).
 
+#### UI implementada (19A.7)
+
+| # | Sort | Classe | Lazy | Conteúdo da view (Blade `executive/*`) |
+|---|---|---|---|---|
+| A | `10` | `App\Filament\Admin\Widgets\Executive\ExecutiveHeroWidget` | não | tagline, **selector `period`** (owner do dispatch D5), updated_at, tasksOverdue/votesOpen/signaturesPending, nextMeetingAt |
+| B | `11` | `…\Executive\ExecutiveKpiStripWidget` | não | 4 grupos: tasks / meetings / votes / signatures |
+| C | `12` | `…\Executive\ExecutiveOperationsWidget` | **sim** | minutesPendingReview, meetingsThisMonth, notificationsUnread + CTA `OperationalReports` |
+| D | `13` | `…\Executive\ExecutivePrioritiesWidget` | **sim** | secção 1 = Priorities (com `urgency` modifier); secção 2 = Activity recente |
+
+- **Estilos**: `public/css/app/bgp-dashboard.css` (registado como asset `bgp-dashboard` no `AdminPanelProvider`). Convenção BEM `bgp-dashboard__*`. Suporte a tema claro/escuro.
+- **i18n**: `lang/{pt_BR,en,es}/dashboard.php`, key root `dashboard.executive.*`. Bloco legacy `dashboard.widgets.*` permanece enquanto a flag puder estar `false`.
+- **Feature flag — coexistência com Fase 14**: `config('board.dashboard.use_executive_widgets')` (env `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS`, default `false`).
+  - `false` → 6 `*StatsWidget` (Fase 14) visíveis, 4 executivos ocultos, `Dashboard::canAccess()` apenas exige autenticação.
+  - `true` → 4 executivos visíveis, 6 legacy ocultos por `canView()`, `Dashboard::canAccess()` exige gate `view_executive_dashboard`.
+  - Activação de produção via env; remoção da flag + dos 6 legacy widgets em **19B.5** (D10).
+
 ### Estratégia de cache
 
 | Bloco | Chave | TTL | Anti-stampede |
@@ -266,8 +285,8 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.3** (concluída): DTOs imutáveis (`ExecutiveDashboardSnapshot` + sub-DTOs + `PriorityUrgency`) + `config/board.php` (`dashboard.*`) + testes unitários de shape e serialização (`tests/Unit/Dashboard/Executive/Snapshot`).
 - **19A.4** (concluída): providers internos (5 classes em `App\Services\Dashboard\Executive\Providers`) + testes em `tests/Unit/Dashboard/Executive/Providers/`.
 - **19A.5** (concluída): `ExecutiveDashboardReadService` em `ExecutiveDashboardReadService.php` + L2 `Cache::flexible` (Hero/Operations); KPI fora do L2 — testes em `ExecutiveDashboardReadServiceTest` e composition.
-- **19A.6** (em curso): gate `view_executive_dashboard` registado em `app/Providers/AuthServiceProvider.php` (wrapper sobre `view_reports` + `super_admin`).
-- **19A.7**: 4 widgets Livewire + página `Dashboard` actualizada (mantém Fase 14 desactivada como fallback).
+- **19A.6** (concluída): gate `view_executive_dashboard` registado em `app/Providers/AuthServiceProvider.php` (wrapper sobre `view_reports` + `super_admin`).
+- **19A.7** (concluída): 4 widgets Livewire em `App\Filament\Admin\Widgets\Executive` + views Blade `bgp-dashboard__*` + asset CSS `public/css/app/bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) + `Dashboard::canAccess()` via gate `view_executive_dashboard`. Coexistência regida pela feature flag `board.dashboard.use_executive_widgets` (default `false`): `false` mantém os 6 `*StatsWidget` legacy visíveis, `true` activa o conjunto executivo e oculta os legacy. Testes em `tests/Feature/Filament/Dashboard/` (page + 4 widgets + smoke).
 - **19A.8**: testes obrigatórios (multi-tenancy + policies per-item + 4 cenários `tests.mdc`).
 - **19A.9**: actualizar esta ficha com estado pós-implementação.
 - **19B**: invalidação por evento, projection table, endpoint `GET /api/v1/dashboard/snapshot`, remoção dos `*StatsWidget` legacy.
