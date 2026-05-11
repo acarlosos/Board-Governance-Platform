@@ -35,7 +35,7 @@ alwaysApply: false
 
 - **`read(User, DashboardMetricsPeriod)`** é o único ponto de entrada HTTP/widgets/API para o snapshot (orquestra providers + L2).
 - **`KpiStrip`** (`KpiStripProvider`) é obtido **antes / fora** do `Cache::flexible` partilhado (**anti cache duplo** sobre `DashboardMetricsService`, que já é L1 próprio `dashboard_metrics:v1:…`).
-- **`Hero` + `Operations`** são persistidos no bloco **L2 shared** via **`Cache::flexible([stale,expire], …)`** com chave `dashboard_snapshot:{snapshot_version}:{cacheSegment}:{period}:shared` e TTL de `config board.dashboard.cache_stale_seconds` / `cache_expire_seconds`.
+- **`Hero` + `Operations`** são persistidos no bloco **L2 shared** via **`Cache::flexible([stale,expire], …)`** com chave `dashboard_snapshot:{snapshot_version}:{cacheSegment}:{period}:shared:plain` (valor = arrays `toArray()`, não objectos DTO — evita falhas de `unserialize`) e TTL de `config board.dashboard.cache_stale_seconds` / `cache_expire_seconds`.
 - **`Priorities` + `Activity`** são sempre computados em cada `read` (**D3**); **nunca** entram na chave `:shared`.
 - **`super_admin`** em modo global: **`cacheSegment()` = `global`** → chave `:global:` — feeds per-user continuam **`[]`** pelos providers (D4).
 - **`ReportingContext::cacheSegment() === 'none'`** (`User` sem tenant e não global): **early return** sem `Cache::flexible` sobre o bloco Hero/Operations (**R4 blueprint**); sempre recalculado nesse pedido.

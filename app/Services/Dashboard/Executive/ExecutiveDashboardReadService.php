@@ -52,11 +52,7 @@ final class ExecutiveDashboardReadService
     }
 
     /**
-     * @return array{
-     *     hero: HeroSummary,
-     *     operations: OperationsBlock,
-     *     shared_generated_at: CarbonImmutable,
-     * }
+     * @return array{hero: HeroSummary, operations: OperationsBlock}
      */
     private function loadOrComputeShared(
         User $actor,
@@ -64,32 +60,61 @@ final class ExecutiveDashboardReadService
         DashboardMetricsPeriod $period,
     ): array {
         if ($ctx->cacheSegment() === 'none') {
-            return [
-                'hero' => $this->hero->build($actor, $period),
-                'operations' => $this->operations->build($actor, $period),
-                'shared_generated_at' => CarbonImmutable::now(),
-            ];
+            return $this->hydrateSharedFromPlain($this->buildSharedPlain($actor, $period));
         }
 
-        /** @var array{hero: HeroSummary, operations: OperationsBlock, shared_generated_at: CarbonImmutable} */
-        return $this->cache->flexible(
+        /** @var array{hero: array<string, mixed>, operations: array<string, mixed>} $plain */
+        $plain = $this->cache->flexible(
             $this->sharedKey($ctx, $period),
             [
                 (int) config('board.dashboard.cache_stale_seconds', 60),
                 (int) config('board.dashboard.cache_expire_seconds', 120),
             ],
-            fn (): array => [
-                'hero' => $this->hero->build($actor, $period),
-                'operations' => $this->operations->build($actor, $period),
-                'shared_generated_at' => CarbonImmutable::now(),
-            ],
+            fn (): array => $this->buildSharedPlain($actor, $period),
         );
+
+        return $this->hydrateSharedFromPlain($plain);
+    }
+
+    /**
+     * Payload L2 apenas com escalares / arrays (nunca objectos DTO) — evita __PHP_Incomplete_Class ao unserialize.
+     *
+     * @return array{hero: array<string, mixed>, operations: array<string, mixed>}
+     */
+    private function buildSharedPlain(User $actor, DashboardMetricsPeriod $period): array
+    {
+        return [
+            'hero' => $this->hero->build($actor, $period)->toArray(),
+            'operations' => $this->operations->build($actor, $period)->toArray(),
+        ];
+    }
+
+    /**
+     * @param  array{hero: mixed, operations: mixed}  $plain
+     * @return array{hero: HeroSummary, operations: OperationsBlock}
+     */
+    private function hydrateSharedFromPlain(array $plain): array
+    {
+        $heroRaw = $plain['hero'] ?? [];
+        $opsRaw = $plain['operations'] ?? [];
+
+        if (! is_array($heroRaw)) {
+            $heroRaw = [];
+        }
+        if (! is_array($opsRaw)) {
+            $opsRaw = [];
+        }
+
+        return [
+            'hero' => HeroSummary::fromArray($heroRaw),
+            'operations' => OperationsBlock::fromArray($opsRaw),
+        ];
     }
 
     private function sharedKey(ReportingContext $ctx, DashboardMetricsPeriod $period): string
     {
         return sprintf(
-            'dashboard_snapshot:%s:%s:%s:shared',
+            'dashboard_snapshot:%s:%s:%s:shared:plain',
             (string) config('board.dashboard.snapshot_version', 'v1'),
             $ctx->cacheSegment(),
             $period->value,

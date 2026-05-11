@@ -14,7 +14,6 @@ use App\Services\Dashboard\Executive\Providers\OperationsProvider;
 use App\Services\Dashboard\Executive\Providers\PrioritiesProvider;
 use App\Services\Dashboard\Executive\Snapshot\HeroSummary;
 use App\Services\Dashboard\Executive\Snapshot\OperationsBlock;
-use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Support\Facades\Config;
@@ -23,7 +22,8 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Ligação determinística ao retorno do L2 flexible (mockado). KPI continua ao encargo do
+ * Ligação determinística ao retorno do L2 `flexible` (mockado): payload **plain** (`hero` /
+ * `operations` como arrays) e reidratação para DTOs no read. KPI continua ao encargo do
  * {@see DashboardMetricsService} (sem mock — classe final); por isso o teste mantém BD vazia
  * apenas com tenant utilizador criado pelo RefreshDatabase da TestCase.
  */
@@ -37,7 +37,7 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
     }
 
     #[Test]
-    public function test_composicao_e_deterministica_e_nao_transforma_dtos(): void
+    public function test_composicao_reidrata_hero_e_operations_a_partir_do_payload_plain_do_l2(): void
     {
         try {
             Config::set(['board.dashboard.snapshot_version' => 'vunit']);
@@ -58,13 +58,10 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
                 notificationsUnread: 1,
             );
 
-            $frozenSharedAt = CarbonImmutable::parse('2024-06-01T10:00:00Z');
-
             $cache = Mockery::mock(CacheRepository::class);
             $cache->shouldReceive('flexible')->once()->andReturn([
-                'hero' => $sharedHero,
-                'operations' => $sharedOps,
-                'shared_generated_at' => $frozenSharedAt,
+                'hero' => $sharedHero->toArray(),
+                'operations' => $sharedOps->toArray(),
             ]);
 
             $tenant = Tenant::factory()->create();
@@ -82,8 +79,8 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
 
             $snapshot = $service->read($actor, DashboardMetricsPeriod::AllTime);
 
-            $this->assertSame($sharedHero, $snapshot->hero);
-            $this->assertSame($sharedOps, $snapshot->operations);
+            $this->assertEquals($sharedHero, $snapshot->hero);
+            $this->assertEquals($sharedOps, $snapshot->operations);
             $this->assertSame('vunit', $snapshot->version);
             $this->assertIsArray($snapshot->priorities);
             $this->assertIsArray($snapshot->activity);

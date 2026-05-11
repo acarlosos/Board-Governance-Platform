@@ -162,7 +162,7 @@ Fluxo textual (determinístico):
 | Camada | Padrão de chave | O que guarda |
 |--------|-----------------|--------------|
 | L1 KPI | `dashboard_metrics:v1:{segmento}:{period}` | resultado de {@see DashboardMetricsService} (90 s) |
-| L2 snapshot shared | `dashboard_snapshot:{snapshot_version}:{segmento}:{period}:shared` | array serializado `{ hero, operations, shared_generated_at }` via `flexible` (stale/expire de `config board.dashboard`) |
+| L2 snapshot shared | `dashboard_snapshot:{snapshot_version}:{segmento}:{period}:shared:plain` | array serializado `{ hero, operations }` (apenas escalares / sub-arrays — **sem** objectos PHP DTO) via `flexible` (stale/expire de `config board.dashboard`); reidratação com `HeroSummary::fromArray` / `OperationsBlock::fromArray` |
 | *(nunca na L2)* | — | KPI strip, feeds Priorities / Activity |
 
 ### Limites de widgets (Filament/Livewire)
@@ -203,7 +203,7 @@ Fluxo textual (determinístico):
 | Bloco | Chave | TTL | Anti-stampede |
 |---|---|---|---|
 | KPI strip (`DashboardMetricsService`) | `dashboard_metrics:v1:{cacheSegment}:{period}` | ~90 s | interno ao serviço (`remember`), **fora** do L2 `:shared` |
-| Hero / Operations (**só**) | `dashboard_snapshot:{snapshot_version}:{cacheSegment}:{period}:shared` | `flexible` 60 / 120 s (config `board.dashboard`) | `Cache::flexible(stale=60, expire=120, …)` |
+| Hero / Operations (**só**) | `dashboard_snapshot:{snapshot_version}:{cacheSegment}:{period}:shared:plain` | `flexible` 60 / 120 s (config `board.dashboard`) | `Cache::flexible(stale=60, expire=120, …)` — valor = arrays compatíveis com `toArray()` dos DTOs |
 | Priorities / Activity | (sem cache partilhado) | — | acessos per-user; rate limit em widget se necessário |
 
 - Prefix versionado **obrigatório**; bump em mudança de shape.

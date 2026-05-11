@@ -28,7 +28,7 @@ final class ExecutiveDashboardReadServiceTest extends TestCase
     private function expectedSharedCacheKey(ReportingContext $ctx, DashboardMetricsPeriod $period): string
     {
         return sprintf(
-            'dashboard_snapshot:%s:%s:%s:shared',
+            'dashboard_snapshot:%s:%s:%s:shared:plain',
             (string) config('board.dashboard.snapshot_version', 'v1'),
             $ctx->cacheSegment(),
             $period->value,
@@ -91,7 +91,7 @@ final class ExecutiveDashboardReadServiceTest extends TestCase
         $this->assertNotNull(Cache::get($keyA));
 
         $keyBExpected = sprintf(
-            'dashboard_snapshot:%s:t_%s:%s:shared',
+            'dashboard_snapshot:%s:t_%s:%s:shared:plain',
             config('board.dashboard.snapshot_version'),
             $tenantB->id,
             $period->value,
@@ -118,6 +118,33 @@ final class ExecutiveDashboardReadServiceTest extends TestCase
         $this->service()->read($user, $period);
 
         $this->assertNotNull(Cache::get($key));
+    }
+
+    #[Test]
+    public function test_l2_guarda_apenas_arrays_plain_para_hero_e_operations(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $user->assignRole('tenant_admin');
+
+        $ctx = ReportingContext::fromUser($user);
+        $period = DashboardMetricsPeriod::Last30Days;
+        $key = $this->expectedSharedCacheKey($ctx, $period);
+
+        $this->service()->read($user, $period);
+
+        $cached = Cache::get($key);
+        $this->assertIsArray($cached);
+        $this->assertArrayHasKey('hero', $cached);
+        $this->assertArrayHasKey('operations', $cached);
+        $this->assertIsArray($cached['hero']);
+        $this->assertIsArray($cached['operations']);
+        foreach (['tasks_overdue', 'votes_open', 'signatures_pending', 'next_meeting_at', 'next_meeting_id'] as $k) {
+            $this->assertArrayHasKey($k, $cached['hero']);
+        }
+        foreach (['minutes_pending_review', 'meetings_this_month', 'notifications_unread'] as $k) {
+            $this->assertArrayHasKey($k, $cached['operations']);
+        }
     }
 
     #[Test]
