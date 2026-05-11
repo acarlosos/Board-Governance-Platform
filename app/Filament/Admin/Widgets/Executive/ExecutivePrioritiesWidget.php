@@ -13,7 +13,7 @@ use Livewire\Attributes\On;
  * D6: Priorities + Activity são consolidados num único widget (duas secções verticais)
  * para manter o limite de 4 widgets Livewire na página do dashboard executivo.
  */
-class ExecutivePrioritiesWidget extends Widget
+final class ExecutivePrioritiesWidget extends Widget
 {
     protected string $view = 'filament.admin.widgets.executive.priorities';
 

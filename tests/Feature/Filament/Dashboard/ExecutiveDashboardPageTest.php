@@ -33,7 +33,7 @@ final class ExecutiveDashboardPageTest extends TestCase
     }
 
     #[Test]
-    public function test_can_access_retorna_true_para_user_com_gate_e_flag_activa(): void
+    public function test_can_access_retorna_true_para_user_com_gate(): void
     {
         config(['board.dashboard.use_executive_widgets' => true]);
 
@@ -44,7 +44,7 @@ final class ExecutiveDashboardPageTest extends TestCase
     }
 
     #[Test]
-    public function test_can_access_retorna_false_para_user_sem_view_reports_e_sem_super_admin(): void
+    public function test_can_access_retorna_false_para_user_sem_gate(): void
     {
         config(['board.dashboard.use_executive_widgets' => true]);
 
@@ -57,7 +57,7 @@ final class ExecutiveDashboardPageTest extends TestCase
     }
 
     #[Test]
-    public function test_can_access_retorna_false_para_anonimo_com_flag_activa(): void
+    public function test_can_access_retorna_false_para_anonimo(): void
     {
         config(['board.dashboard.use_executive_widgets' => true]);
 

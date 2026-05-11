@@ -48,7 +48,26 @@ final class ExecutiveHeroWidgetTest extends TestCase
         // Não deve aparecer renderizado para o utilizador.
         Livewire::test(ExecutiveHeroWidget::class)
             ->assertDontSee('cache_segment')
-            ->assertDontSee('cacheSegment');
+            ->assertDontSee('cacheSegment')
+            ->tap(function ($component): void {
+                $html = $component->html();
+                // Segmento de cache tipo `t_{id}` — não confundir com `last_30_days` (contém `t_`).
+                $this->assertDoesNotMatchRegularExpression('/\bt_\d+/', $html);
+                $this->assertDoesNotMatchRegularExpression('/\bcacheSegment\b/', $html);
+                $this->assertStringNotContainsString('>global<', $html);
+            });
+    }
+
+    #[Test]
+    public function test_can_view_respeita_gate(): void
+    {
+        config(['board.dashboard.use_executive_widgets' => true]);
+
+        $tenant = Tenant::factory()->create();
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $this->actingAs($user);
+
+        $this->assertFalse(ExecutiveHeroWidget::canView());
     }
 
     #[Test]

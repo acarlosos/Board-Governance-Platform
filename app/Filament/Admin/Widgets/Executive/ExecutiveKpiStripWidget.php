@@ -9,13 +9,15 @@ use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\On;
 
-class ExecutiveKpiStripWidget extends Widget
+final class ExecutiveKpiStripWidget extends Widget
 {
     protected string $view = 'filament.admin.widgets.executive.kpi-strip';
 
     protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 11;
+
+    protected static bool $isLazy = false;
 
     public string $period = '';
 

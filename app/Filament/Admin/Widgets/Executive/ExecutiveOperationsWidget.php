@@ -10,7 +10,7 @@ use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\On;
 
-class ExecutiveOperationsWidget extends Widget
+final class ExecutiveOperationsWidget extends Widget
 {
     protected string $view = 'filament.admin.widgets.executive.operations';
 
@@ -61,7 +61,7 @@ class ExecutiveOperationsWidget extends Widget
         $snapshot = app(ExecutiveDashboardReadService::class)->read($user, $period);
 
         $reportsUrl = OperationalReports::canAccess()
-            ? OperationalReports::getUrl(panel: 'admin')
+            ? OperationalReports::getUrl()
             : null;
 
         return [

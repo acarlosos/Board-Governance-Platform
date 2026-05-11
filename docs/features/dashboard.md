@@ -53,7 +53,7 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 
 ## Executive Dashboard (Fase 19A)
 
-> Estado: **19A.0–19A.4 + 19A.5 concluídas**. **19A.5**: `ExecutiveDashboardReadService` em `App\Services\Dashboard\Executive\ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). **Widgets novos** (19A.7), **gate dedicado** (19A.6). Toda a Fase 14 actual (KPIs Filament + `OperationalReports`) **mantém-se intacta** até à fase 19A.7 salvo trabalho futuro nos widgets executivos.
+> Estado: **19A.0–19A.7 concluídas** (read path 19A.5 + gate 19A.6 + UI 19A.7). **19A.5**: `ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). A Fase 14 (KPIs legados + `OperationalReports`) **mantém-se** como fallback enquanto `board.dashboard.use_executive_widgets` estiver `false` (remoção dos 6 `*StatsWidget` em **19B.5**).
 
 ### Objectivo
 
@@ -169,8 +169,10 @@ Fluxo textual (determinístico):
 
 - **Máximo 4 widgets Livewire** no dashboard executivo. `StatsSecondary` consolida-se em `OperationsBlock`/`OperationsWidget`.
 - Widgets **não consultam Eloquent** — consomem o snapshot do service.
-- `Priorities` e `Activity` carregam com **`deferLoading()`** para não bloquear a renderização inicial.
-- `canView()` de cada widget e `canAccess()` da page: **gate único** `view_executive_dashboard` (sem `can('view_reports')` inline).
+- `Operations` e `ExecutivePrioritiesWidget` (Priorities + Activity) carregam com **`deferLoading()`** (`$isLazy = true`) para não bloquear a renderização inicial.
+- `canView()` de cada widget executivo e `canAccess()` da page: **gate** `view_executive_dashboard` **e** `config('board.dashboard.use_executive_widgets')` (sem `can('view_reports')` inline nos executivos).
+
+### UI — Fase 19A.7
 
 #### UI implementada (19A.7)
 
@@ -181,6 +183,14 @@ Fluxo textual (determinístico):
 | C | `12` | `…\Executive\ExecutiveOperationsWidget` | **sim** | minutesPendingReview, meetingsThisMonth, notificationsUnread + CTA `OperationalReports` |
 | D | `13` | `…\Executive\ExecutivePrioritiesWidget` | **sim** | secção 1 = Priorities (com `urgency` modifier); secção 2 = Activity recente |
 
+| Widget (classe) | DTOs / blocos do snapshot consumidos |
+|---|---|
+| `ExecutiveHeroWidget` | `ExecutiveDashboardSnapshot` → `hero`, `generatedAt` (label **«Atualizado às HH:MM»** com `config('app.timezone')`) |
+| `ExecutiveKpiStripWidget` | → `kpiStrip` |
+| `ExecutiveOperationsWidget` | → `operations` + CTA única para `OperationalReports` (não duplicar conteúdo dessa página) |
+| `ExecutivePrioritiesWidget` | → `priorities[]`, `activity[]` (duas secções verticais no mesmo widget) |
+
+- **`cacheSegment`:** presente só no DTO para chaves de cache internas — **proibido** renderizar em Blade ou `json_encode`/`toArray()` nas views executivas (evita fuga de telemetria e padrões `t_*` / `global` na UI).
 - **Estilos**: `public/css/app/bgp-dashboard.css` (registado como asset `bgp-dashboard` no `AdminPanelProvider`). Convenção BEM `bgp-dashboard__*`. Suporte a tema claro/escuro.
 - **i18n**: `lang/{pt_BR,en,es}/dashboard.php`, key root `dashboard.executive.*`. Bloco legacy `dashboard.widgets.*` permanece enquanto a flag puder estar `false`.
 - **Feature flag — coexistência com Fase 14**: `config('board.dashboard.use_executive_widgets')` (env `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS`, default `false`).

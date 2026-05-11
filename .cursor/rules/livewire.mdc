@@ -39,9 +39,18 @@ alwaysApply: false
 ### Caso canónico — Executive Dashboard (D5)
 
 ```php
-// App\Filament\Admin\Pages\Dashboard
-public string $period = 'this_month';
+// App\Filament\Admin\Pages\Dashboard — bootstrap + alinhamento inicial dos lazy widgets
+public string $period = '';
 
+public function mount(): void
+{
+    if ($this->period === '') {
+        $this->period = DashboardMetricsPeriod::ThisMonth->value;
+    }
+    $this->dispatch('dashboard:period-changed', period: $this->period);
+}
+
+// ExecutiveHeroWidget: selector UI + re-emissão ao mudar
 public function updatedPeriod(string $value): void
 {
     $this->dispatch('dashboard:period-changed', period: $value);
@@ -55,7 +64,12 @@ public function onPeriodChanged(string $period): void
 }
 ```
 
-Manter `period` duplicado como property em cada widget sem dispatch/On é **violação de D5**.
+Ignorar o evento `dashboard:period-changed` (ou manter `$period` estático sem `#[On]`) é **violação de D5**.
+
+### Anti-leak na render (19A.7)
+
+- **Proibido** `$snapshot->toArray()` (ou `json_encode($snapshot)`) nas views/widgets executivos: `toArray()` inclui `cache_segment` e outros campos de boundary API — risco de expor telemetria interna na UI.
+- Preferir propriedades tipadas do DTO nas Blade (`$snapshot->hero`, `priorities`, etc.).
 
 ## Autorização (obrigatório)
 
@@ -65,10 +79,10 @@ Manter `period` duplicado como property em cada widget sem dispatch/On é **viol
 - Permite alterar a regra num único ponto sem grep no projecto inteiro.
 - `super_admin` continua único bypass global; o gate decide se aplica `LIMIT`/desactiva blocos.
 
-### Permissões — Executive Dashboard (19A.6)
+### Permissões — Executive Dashboard (19A.6 + 19A.7)
 
-- Widgets/pages do **dashboard executivo**: `canView()` / `canAccess()` **sempre** via `Gate::forUser($user)->allows('view_executive_dashboard')`.
-- Proibido `can('manage_*')` / `can('view_*')` inline no executive (incl. `view_reports`): o gate único faz o wrapper.
+- Widgets/pages do **dashboard executivo**: `canView()` / `canAccess()` via **`Gate::forUser($user)->allows('view_executive_dashboard')` AND `config('board.dashboard.use_executive_widgets')`**.
+- Proibido `can('manage_*')` / `can('view_*')` inline no executive (incl. `view_reports`): o gate único faz o wrapper de autorização; a flag não substitui permissões Spatie.
 - Widgets legacy `*StatsWidget` mantêm `view_reports` directo até 19B.5 (D10).
 
 ## Tenancy
@@ -90,5 +104,5 @@ Manter `period` duplicado como property em cada widget sem dispatch/On é **viol
 - `canView()` com `can('permission')` inline em vez de Gate centralizado.
 - Componente com mais de 200 linhas de PHP — partir em sub-componentes ou mover lógica para service.
 - 5+ widgets Livewire na mesma página sem aprovação arquitectural (viola D6 no executive dashboard).
-- `period` duplicado em cada widget sem dispatch/On (viola D5).
+- `period` nos widgets executivos sem listener `#[On('dashboard:period-changed')]` (viola D5).
 - Widget pesado sem `deferLoading()`/`wire:init` no executive dashboard (viola D7).

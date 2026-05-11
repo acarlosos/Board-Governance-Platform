@@ -256,7 +256,7 @@ Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orient
 - 19A.5 `ExecutiveDashboardReadService` orquestrador + L2 `Cache::flexible` (Hero/Operations; KPI fora do L2) — **concluída** (`ExecutiveDashboardReadService.php`, testes feature + composition).
 - 19A.6 Gate único `view_executive_dashboard` registado em `AuthServiceProvider` — **concluída**
 - 19A.7 4 widgets Livewire executivos (`Hero` / `KpiStrip` / `Operations` / `Priorities` com `deferLoading` em C/D) + page `Dashboard` via gate `view_executive_dashboard` + feature flag `board.dashboard.use_executive_widgets` (default `false`) para coexistência com os 6 `*StatsWidget` legacy + assets CSS `bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) — **concluída**
-- 19A.8 Testes obrigatórios (multi-tenancy, policies por item, anti-stampede, super_admin, shape estável)
+- 19A.8 Testes obrigatórios (multi-tenancy, policies por item, anti-stampede, super_admin, shape estável) — **em curso**
 - 19A.9 Documentação final pós-implementação (sincronizar `features/dashboard.md`)
 
 #### Fase 19B — Operacionalização avançada

@@ -46,6 +46,24 @@ final class ExecutiveKpiStripWidgetTest extends TestCase
 
         Livewire::test(ExecutiveKpiStripWidget::class)
             ->assertDontSee('cache_segment')
-            ->assertDontSee('cacheSegment');
+            ->assertDontSee('cacheSegment')
+            ->tap(function ($component): void {
+                $html = $component->html();
+                $this->assertDoesNotMatchRegularExpression('/\bt_\d+/', $html);
+                $this->assertDoesNotMatchRegularExpression('/\bcacheSegment\b/', $html);
+                $this->assertStringNotContainsString('>global<', $html);
+            });
+    }
+
+    #[Test]
+    public function test_can_view_respeita_gate(): void
+    {
+        config(['board.dashboard.use_executive_widgets' => true]);
+
+        $tenant = Tenant::factory()->create();
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $this->actingAs($user);
+
+        $this->assertFalse(ExecutiveKpiStripWidget::canView());
     }
 }

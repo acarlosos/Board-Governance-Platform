@@ -90,22 +90,24 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **Máximo 4 widgets Livewire** (D6): Hero, KPI Strip, Operations, Priorities. **Activity** entra como sub-bloco de Operations OU consolidado em Priorities. **Não criar 5º widget** sem aprovação arquitectural.
 - Widgets **não consultam Eloquent**. Consomem o snapshot do `ExecutiveDashboardReadService`.
 - **`deferLoading()` obrigatório (D7)** em Priorities, Activity e qualquer bloco secundário. Hero e KPI Strip carregam imediatamente.
-- **Período partilhado (D5)**: estado único na page (`Dashboard::$period`); comunicação para os widgets via `dispatch('dashboard:period-changed', period: $this->period)` + `#[On('dashboard:period-changed')]`. Proibido manter `period` duplicado em cada widget.
-- **Executive dashboard (19A.6)**: `canView()` (widgets executivos) e `canAccess()` (page executiva) via **gate único** `view_executive_dashboard` (registado em `App\Providers\AuthServiceProvider`).
-  - Proibido `can('view_reports')` inline no executive; o gate centraliza a regra.
+- **Período partilhado (D5)**: `Dashboard::$period` com `mount()` que define default (`ThisMonth`) e faz `dispatch('dashboard:period-changed', period: …)` para alinhar widgets **lazy** no primeiro paint; selector UI no `ExecutiveHeroWidget` (`wire:model.live` + `updatedPeriod()` re-emite o mesmo evento). Cada widget executivo mantém `$period` **espelhado** via `#[On('dashboard:period-changed')]` para `getViewData()` — proibido fontes de verdade divergentes (sem período só em sessão/query string).
+- **Executive dashboard (19A.6 + 19A.7)**: `canView()` (widgets executivos) e `canAccess()` (page) via **`Gate::forUser($user)->allows('view_executive_dashboard')` AND `config('board.dashboard.use_executive_widgets')`**.
+  - Proibido `can('view_reports')` inline no executive; o gate centraliza a regra de autorização; a flag controla rollout UX.
   - Widgets legacy `*StatsWidget` (Fase 14, D10) **mantêm** `view_reports` directo até 19B.5.
 
-### Implementação UI (19A.7)
+### UI (19A.7)
 
-- **4 widgets executivos** vivem em `App\Filament\Admin\Widgets\Executive\` e usam views em `resources/views/filament/admin/widgets/executive/` (prefixo CSS `bgp-dashboard__*` registado como asset `bgp-dashboard.css` no `AdminPanelProvider`).
-- **Ordem fixa A→B→C→D** (sort `10`/`11`/`12`/`13`), desktop/tablet/mobile: `ExecutiveHeroWidget` → `ExecutiveKpiStripWidget` → `ExecutiveOperationsWidget` → `ExecutivePrioritiesWidget`. Priorities e Activity ficam em **duas secções verticais** dentro do `ExecutivePrioritiesWidget` (consolida o 5º bloco mantendo D6).
-- **Owner do `period` selector = `ExecutiveHeroWidget`** (cabeça do painel, sempre visível). `updatedPeriod()` no Hero faz `dispatch('dashboard:period-changed', period: …)`; os outros 3 widgets recebem via `#[On]`. Page `Dashboard` **não duplica** `period`.
-- **`deferLoading` (D7)** activo em `Operations` e `Priorities` (`protected static bool $isLazy = true;`); `Hero` e `KpiStrip` são imediatos.
-- **i18n executivo** vive sob a key `dashboard.executive.*` em `lang/{pt_BR,en,es}/dashboard.php`. Manter o bloco legacy `dashboard.widgets.*` enquanto a flag puder ficar `false`.
-- **Coexistência widgets / feature flag**: `config('board.dashboard.use_executive_widgets')` (default `false` via env `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS`):
-  - `false` → 6 widgets legados `*StatsWidget` visíveis; 4 executivos ocultos; `Dashboard::canAccess()` mantém comportamento legacy (`Auth::check()`).
-  - `true`  → 4 executivos visíveis; 6 legados ocultos via `canView()`; `Dashboard::canAccess()` exige gate `view_executive_dashboard`.
-- **Remoção da flag + dos 6 legacy widgets**: planeada para **19B.5** (D10). Até lá, qualquer alteração à coexistência tem de actualizar **ambos** os caminhos (`*StatsWidget::canView()` e widgets executivos).
+- **4 widgets executivos:** `ExecutiveHeroWidget`, `ExecutiveKpiStripWidget`, `ExecutiveOperationsWidget`, `ExecutivePrioritiesWidget` (`App\Filament\Admin\Widgets\Executive\`, views `resources/views/filament/admin/widgets/executive/`, CSS `bgp-dashboard__*` em `public/css/app/bgp-dashboard.css` registado no `AdminPanelProvider`).
+- **`canView` / `canAccess`:** gate `view_executive_dashboard` **e** feature flag `board.dashboard.use_executive_widgets` (default `false`).
+- **`ExecutivePrioritiesWidget`:** duas secções **verticais empilhadas** — Prioridades (topo) + Atividade recente (baixo); não criar 5º widget Livewire.
+- **`cacheSegment`:** nunca na UI (Blade, `toArray()` exposto ao HTML, JSON inline); é telemetria interna do snapshot/L2.
+- **`generatedAt`:** apresentar como **«Atualizado às HH:MM»** (timezone `config('app.timezone')`; fallback i18n).
+- **Link «Ver relatórios operacionais»:** só no `ExecutiveOperationsWidget` → `OperationalReports::getUrl()` (sem duplicar conteúdo de `OperationalReports`).
+- **Ordem fixa A→B→C→D** (sort `10`/`11`/`12`/`13`), desktop/tablet/mobile.
+- **`deferLoading` (D7)** em `Operations` e `Priorities` (`protected static bool $isLazy = true`); Hero e KPI **não** lazy (`$isLazy = false`).
+- **i18n:** `dashboard.executive.*` em `lang/{pt_BR,en,es}/dashboard.php`; não mexer no bloco legacy `dashboard.widgets.*` salvo copy dos legados.
+- **Coexistência / flag:** `false` → legados visíveis, executivos ocultos, `Dashboard::canAccess()` = `Auth::check()`; `true` → executivos visíveis, legados ocultos (`canView()`), `canAccess()` exige gate.
+- **Remoção da flag + dos 6 legacy widgets:** **19B.5** (D10).
 
 ## Cache split (D1, D2, D3)
 
@@ -149,7 +151,7 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - Mensagem "X items ocultos" ou "tem N items sem permissão" (viola D9).
 - Adicionar 5º widget Livewire ao dashboard executivo sem aprovação arquitectural (viola D6).
 - Ler `DashboardMetricsService` **fora** de `KpiStripProvider` (violando a regra da camada Executive `Providers`; Hero/Operations têm perguntas alinhadas ao **seu** DTO — não usar o service como «atalho KPI» dentro de outros providers).
-- Manter `period` como property duplicada em cada widget em vez de dispatch/On (viola D5).
+- Widget executivo com `period` que **não** reacciona a `dashboard:period-changed` (viola D5).
 - TTL > 60 s no snapshot partilhado sem invalidação por evento (viola D1; reservado para 19B.1).
 - `super_admin` em modo global a popular Priorities/Activity (viola D4).
 

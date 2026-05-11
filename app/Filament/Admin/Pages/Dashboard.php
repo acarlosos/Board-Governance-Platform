@@ -2,15 +2,38 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Enums\DashboardMetricsPeriod;
 use App\Models\User;
 use Filament\Pages\Dashboard as FilamentDashboard;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\On;
 
 class Dashboard extends FilamentDashboard
 {
     protected static ?string $title = null;
+
+    /**
+     * Período partilhado (D5): valor canónico do enum; o selector vive no Hero, mas a página
+     * faz bootstrap via `mount()` + `dispatch` para widgets lazy montarem já alinhados.
+     */
+    public string $period = '';
+
+    public function mount(): void
+    {
+        if ($this->period === '') {
+            $this->period = DashboardMetricsPeriod::ThisMonth->value;
+        }
+
+        $this->dispatch('dashboard:period-changed', period: $this->period);
+    }
+
+    #[On('dashboard:period-changed')]
+    public function onDashboardPeriodChanged(string $period): void
+    {
+        $this->period = $period;
+    }
 
     /**
      * Acesso à página do dashboard.

@@ -97,6 +97,8 @@ Tabela de verdade (resumo):
 | `tenant_id === null` e não super_admin (mesmo com `view_reports`) | ❌ |
 | anónimo | ❌ |
 
+**Feature flag `board.dashboard.use_executive_widgets` (19A.7):** não é permissão Spatie nem entra no seeder de roles. Quando está `false`, o painel mostra o dashboard **legado** (6 `*StatsWidget`) a qualquer utilizador autenticado; quando está `true`, a página `Dashboard` e os 4 widgets executivos exigem **este gate** em conjunto com a flag — permite rollout/rollback sem alterar matriz de permissões.
+
 Nota: **não existe `Gate::before` global**; cada Gate/Policy trata `super_admin` explicitamente.
 
 ## Testes relacionados

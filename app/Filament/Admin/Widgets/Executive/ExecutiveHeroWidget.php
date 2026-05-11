@@ -9,13 +9,15 @@ use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\On;
 
-class ExecutiveHeroWidget extends Widget
+final class ExecutiveHeroWidget extends Widget
 {
     protected string $view = 'filament.admin.widgets.executive.hero';
 
     protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 10;
+
+    protected static bool $isLazy = false;
 
     public string $period = '';
 
