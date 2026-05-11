@@ -57,6 +57,25 @@ final class ExecutiveDashboardPageTest extends TestCase
     }
 
     #[Test]
+    public function test_can_access_retorna_false_para_user_sem_tenant_e_sem_super_admin_decisao_19a8(): void
+    {
+        // Decisão arquitectural 19A.8 (§12.C): user com `tenant_id = null` e sem
+        // super_admin NÃO acessa o Executive Dashboard, mesmo tendo `view_reports`.
+        // Cobre o ramo `tenant_id === null` em AuthServiceProvider::view_executive_dashboard.
+        config(['board.dashboard.use_executive_widgets' => true]);
+
+        $user = User::factory()->create(['tenant_id' => null]);
+        $user->assignRole('tenant_admin'); // possui view_reports, mas sem tenant
+        $this->actingAs($user);
+
+        $this->assertFalse(Dashboard::canAccess());
+        $this->assertFalse(ExecutiveHeroWidget::canView());
+        $this->assertFalse(ExecutiveKpiStripWidget::canView());
+        $this->assertFalse(ExecutiveOperationsWidget::canView());
+        $this->assertFalse(ExecutivePrioritiesWidget::canView());
+    }
+
+    #[Test]
     public function test_can_access_retorna_false_para_anonimo(): void
     {
         config(['board.dashboard.use_executive_widgets' => true]);

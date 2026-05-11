@@ -107,6 +107,7 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **`deferLoading` (D7)** em `Operations` e `Priorities` (`protected static bool $isLazy = true`); Hero e KPI **não** lazy (`$isLazy = false`).
 - **i18n:** `dashboard.executive.*` em `lang/{pt_BR,en,es}/dashboard.php`; não mexer no bloco legacy `dashboard.widgets.*` salvo copy dos legados.
 - **Coexistência / flag:** `false` → legados visíveis, executivos ocultos, `Dashboard::canAccess()` = `Auth::check()`; `true` → executivos visíveis, legados ocultos (`canView()`), `canAccess()` exige gate.
+- **19A.8 §12.C (decisão fechada):** user com `tenant_id = null` e **sem** `super_admin` **não** acessa o Executive Dashboard, mesmo que tenha `view_reports`. A regra vive no gate (`AuthServiceProvider`, ramo `tenant_id === null`) e é coberta por `ExecutiveDashboardPageTest::test_can_access_retorna_false_para_user_sem_tenant_e_sem_super_admin_decisao_19a8`. Não criar Page vazia para este caso; também não alterar o gate sem aprovação arquitectural.
 - **Remoção da flag + dos 6 legacy widgets:** **19B.5** (D10).
 
 ## Cache split (D1, D2, D3)

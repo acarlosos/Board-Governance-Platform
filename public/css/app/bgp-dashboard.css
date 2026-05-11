@@ -218,6 +218,12 @@
 
 /* Priorities + Activity ------------------------------------- */
 
+.bgp-dashboard__priorities-widget-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 .bgp-dashboard__priorities {
   list-style: none;
   margin: 0;

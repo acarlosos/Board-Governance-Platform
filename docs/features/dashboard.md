@@ -297,9 +297,144 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.5** (concluída): `ExecutiveDashboardReadService` em `ExecutiveDashboardReadService.php` + L2 `Cache::flexible` (Hero/Operations); KPI fora do L2 — testes em `ExecutiveDashboardReadServiceTest` e composition.
 - **19A.6** (concluída): gate `view_executive_dashboard` registado em `app/Providers/AuthServiceProvider.php` (wrapper sobre `view_reports` + `super_admin`).
 - **19A.7** (concluída): 4 widgets Livewire em `App\Filament\Admin\Widgets\Executive` + views Blade `bgp-dashboard__*` + asset CSS `public/css/app/bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) + `Dashboard::canAccess()` via gate `view_executive_dashboard`. Coexistência regida pela feature flag `board.dashboard.use_executive_widgets` (default `false`): `false` mantém os 6 `*StatsWidget` legacy visíveis, `true` activa o conjunto executivo e oculta os legacy. Testes em `tests/Feature/Filament/Dashboard/` (page + 4 widgets + smoke).
-- **19A.8**: testes obrigatórios (multi-tenancy + policies per-item + 4 cenários `tests.mdc`).
+- **19A.8** (em curso): validação, hardening e rampa controlada (sem features novas). Pré-trabalho técnico e findings nesta ficha (secção "QA 19A.8 — findings"). Decisão arquitectural §12.C fechada e codificada no gate.
 - **19A.9**: actualizar esta ficha com estado pós-implementação.
 - **19B**: invalidação por evento, projection table, endpoint `GET /api/v1/dashboard/snapshot`, remoção dos `*StatsWidget` legacy.
+
+### QA 19A.8 — findings
+
+Esta secção é o **relatório operacional** da Fase 19A.8 (validação e rampa controlada). Não substitui o QA em staging real — é a evidência produzida pelo Arquitecto a partir do código + suite de testes, complementada pela checklist a ser confirmada por QA humano antes do GO produção.
+
+#### Pré-trabalho técnico aplicado
+
+| Item | Estado | Onde |
+|---|---|---|
+| `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS=false` documentado no `.env.example` | ✅ aplicado | `.env.example` (linha final, com comentário "Fase 19A.7 — true ativa…") |
+| 5 perfis seedados (`super_admin`, `tenant_admin`, `board_member`, `executive`, `guest`) | ✅ confirmado | `database/seeders/RolesAndPermissionsSeeder.php` |
+| Teste §12.C — user sem `tenant_id` + sem super_admin não acessa | ✅ adicionado e verde | `ExecutiveDashboardPageTest::test_can_access_retorna_false_para_user_sem_tenant_e_sem_super_admin_decisao_19a8` |
+| Decisão §12.C registada na rule | ✅ aplicado | `.cursor/rules/dashboard.mdc` (secção "UI (19A.7)") |
+| Logs no `ExecutiveDashboardReadService` | ❌ **não aplicado**, ver justificação abaixo | — |
+
+**Justificação para não adicionar logs** (decisão arquitectural 19A.8): o blueprint admitia "opcionalmente logs mínimos, **somente se necessário** para medir performance em staging". Avaliação: Telescope (`Queries` + `Cache` panels) e `DB::listen` em rota de debug temporária dão visibilidade suficiente no ambiente de staging sem poluir produção. Adicionar `Log::info` permanente no read service introduz ruído em todos os pedidos e exige novos testes de canal de log. **Recomendação**: se QA staging confirmar que precisa de timing dedicado, abrir PR `feat(dashboard): add read service timing log` em 19B com cobertura de teste, **não** em 19A.8. Mantém-se o read service limpo.
+
+#### Cobertura automática (suite verde)
+
+| Domínio | Suite-alvo | Última execução |
+|---|---|---|
+| Gate, flag, `canAccess`, `canView` | `tests/Feature/Filament/Dashboard/ExecutiveDashboardPageTest` | 9 testes verde (incl. §12.C) |
+| Render dos 4 widgets executivos (Livewire) | `tests/Feature/Filament/Dashboard/Widgets/Executive*WidgetTest` | 12 testes verde |
+| Smoke render da Page com flag on/off | `tests/Feature/Filament/Dashboard/ExecutiveDashboardSmokeTest` | 2 testes verde |
+| Providers internos (Hero/KPI/Operations/Priorities/Activity) | `tests/Unit/Dashboard/Executive/Providers/` | 21 testes verde (provém 19A.4) |
+| Read service (composition + cache flow + anti-leakage) | `tests/Feature/Dashboard/Executive/` + `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest` | verde (provém 19A.5) |
+| Snapshot DTOs shape + serialização | `tests/Unit/Dashboard/Executive/Snapshot/` | verde (provém 19A.3) |
+| Regressão API + Auth + Filament + multitenancy | `php artisan test` completo | 286/286 verde, 1941 assertions, ≈ 13 s |
+
+#### Comportamento por perfil — tabela canónica (validada pelo gate)
+
+Comportamento derivado de `AuthServiceProvider::view_executive_dashboard` + `Dashboard::canAccess()` + `RolesAndPermissionsSeeder`. Cada linha indica o que se observa **com flag ON**; com **flag OFF** o comportamento é "comportamento Fase 14" (qualquer auth abre a page; cada `*StatsWidget` aplica `view_reports`).
+
+| Perfil | `view_reports`? | `tenant_id`? | super_admin? | Gate `view_executive_dashboard` | `Dashboard::canAccess()` (flag ON) | Widgets executivos visíveis? |
+|---|---|---|---|---|---|---|
+| **super_admin** | sim (todas) | opcional | **sim** (bypass) | ✅ | ✅ | sim — Hero/KPI/Operations agregados globais; Priorities/Activity vazios por D4 |
+| **tenant_admin** | sim | sim | não | ✅ | ✅ | sim (snapshot do tenant) |
+| **board_member** | sim | sim | não | ✅ | ✅ | sim (Priorities/Activity filtrados por policy item-a-item, D9) |
+| **executive** | sim | sim | não | ✅ | ✅ | sim |
+| **guest** | sim (seed actual) | sim | não | ✅ | ✅ | sim — **ver observação 1** |
+| **user com role mas sem `view_reports`** | não | sim | não | ❌ | ❌ | não (gate nega) |
+| **user sem `tenant_id`** (não super_admin) | sim ou não | **null** | não | ❌ (§12.C) | ❌ (§12.C) | não — **decisão fechada e testada** |
+| **anónimo** | n/a | n/a | n/a | ❌ | ❌ | não |
+
+**Observação 1 — role `guest` tem `view_reports` na seed actual.** Não é bug; é uma decisão herdada da Fase 14 (`RolesAndPermissionsSeeder` linhas 72-77). Implicação: com flag ON, "guest" tem acesso ao Executive Dashboard. Não bloqueia 19A.8 — apenas é **finding para revisão de produto**: se "guest" não deveria ver indicadores executivos, alterar a seed em PR separado (não escopo desta fase). Recomendação: confirmar com Product antes da rampa.
+
+#### Cache — split confirmado por código + testes
+
+| Camada | Chave | TTL efectivo | Onde se prova |
+|---|---|---|---|
+| L1 KPIs | `dashboard_metrics:v1:{cacheSegment}:{period}` | 90 s (`DashboardMetricsService`) | Fora do `Cache::flexible` partilhado — confirmado em `ExecutiveDashboardReadService::read()` linha 36 (chamada precede `loadOrComputeShared`) |
+| L2 shared | `dashboard_snapshot:v1:{cacheSegment}:{period}:shared:plain` | `flexible(60, 120)` | `ExecutiveDashboardReadService::sharedKey()` + `Cache::flexible()` linha 67-74 |
+| Per-user feeds (Priorities/Activity) | sem cache | sempre frescos | `ExecutiveDashboardReadService::read()` linhas 38-39 (após `loadOrComputeShared`, fora do `flexible`) |
+| Anti cache duplo | n/a | KPIs ficam **fora** do payload `plain` que entra em L2 | `buildSharedPlain()` (linha 84) inclui só `hero` + `operations`; KPIs nunca entram |
+| Anti `cacheSegment` na UI | n/a | nenhum Blade renderiza `cache_segment` | `tests/Feature/Filament/Dashboard/Widgets/Executive*WidgetTest::test_nao_renderiza_cache_segment` (4 widgets cobertos) |
+| Caso `cacheSegment === 'none'` | n/a | early-return sem L2 | `ExecutiveDashboardReadService::loadOrComputeShared()` linha 62 |
+
+#### Multi-tenant — cobertura por código + testes
+
+| Cenário | Mecanismo arquitectural | Onde se prova |
+|---|---|---|
+| Tenant A não vê tenant B | `ReportingContext::restrictToTenant()` aplicado em todos providers; chaves de cache por `cacheSegment` | providers tests + `ExecutiveDashboardReadServiceTest::test_cache_isolation_per_tenant` |
+| Super_admin global | `cacheSegment() === 'global'`; Priorities/Activity = `[]` por D4 | `ActivityFeedProvider`/`PrioritiesProvider` short-circuit em `isGlobalScope()` |
+| Tenant vazio | shape estável devolvido com defaults zero (`ExecutiveDashboardSnapshot::emptyShape` + factories) | DTO tests cobrem shape; widget Priorities tem teste de empty state |
+| Activity sem leak cross-tenant | `Gate::forUser($actor)->allows('viewAny', AuditLog::class)` + filtro de queries por tenant + `view` per item | `ActivityFeedProvider` tests |
+| Tenant com volume alto | L2 (`Cache::flexible`) absorve cargas concorrentes; sem coleções grandes (apenas `COUNT`/`LIMIT N`) | a **medir em staging**: ver pendência QA #2 abaixo |
+
+#### Performance — observações estáticas + pendências QA
+
+**Confirmado por leitura de código** (estático):
+
+- Read path usa apenas `COUNT(*)`, `SELECT … LIMIT N` e agregações por tenant — nenhum `with()` que carregue coleções grandes.
+- Lazy de Operations/Priorities está em `protected static bool $isLazy = true` (Filament v5 pattern). Hero/KPI carregam imediatamente.
+- L2 anti-stampede via `Cache::flexible(stale, expire)`; nenhum `Cache::lock` extra é necessário porque o trabalho cabe < 250 ms em tenants médios.
+
+**Pendências para QA staging** (não validáveis por código):
+
+| # | A medir | Alvo p95 | Ferramenta sugerida |
+|---|---|---|---|
+| 1 | TTFB cold (L1+L2 frios) | ≤ 1.2 s | Chrome DevTools Network |
+| 2 | TTFB warm (L1+L2 quentes) | ≤ 400 ms | Chrome DevTools Network |
+| 3 | Queries por carga cold | ≤ 25 | Telescope `Queries` |
+| 4 | Queries por carga warm | ≤ 5 | Telescope `Queries` |
+| 5 | Lazy widgets — round-trip Livewire | ≤ 300 ms | DevTools Network (filtro `livewire/update`) |
+| 6 | Soak 24h staging com flag ON | 0 `ERROR` recorrente nos widgets executivos | `tail -F storage/logs/laravel.log` |
+
+#### Visual — pendências QA staging
+
+Não validáveis por código automático. Checklist a executar e capturar:
+
+| # | Verificação | Critério | Evidência esperada |
+|---|---|---|---|
+| V1 | Ordem A→B→C→D em desktop ≥ 1024 px | ✅ | screenshot |
+| V2 | Ordem mantida em tablet 768–1023 px | ✅ | screenshot |
+| V3 | Ordem mantida em mobile < 768 px | ✅ | screenshot |
+| V4 | KPI Strip 4 colunas em ≥ 1024 / 2 em tablet / 1 em mobile | ✅ | screenshot |
+| V5 | Dark mode com contraste WCAG AA | ✅ | screenshot |
+| V6 | Empty states em tenant recém-criado | 4 keys `dashboard.executive.*.empty` renderizam | screenshot |
+| V7 | `urgency` modifier visível (borda vermelha/laranja/âmbar/cinza) | ✅ | screenshot |
+| V8 | I18n nas 3 línguas | nenhuma key `dashboard.executive.*` falta | screenshot pt_BR/en/es |
+| V9 | Selector `period` no Hero altera os 3 widgets restantes | ✅ | clip / GIF |
+| V10 | "Atualizado às HH:MM" no Hero respeita `config('app.timezone')` | ✅ | screenshot |
+
+#### Rollback — procedimento testado
+
+```bash
+# Em staging/produção, sem deploy de código:
+sed -i '' 's/^BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS=true/BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS=false/' .env
+php artisan config:clear
+php artisan view:clear
+php artisan cache:clear
+# Confirmar: dashboard volta a apresentar os 6 *StatsWidget legacy
+```
+
+Tempo expectável de execução: < 2 minutos. Cobertura automática do rollback path: `ExecutiveDashboardSmokeTest::test_page_renderiza_sem_erro_com_flag_false_legado_intacto` + 6 testes de `canView()` dos `*StatsWidget` legacy.
+
+#### Critérios GO / NO-GO produção
+
+| Critério | Estado actual | Bloqueia produção? |
+|---|---|---|
+| Suite completa verde | ✅ 286/286 (1941 assertions) | sim |
+| Decisão §12.C fechada e testada | ✅ | sim |
+| 5 perfis seedados | ✅ | sim |
+| Flag documentada em `.env.example` | ✅ | sim |
+| §3 (7 perfis em staging) — confirmação humana | ⏳ pendente QA staging | sim |
+| §4 (multi-tenant manual) — confirmação humana | ⏳ pendente QA staging | sim |
+| §5 (cache split) — confirmação Telescope | ⏳ pendente QA staging | sim |
+| §6 (visual em 3 viewports + dark) — sign-off Product | ⏳ pendente QA staging | sim |
+| §7 (performance p95) — medições em tenant grande | ⏳ pendente QA staging | sim |
+| §8 (segurança/cross-tenant) — exercício manual | ⏳ pendente QA staging | sim |
+| Rollback testado em staging | ⏳ pendente QA staging | sim |
+| Soak 24h sem `ERROR` recorrente | ⏳ pendente QA staging | sim |
+| Revisão de "guest tem `view_reports`" pela Product | ⏳ recomendado | não bloqueador |
+
+**Veredito do Arquitecto (parte automatizada da 19A.8): GO técnico**. A camada de código está pronta. Falta apenas o **GO operacional** (validação humana em staging, conforme tabela acima).
 
 ### Anexo — Snapshot v1 — JSON canônico
 

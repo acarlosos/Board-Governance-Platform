@@ -6,6 +6,7 @@
 @endphp
 
 <x-filament-widgets::widget>
+    <div class="bgp-dashboard__priorities-widget-stack">
     <x-filament::section :heading="__('dashboard.executive.priorities.heading')">
         @if (count($priorities) === 0)
             <p class="bgp-dashboard__empty">{{ __('dashboard.executive.priorities.empty') }}</p>
@@ -68,4 +69,5 @@
             </ul>
         @endif
     </x-filament::section>
+    </div>
 </x-filament-widgets::widget>
