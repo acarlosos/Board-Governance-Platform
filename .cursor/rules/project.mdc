@@ -1,0 +1,32 @@
+---
+description: Identidade, stack e princípios gerais da Board Governance Platform
+alwaysApply: true
+---
+
+# Board Governance Platform
+
+- **Nome:** Board Governance Platform
+- **Produto:** SaaS multi-tenant de governança corporativa (conselhos, reuniões, documentos, votações, assinaturas, auditoria).
+- **Stack:** Laravel, Filament, Livewire, MySQL.
+
+## Antes de implementar (obrigatório)
+
+**Nunca** começar a gerar ou editar código de funcionalidade sem este fluxo:
+
+1. **Contexto:** entender o estado actual do projecto via `docs/` — `docs/architecture.md`, `docs/features/README.md` e a ficha `docs/features/{feature}.md` relevante (se existir).
+2. **Código existente:** identificar ficheiros, classes e padrões já presentes (pesquisa/leitura no repositório); reutilizar ou estender em vez de duplicar.
+3. **Plano:** expor ao utilizador o plano de implementação em **até 5 passos** claros (sem ainda escrever código).
+4. **Implementação:** só depois de exposto o plano (passo 3), iniciar alterações de código.
+
+## Princípios
+
+- Priorizar código **limpo**, **seguro**, **testável** e **escalável**.
+- Não gerar código nem arquivos sem necessidade clara; evitar escopo extra e “módulos futuros” especulativos.
+- **Documentação interna:** após alterações relevantes, **atualizar** `docs/` conforme `.cursor/rules/documentation.mdc`.
+- Alinhar decisões com as regras irmãs em `.cursor/rules/` (Laravel, Filament, multi-tenancy, **tenant-leakage-critical**, **foundation-first**, **architect-mode**, segurança, testes, **incremental**, token economy, documentation, code-review, **commits**).
+
+## Entregas
+
+- Mudanças pequenas e revisáveis; nomes consistentes em migrations, models, enums, services e policies.
+- Funcionalidades críticas devem prever **auditoria** e isolamento por tenant (detalhes nas regras específicas).
+- **Testes obrigatórios** nas áreas listadas em **`tests.mdc`** (multi-tenancy, policies, criação de reuniões, upload de documentos, votações): **sem teste onde for obrigatório, a entrega não está completa**.

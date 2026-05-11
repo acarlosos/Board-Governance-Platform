@@ -1,0 +1,18 @@
+---
+description: Code review automático antes de finalizar qualquer implementação
+alwaysApply: true
+---
+
+# Code review antes de concluir
+
+- Confirmar **testes obrigatórios** (`tests.mdc`) para multi-tenancy, policies e fluxos críticos (reuniões, upload de documentos, votações) quando a alteração os tocar; **sem teste, a tarefa não está completa**.
+- Após gerar código, **revisar** (e corrigir quando for óbvio):
+  - **Segurança:** multi-tenant, validações, policies.
+  - **Vazamento de dados entre tenants:** aplicar o checklist em **`tenant-leakage-critical.mdc`** (`tenant_id`, policies, validações, scopes, `withoutGlobalScopes` indevido).
+  - **Código duplicado** ou oportunidades de reutilização.
+  - **Complexidade desnecessária** (simplificar sem alterar comportamento).
+  - **Nomes inconsistentes** com o resto do projeto.
+
+- **Sugerir melhorias** relevantes antes de considerar a tarefa concluída (na própria resposta ou em follow-up curto).
+
+- **Nunca** assumir que o código está perfeito; tratar a revisão como parte da entrega.

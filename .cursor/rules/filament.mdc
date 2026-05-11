@@ -1,0 +1,16 @@
+---
+description: Filament v3+ — Resources limpos, forms, tables e autorização
+globs:
+  - app/Filament/**/*.php
+alwaysApply: false
+---
+
+# Filament (painel administrativo)
+
+- Filament é o **painel admin** principal; manter Resources **organizados** (classes auxiliares, form/table em arquivos dedicados quando o Filament suportar o padrão do projeto).
+- **Forms:** agrupar campos com `Section` (e fieldsets quando fizer sentido UX); labels e validação alinhadas aos Form Requests / rules centrais.
+- **Tables:** colunas relevantes, **filtros** úteis e **actions** com nomes e ícones claros; evitar lógica esparsa em closures gigantes.
+- **Regra de negócio crítica** não fica “só” no Resource: delegar a Actions/Services; o Resource coordena UI e chamadas.
+- **Autorização:** sempre **Policies** (e Gates quando globais); não depender só de `visible()`/`can()` sem policy de apoio.
+- **Multi-tenancy:** toda query do Resource deve respeitar o tenant atual (scopes, trait `BelongsToTenant`, filtros globais); nunca listar/editar registros de outro tenant.
+- Evitar duplicar validação: preferir Form Request ou validação compartilhada com a API quando existir.

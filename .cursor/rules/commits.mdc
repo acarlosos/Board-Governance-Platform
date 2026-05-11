@@ -1,0 +1,14 @@
+---
+description: Padrão de mensagens de commit (Conventional Commits + resumo)
+alwaysApply: true
+---
+
+# Commits
+
+- Seguir **`docs/commits.md`**: primeira linha `type(scope): descrição` em português; scopes alinhados ao módulo (`meetings`, `documents`, `votes`, `multitenancy`, `auth`, `filament`, `audit`, etc.).
+- Ao **finalizar** trabalho com alterações de código, incluir no resposta ao utilizador o bloco **“Commit sugerido”** com:
+  1. **Commit sugerido:** uma linha (assunto).
+  2. **Arquivos alterados:** lista de caminhos relativos.
+  3. **Motivo:** uma ou duas frases (o quê / porquê).
+
+Evitar assuntos vagos (“update”, “fix stuff”); **um commit lógico** por incremento quando possível.

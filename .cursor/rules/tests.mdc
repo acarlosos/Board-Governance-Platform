@@ -1,0 +1,27 @@
+---
+description: Testes obrigatórios em áreas críticas; Pest/PHPUnit, tenancy e regressão
+alwaysApply: true
+---
+
+# Testes
+
+## Obrigatório — tarefa **incompleta** sem testes (quando aplicável)
+
+Sempre que a implementação **afectar** as áreas abaixo, **criar ou actualizar testes**. **Se não houver teste onde for obrigatório, a tarefa não está completa.**
+
+1. **Multi-tenancy — isolamento de dados:** provar que o contexto do **tenant A** não lê nem altera dados do **tenant B** (queries, endpoints, Filament, jobs que manipulem esses dados).
+2. **Policies — autorização:** casos de **acesso permitido** e **acesso negado** (incl. recurso de outro tenant ou utilizador sem capacidade).
+3. **Fluxos críticos de negócio:**
+   - **Criação de reuniões**
+   - **Upload de documentos**
+   - **Votações**
+
+Alterações puramente cosméticas, copy ou infra sem impacto nestes domínios: indicar na resposta **porque** não há teste novo; caso haja dúvida, **preferir escrever teste**.
+
+## Orientação geral
+
+- **Runner:** **Pest** se o projecto já usar Pest; caso contrário **PHPUnit** — não misturar estilos sem migração coordenada.
+- **Feature tests** para fluxos principais (happy path + falhas de permissão/validação relevantes).
+- **Unit tests** para **Actions** e **Services** com lógica condicional ou cálculos.
+- Evitar testes cosméticos só para cobertura; cada teste deve proteger comportamento real.
+- **Regressão:** todo bug corrigido ganha pelo menos um teste que falharia antes do fix.

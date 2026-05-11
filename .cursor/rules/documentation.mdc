@@ -1,0 +1,43 @@
+---
+description: Documentação interna em docs/ — fichas por feature e arquitetura
+alwaysApply: true
+---
+
+# Documentação interna
+
+## Obrigatório
+
+1. **Nova funcionalidade:** criar ou estender `docs/features/{nome-da-feature}.md` (kebab-case) e **adicionar a entrada** no índice `docs/features/README.md`.
+2. **Alteração relevante** numa feature existente: atualizar a **mesma** ficha (tabelas, models, policies, serviços, regras, segurança, testes, pendências).
+3. **Antes de desenvolver:** cumprir o fluxo de planeamento em **`.cursor/rules/project.mdc`** (contexto em `docs/`, ficheiros existentes, plano em até 5 passos, **só depois** código); consultar `docs/architecture.md`, `docs/features/README.md` e a ficha da feature relacionada (se existir).
+4. **Depois de implementar:** sincronizar a ficha com o código real; **não** deixar só placeholders se já houver classes/migrations concretas.
+5. **Localização / i18n:** toda decisão relevante (idiomas suportados, fallback, onde ficam chaves, política para traduções de vendor) deve constar de **`docs/features/localization.md`** e manter-se alinhada ao código.
+
+## Ao finalizar uma funcionalidade (resposta ao utilizador)
+
+Incluir sempre, de forma objetiva:
+
+1. **Arquivos alterados** (lista)
+2. **Testes criados/alterados** — nas áreas **obrigatórias** (ver `tests.mdc`: multi-tenancy, policies, reuniões, upload de documentos, votações) **não** pode ficar “nenhum”; fora disso, “nenhum” só com justificativa breve.
+3. **Documentação atualizada** (ficheiros em `docs/`, ou “nenhuma” se não aplicável)
+4. **Próximo passo recomendado** (uma sugestão concreta alinhada ao roadmap do projeto)
+5. **Commit sugerido** — bloco conforme **`docs/commits.md`** e **`commits.mdc`**: assunto `type(scope): …`, lista de ficheiros alterados, **Motivo** em uma ou duas frases (omitir só se não houver mudanças em código).
+
+## Conteúdo mínimo de cada `docs/features/*.md`
+
+- Objetivo da funcionalidade  
+- Tabelas envolvidas  
+- Models envolvidos  
+- Policies envolvidas  
+- Services / Actions envolvidos  
+- Regras de negócio  
+- Regras de segurança  
+- Testes relacionados  
+- Pendências futuras  
+
+## Princípios
+
+- **Não duplicar** parágrafos longos entre `architecture.md` e features: arquitetura = visão global; feature = detalhe do módulo.
+- Documentar **decisões técnicas importantes** em `docs/architecture.md` ou na feature, em linguagem objetiva.
+- Manter texto **útil para contexto do agente** e para humanos; evitar tutoriais genéricos de Laravel/Filament sem ligação ao código deste repositório.
+- **Não** criar documentação genérica desligada do que está ou vai ser implementado na Board.

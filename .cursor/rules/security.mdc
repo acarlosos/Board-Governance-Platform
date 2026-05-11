@@ -1,0 +1,19 @@
+---
+description: Segurança — validação, authz, logs, dados sensíveis e soft deletes
+globs:
+  - app/**/*.php
+  - routes/**/*.php
+  - database/migrations/**/*.php
+alwaysApply: false
+---
+
+# Segurança
+
+- **Validar** toda entrada no backend (Form Requests / rules); nunca confiar só no frontend ou no Filament.
+- **Policies e Gates** para autorização; checar ownership + `tenant_id` em operações sensíveis.
+- Mitigar **XSS** (escape Blade, cuidado com HTML rico), **CSRF** (form/web), **SQL injection** (Eloquent/query builder parametrizado; raw SQL só com bindings).
+- **Logs:** não registrar tokens, senhas, segredos, PII desnecessária nem payloads completos de documentos; mascarar quando precisar diagnosticar.
+- **Senhas:** sempre hash (bcrypt/argon conforme configuração Laravel); nunca persistir em plain text.
+- **2FA:** planejar como evolução futura (hooks de login / Filament plugins) sem bloquear MVP sem documentar o gap.
+- **Ações críticas** (publicação, voto, assinatura, exclusão lógica sensível): registrar em **`audit_logs`** (ou pacote de auditoria adotado) com ator, tenant e metadados mínimos.
+- **Exclusão física** de dados sensíveis só com justificativa forte (compliance/legal); preferir **soft deletes** ou arquivamento com trilha de auditoria.

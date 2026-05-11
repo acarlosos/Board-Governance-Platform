@@ -15,6 +15,10 @@ class VotesStatsWidget extends StatsOverviewWidget
 
     public static function canView(): bool
     {
+        if ((bool) config('board.dashboard.use_executive_widgets', false)) {
+            return false;
+        }
+
         return auth()->check()
             && auth()->user()?->can('view_reports');
     }

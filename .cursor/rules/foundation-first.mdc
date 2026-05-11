@@ -1,0 +1,24 @@
+---
+description: Não avançar sem base sólida — tenancy, auth, permissões, auditoria
+alwaysApply: true
+---
+
+# Base sólida antes de features avançadas
+
+**Não implementar** funcionalidades avançadas (ex.: **votações**, **workflows**, **assinaturas**, **integrações** externas, relatórios complexos) **enquanto** não existir base estável e verificável no projecto.
+
+## Pré-requisitos mínimos
+
+Só avançar para módulos avançados depois de:
+
+1. **Multi-tenancy** estável (isolamento por `tenant_id`, scopes/policies/validações alinhados; testes de isolamento — ver `multitenancy.mdc`, `tenant-leakage-critical.mdc`, `tests.mdc`).
+2. **Autenticação** correcta (login, sessão/API, recuperação de password conforme escopo; fluxos testados).
+3. **Permissões** a funcionar (roles/policies no painel e, se existir, na API; negar acesso por defeito onde aplicável).
+4. **Auditoria** implementada para ações críticas (padrão do projecto em `audit_logs` ou equivalente; registo com `tenant_id` e actor).
+
+## Prioridade
+
+- **Primeiro:** fundação (tenants, utilizadores, authz, auditoria mínima, convenções Filament/API).
+- **Depois:** domínio de governança que dependa disso (reuniões, documentos, votos, workflows).
+
+Se o utilizador pedir uma feature avançada **sem** esta base, **explicar o bloqueio**, propor **ordenar** o trabalho (incrementos na base) e **não** simular soluções improvisadas que contornem tenancy, auth ou audit.

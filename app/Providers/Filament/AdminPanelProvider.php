@@ -2,6 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Widgets\Executive\ExecutiveHeroWidget;
+use App\Filament\Admin\Widgets\Executive\ExecutiveKpiStripWidget;
+use App\Filament\Admin\Widgets\Executive\ExecutiveOperationsWidget;
+use App\Filament\Admin\Widgets\Executive\ExecutivePrioritiesWidget;
 use App\Filament\Admin\Widgets\MeetingsStatsWidget;
 use App\Filament\Admin\Widgets\MinutesStatsWidget;
 use App\Filament\Admin\Widgets\NotificationsStatsWidget;
@@ -65,6 +69,8 @@ class AdminPanelProvider extends PanelProvider
                     ->relativePublicPath('css/app/bgp-panel.css'),
                 Css::make('bgp-login')
                     ->relativePublicPath('css/app/bgp-login.css'),
+                Css::make('bgp-dashboard')
+                    ->relativePublicPath('css/app/bgp-dashboard.css'),
             ], package: 'app')
             ->bootUsing(function (): void {
                 EditAction::configureUsing(
@@ -74,6 +80,15 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
             ->widgets([
+                // Executivos (Fase 19A.7) — sort 10-13. Visíveis quando
+                // config('board.dashboard.use_executive_widgets') === true.
+                ExecutiveHeroWidget::class,
+                ExecutiveKpiStripWidget::class,
+                ExecutiveOperationsWidget::class,
+                ExecutivePrioritiesWidget::class,
+
+                // Legados (Fase 14) — sort 20-25. Visíveis quando flag === false.
+                // Remoção planeada para 19B.5 (D10).
                 TasksStatsWidget::class,
                 MeetingsStatsWidget::class,
                 MinutesStatsWidget::class,

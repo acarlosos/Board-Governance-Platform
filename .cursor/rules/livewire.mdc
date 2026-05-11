@@ -1,0 +1,108 @@
+---
+description: Performance e segurança em widgets Livewire/Filament — deferLoading, eventos, gates, sem Eloquent directo
+globs:
+  - app/Filament/**/*.php
+  - app/Livewire/**/*.php
+  - resources/views/filament/**/*.blade.php
+  - resources/views/livewire/**/*.blade.php
+alwaysApply: false
+---
+
+# Livewire / Filament
+
+> Para o dashboard executivo, esta rule consolida as decisões D5 (período partilhado via dispatch/On), D6 (máximo 4 widgets), D7 (deferLoading obrigatório) e a regra "widgets não consultam Eloquent" registadas em `docs/features/dashboard.md` (secção "Formal Decisions — Executive Dashboard (19A.1)").
+
+## Composição (obrigatório)
+
+- **Widgets/components não consultam Eloquent directamente.** Consomem services e DTOs.
+  - Errado: `Task::query()->where('tenant_id', auth()->id())->count()` num widget.
+  - Certo: `app(ExecutiveDashboardReadService::class)->getSnapshot($user, $period)->kpis->openTasks`.
+- A camada de service aplica **tenancy explícita** (`ReportingContext`) e **policies por item** quando relevante.
+- Form Requests / validação continuam fora dos componentes Livewire (Filament Forms ou FormRequest).
+
+## Loading e performance (D7)
+
+- Componentes pesados ou de I/O lento: **`deferLoading()`** ou `wire:init` por defeito.
+  - **Dashboard executivo (D7, obrigatório)**: Priorities, Activity e qualquer bloco secundário. Hero e KPI Strip carregam imediatamente.
+  - Aplica-se também a feeds em geral, listagens longas, agregações cross-table, chamadas a integrações.
+- **Polling proibido sem aprovação arquitectural.** Refresh por evento (`dispatch`) é preferido.
+- Componentes que aparecem em múltiplos pontos da mesma página devem consumir cache partilhado por tenant ou ser deferidos (ver `.cursor/rules/cache.mdc`).
+
+## Eventos e estado partilhado (D5)
+
+- Estado partilhado entre componentes Livewire da mesma página: **via dispatch/On**.
+  - Emissor: `$this->dispatch('period:changed', period: $this->period)`.
+  - Listener: `#[On('period:changed')] public function onPeriodChanged(string $period): void { ... }`.
+- **Não passar estado via session, query string ou propriedades públicas duplicadas.**
+- Nomes de evento em formato `{contexto}:{verbo}` (`period:changed`, `tenant:switched`, `notification:read`).
+
+### Caso canónico — Executive Dashboard (D5)
+
+```php
+// App\Filament\Admin\Pages\Dashboard — bootstrap + alinhamento inicial dos lazy widgets
+public string $period = '';
+
+public function mount(): void
+{
+    if ($this->period === '') {
+        $this->period = DashboardMetricsPeriod::ThisMonth->value;
+    }
+    $this->dispatch('dashboard:period-changed', period: $this->period);
+}
+
+// ExecutiveHeroWidget: selector UI + re-emissão ao mudar
+public function updatedPeriod(string $value): void
+{
+    $this->dispatch('dashboard:period-changed', period: $value);
+}
+
+// Cada widget executivo (Hero/KPI/Operations/Priorities)
+#[On('dashboard:period-changed')]
+public function onPeriodChanged(string $period): void
+{
+    $this->period = $period;
+}
+```
+
+Ignorar o evento `dashboard:period-changed` (ou manter `$period` estático sem `#[On]`) é **violação de D5**.
+
+### Anti-leak na render (19A.7)
+
+- **Proibido** `$snapshot->toArray()` (ou `json_encode($snapshot)`) nas views/widgets executivos: `toArray()` inclui `cache_segment` e outros campos de boundary API — risco de expor telemetria interna na UI.
+- Preferir propriedades tipadas do DTO nas Blade (`$snapshot->hero`, `priorities`, etc.).
+
+## Autorização (obrigatório)
+
+- `canView()` (Widgets) e `canAccess()` (Pages) usam **Gate único** registado em `AuthServiceProvider`.
+  - Errado: `auth()->user()?->can('view_reports')` directo no widget.
+  - Certo: `Gate::allows('view_executive_dashboard')`.
+- Permite alterar a regra num único ponto sem grep no projecto inteiro.
+- `super_admin` continua único bypass global; o gate decide se aplica `LIMIT`/desactiva blocos.
+
+### Permissões — Executive Dashboard (19A.6 + 19A.7)
+
+- Widgets/pages do **dashboard executivo**: `canView()` / `canAccess()` via **`Gate::forUser($user)->allows('view_executive_dashboard')` AND `config('board.dashboard.use_executive_widgets')`**.
+- Proibido `can('manage_*')` / `can('view_*')` inline no executive (incl. `view_reports`): o gate único faz o wrapper de autorização; a flag não substitui permissões Spatie.
+- Widgets legacy `*StatsWidget` mantêm `view_reports` directo até 19B.5 (D10).
+
+## Tenancy
+
+- Componentes Livewire correm no mesmo request stack que HTTP — `auth()->user()` + `ReportingContext::fromUser($user)` é a única origem de tenant.
+- **Proibido** aceitar `tenant_id` via property pública, query string, header ou hidden input.
+
+## Limite de widgets por página (D6)
+
+- **Dashboard executivo: máximo 4 widgets Livewire** — Hero, KPI Strip, Operations, Priorities. Activity entra como sub-bloco de Operations OU consolidado em Priorities.
+- Outras páginas: regra orientadora **≤ 6 widgets**; acima exige aprovação arquitectural (cada widget = 1 ciclo HTTP no Filament).
+
+## Anti-padrões (proibidos)
+
+- Eloquent directo em widget/component.
+- Polling sem aprovação.
+- `wire:poll` em widget que dispare query agregada cara.
+- Estado partilhado via session entre widgets.
+- `canView()` com `can('permission')` inline em vez de Gate centralizado.
+- Componente com mais de 200 linhas de PHP — partir em sub-componentes ou mover lógica para service.
+- 5+ widgets Livewire na mesma página sem aprovação arquitectural (viola D6 no executive dashboard).
+- `period` nos widgets executivos sem listener `#[On('dashboard:period-changed')]` (viola D5).
+- Widget pesado sem `deferLoading()`/`wire:init` no executive dashboard (viola D7).

@@ -16,6 +16,11 @@ class TasksStatsWidget extends StatsOverviewWidget
 
     public static function canView(): bool
     {
+        // 19A.7: widgets legados ficam ocultos quando o conjunto executivo estiver activo.
+        if ((bool) config('board.dashboard.use_executive_widgets', false)) {
+            return false;
+        }
+
         return auth()->check()
             && auth()->user()?->can('view_reports');
     }

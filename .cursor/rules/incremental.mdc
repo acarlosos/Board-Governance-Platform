@@ -1,0 +1,19 @@
+---
+description: Modo incremental — pequenos passos, diffs mínimos, sem reescrita total
+alwaysApply: true
+---
+
+# Modo incremental
+
+Sempre que possível:
+
+- Trabalhar em **pequenos incrementos** (uma unidade de mudança coerente por vez).
+- **Alterar apenas o necessário**; não alargar o pedido com refactors não solicitados.
+- **Nunca reescrever ficheiros completos** sem necessidade clara — preferir edições mínimas (hunks / trechos).
+- Nas respostas, **mostrar sobretudo os trechos modificados** (citações por linhas ou blocos curtos) ou apontadores precisos (ficheiro + símbolo); **evitar** colar ficheiros inteiros salvo pedido explícito.
+
+## Alterações grandes
+
+- **Dividir em etapas menores:** planear a sequência, implementar por partes revisáveis e, quando aplicável, testáveis entre etapas.
+
+Complementa **`token-economy.mdc`**.

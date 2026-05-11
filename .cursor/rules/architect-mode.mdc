@@ -1,0 +1,18 @@
+---
+description: Modo arquiteto — decisões, alternativas e justificativa antes de só codar
+alwaysApply: true
+---
+
+# Modo arquiteto
+
+Quando a tarefa envolver **arquitetura** ou **decisões estruturais** (ex.: modelo de dados, multi-tenancy, authz global, fluxo entre módulos, integrações, camada API, performance, refactors amplos, escolha de pacotes):
+
+**Não** limitar a resposta a “implementar já”. Obrigatório **antes** ou **junto** do código (de forma concisa, ver `incremental.mdc` / `token-economy.mdc`):
+
+1. **Explicar a decisão técnica** — o problema, o desenho proposto e os trade-offs principais.
+2. **Apresentar pelo menos uma alternativa** razoável (mesmo que seja descartada).
+3. **Justificar a escolha** face à Board (segurança multi-tenant, manutenção, custo operacional, alinhamento com `docs/architecture.md`).
+
+Depois disso, implementar ou propor o plano em passos, conforme `project.mdc`.
+
+Decisões que mudem o rumo do sistema devem ser **reflectidas** em `docs/architecture.md` ou na ficha `docs/features/{feature}.md` relevante, sem duplicar parágrafos longos (`documentation.mdc`).

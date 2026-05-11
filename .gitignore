@@ -6,7 +6,11 @@
 .phpactor.json
 .phpunit.result.cache
 /.codex
-/.cursor/
+# Cursor IDE: ignorar chats/cache/agent/histórico; versionar só `.cursor/rules/*.mdc`
+/.cursor/**
+!/.cursor/rules/
+/.cursor/rules/*
+!/.cursor/rules/*.mdc
 /.idea
 /.nova
 /.phpunit.cache

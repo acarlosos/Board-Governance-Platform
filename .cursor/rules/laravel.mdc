@@ -1,0 +1,26 @@
+---
+description: Padrões Laravel modernos — camadas, Eloquent, migrations e enums
+globs:
+  - app/**/*.php
+  - bootstrap/**/*.php
+  - config/**/*.php
+  - database/**/*.php
+  - routes/**/*.php
+alwaysApply: false
+---
+
+# Laravel
+
+## Antes de criar Service, Action, Policy ou Model
+
+- Verificar se já existe algo semelhante no projeto.
+- Reutilizar ou estender código existente sempre que possível.
+- Evitar duplicação de lógica de negócio.
+
+- Seguir convenções e padrões **atuais** do Laravel (facades, service container, estrutura de pastas do projeto).
+- **Controllers enxutos:** apenas orquestração HTTP; sem regra de negócio pesada.
+- Extrair para **Actions**, **Services**, **Policies**, **Observers** e **Form Requests** quando houver validação complexa, efeitos colaterais ou reutilização.
+- **Enums** para estados, tipos e flags estáveis (ex.: status de reunião, documento, workflow).
+- **Migrations** explícitas: nomes claros, índices pensados para consultas multi-tenant e FKs coerentes.
+- **Eloquent:** relacionamentos nomeados e carregamento consciente (`with` / eager) para evitar N+1; casts e dates corretos.
+- **Models:** accessors/mutators e scopes simples; se a regra de negócio crescer, mover para Action/Service/Domain layer em vez de inflar o model.
