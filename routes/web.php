@@ -5,10 +5,6 @@ use App\Http\Controllers\DocumentDownloadController;
 
 Route::get('/', function () {
     // Sem "welcome": entrada do produto é o login do painel.
-    if (Route::has('filament.admin.auth.login')) {
-        return redirect()->route('filament.admin.auth.login');
-    }
-
     return redirect('/admin/login');
 })->name('home');
 
