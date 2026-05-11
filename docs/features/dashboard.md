@@ -39,6 +39,8 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 - `tests/Feature/DashboardTest.php`
 - `tests/Unit/Dashboard/Executive/Snapshot/` (19A.3)
 - `tests/Unit/Dashboard/Executive/Providers/` (19A.4)
+- `tests/Feature/Dashboard/Executive/ExecutiveDashboardReadServiceTest.php` (19A.5)
+- `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest.php` (19A.5)
 
 ## Pendências futuras
 
@@ -48,7 +50,7 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 
 ## Executive Dashboard (Fase 19A)
 
-> Estado: **19A.0 concluída**, **19A.1 em curso (formalização das decisões)**, **19A.2 concluída** (índice DB overdue em `tasks`), **19A.3 concluída** (DTOs do snapshot em `App\Services\Dashboard\Executive\Snapshot`), **19A.4 concluída** (providers em `App\Services\Dashboard\Executive\Providers`). Sem **read service** (19A.5), **widgets novos** nem cache de snapshot até essas sub-fases. Toda a Fase 14 actual (KPIs Filament + `OperationalReports`) **mantém-se intacta** até à fase 19A.7.
+> Estado: **19A.0–19A.4 + 19A.5 concluídas**. **19A.5**: `ExecutiveDashboardReadService` em `App\Services\Dashboard\Executive\ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). **Widgets novos** (19A.7), **gate dedicado** (19A.6). Toda a Fase 14 actual (KPIs Filament + `OperationalReports`) **mantém-se intacta** até à fase 19A.7 salvo trabalho futuro nos widgets executivos.
 
 ### Objectivo
 
@@ -117,6 +119,49 @@ Classes em **`App\Services\Dashboard\Executive\Providers`**; cada uma expõe **u
 
 Ver testes: `tests/Unit/Dashboard/Executive/Providers/*.php`.
 
+### Read service — Fase 19A.5
+
+Implementação: **`App\Services\Dashboard\Executive\ExecutiveDashboardReadService`** — método público único **`read(User $actor, DashboardMetricsPeriod $period = DashboardMetricsPeriod::ThisMonth): ExecutiveDashboardSnapshot`**.
+
+Fluxo textual (determinístico):
+
+1. `ReportingContext::fromUser($actor)` (`$ctx`).
+2. **`$kpis = KpiStripProvider::build`** — sempre **directo**, **sem** estar dentro do `Cache::flexible` L2 (evita segundo cache sobre o já cacheado no `DashboardMetricsService`, L1 `dashboard_metrics:v1:…`).
+3. **`$shared = Cache::flexible(sharedKey, [stale, expire], …)`** — apenas **Hero** + **Operations** + marca `shared_generated_at` **`CarbonImmutable::now()`** no momento da computação persistida pelo `flexible` (métricas de “quando foram calculadas” ficam apenas no payload persistido pelo driver; no DTO-root do snapshot público **`generated_at`** continua sempre `CarbonImmutable::now()` ao fim do `read`, como contrato já definido nos DTOs).
+4. **`PrioritiesProvider::build`** e **`ActivityFeedProvider::build`** — **sempre frescos**, por pedido (**D3**).
+5. `new ExecutiveDashboardSnapshot(...)` ligando **`version`** a `config('board.dashboard.snapshot_version')`, **`cache_segment`** = `$ctx->cacheSegment()`, **`kpis`** = passo (2).
+
+**Casos especiais**
+
+- **`$ctx->cacheSegment() === 'none'`**: sem `flexible`; Hero e Operations são calculados de imediato (evita escritas L2 quando o segmento é “none”; R4 blueprint).
+- **`super_admin` global**: feeds per-user ficam **`[]`** (D4) via providers existentes.
+
+**Diagrama ASCII (deps de cache)**
+
+```text
+                    read(actor, period)
+                            |
+           +----------------+----------------+
+           |                                 |
+      KpiStripProvider                   loadOrComputeShared
+     (delega KPI L1                       (Cache::flexible L2 só
+      ~90 s próprio)                      Hero + Operations)
+           |                                 |
+           +----------------+----------------+
+                            |
+                   Prioridades + Activity (sempre fresco)
+                            |
+                  ExecutiveDashboardSnapshot
+```
+
+**Tabela de chaves (operacional)**
+
+| Camada | Padrão de chave | O que guarda |
+|--------|-----------------|--------------|
+| L1 KPI | `dashboard_metrics:v1:{segmento}:{period}` | resultado de {@see DashboardMetricsService} (90 s) |
+| L2 snapshot shared | `dashboard_snapshot:{snapshot_version}:{segmento}:{period}:shared` | array serializado `{ hero, operations, shared_generated_at }` via `flexible` (stale/expire de `config board.dashboard`) |
+| *(nunca na L2)* | — | KPI strip, feeds Priorities / Activity |
+
 ### Limites de widgets (Filament/Livewire)
 
 - **Máximo 4 widgets Livewire** no dashboard executivo. `StatsSecondary` consolida-se em `OperationsBlock`/`OperationsWidget`.
@@ -128,7 +173,8 @@ Ver testes: `tests/Unit/Dashboard/Executive/Providers/*.php`.
 
 | Bloco | Chave | TTL | Anti-stampede |
 |---|---|---|---|
-| Hero / KPI / Operations | `dashboard_snapshot:v1:{cacheSegment}:{period}:shared` | 60 s | `Cache::flexible(stale=60, expire=120, …)` |
+| KPI strip (`DashboardMetricsService`) | `dashboard_metrics:v1:{cacheSegment}:{period}` | ~90 s | interno ao serviço (`remember`), **fora** do L2 `:shared` |
+| Hero / Operations (**só**) | `dashboard_snapshot:{snapshot_version}:{cacheSegment}:{period}:shared` | `flexible` 60 / 120 s (config `board.dashboard`) | `Cache::flexible(stale=60, expire=120, …)` |
 | Priorities / Activity | (sem cache partilhado) | — | acessos per-user; rate limit em widget se necessário |
 
 - Prefix versionado **obrigatório**; bump em mudança de shape.
@@ -219,8 +265,8 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.2**: índices DB críticos (migration mínima).
 - **19A.3** (concluída): DTOs imutáveis (`ExecutiveDashboardSnapshot` + sub-DTOs + `PriorityUrgency`) + `config/board.php` (`dashboard.*`) + testes unitários de shape e serialização (`tests/Unit/Dashboard/Executive/Snapshot`).
 - **19A.4** (concluída): providers internos (5 classes em `App\Services\Dashboard\Executive\Providers`) + testes em `tests/Unit/Dashboard/Executive/Providers/`.
-- **19A.5** (em curso / desbloqueada): `ExecutiveDashboardReadService` orquestrador + cache snapshot + anti-stampede.
-- **19A.6**: gate `view_executive_dashboard` registado em `AuthServiceProvider`.
+- **19A.5** (concluída): `ExecutiveDashboardReadService` em `ExecutiveDashboardReadService.php` + L2 `Cache::flexible` (Hero/Operations); KPI fora do L2 — testes em `ExecutiveDashboardReadServiceTest` e composition.
+- **19A.6** (em curso): gate `view_executive_dashboard` registado em `AuthServiceProvider`.
 - **19A.7**: 4 widgets Livewire + página `Dashboard` actualizada (mantém Fase 14 desactivada como fallback).
 - **19A.8**: testes obrigatórios (multi-tenancy + policies per-item + 4 cenários `tests.mdc`).
 - **19A.9**: actualizar esta ficha com estado pós-implementação.
