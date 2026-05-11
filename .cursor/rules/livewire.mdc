@@ -65,6 +65,12 @@ Manter `period` duplicado como property em cada widget sem dispatch/On é **viol
 - Permite alterar a regra num único ponto sem grep no projecto inteiro.
 - `super_admin` continua único bypass global; o gate decide se aplica `LIMIT`/desactiva blocos.
 
+### Permissões — Executive Dashboard (19A.6)
+
+- Widgets/pages do **dashboard executivo**: `canView()` / `canAccess()` **sempre** via `Gate::forUser($user)->allows('view_executive_dashboard')`.
+- Proibido `can('manage_*')` / `can('view_*')` inline no executive (incl. `view_reports`): o gate único faz o wrapper.
+- Widgets legacy `*StatsWidget` mantêm `view_reports` directo até 19B.5 (D10).
+
 ## Tenancy
 
 - Componentes Livewire correm no mesmo request stack que HTTP — `auth()->user()` + `ReportingContext::fromUser($user)` é a única origem de tenant.

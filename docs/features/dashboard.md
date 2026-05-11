@@ -266,7 +266,7 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.3** (concluída): DTOs imutáveis (`ExecutiveDashboardSnapshot` + sub-DTOs + `PriorityUrgency`) + `config/board.php` (`dashboard.*`) + testes unitários de shape e serialização (`tests/Unit/Dashboard/Executive/Snapshot`).
 - **19A.4** (concluída): providers internos (5 classes em `App\Services\Dashboard\Executive\Providers`) + testes em `tests/Unit/Dashboard/Executive/Providers/`.
 - **19A.5** (concluída): `ExecutiveDashboardReadService` em `ExecutiveDashboardReadService.php` + L2 `Cache::flexible` (Hero/Operations); KPI fora do L2 — testes em `ExecutiveDashboardReadServiceTest` e composition.
-- **19A.6** (em curso): gate `view_executive_dashboard` registado em `AuthServiceProvider`.
+- **19A.6** (em curso): gate `view_executive_dashboard` registado em `app/Providers/AuthServiceProvider.php` (wrapper sobre `view_reports` + `super_admin`).
 - **19A.7**: 4 widgets Livewire + página `Dashboard` actualizada (mantém Fase 14 desactivada como fallback).
 - **19A.8**: testes obrigatórios (multi-tenancy + policies per-item + 4 cenários `tests.mdc`).
 - **19A.9**: actualizar esta ficha com estado pós-implementação.

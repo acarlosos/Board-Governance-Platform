@@ -70,6 +70,35 @@ Especificação e matriz de abilities: ver [`docs/features/api.md`](api.md).
 - Não enumerar utilizadores de outro tenant: `UserPolicy::view` / `update` / `delete` validam `tenant_id`.
 - `is_super_admin` e role `super_admin` são equivalentes para `isSuperAdmin()` até unificar num único mecanismo.
 
+## Gates registados
+
+### `view_executive_dashboard`
+
+Gate único para páginas/widgets do **Executive Dashboard** (Fase 19A), definido em `app/Providers/AuthServiceProvider.php`. É um **wrapper** sobre a permissão Spatie `view_reports`, com bypass explícito para `super_admin`.
+
+Regra exacta:
+
+- `user === null` → **false**
+- `user->isSuperAdmin()` → **true**
+- `user->tenant_id === null` → **false**
+- caso contrário → `user->can('view_reports')`
+
+Tabela de verdade (resumo):
+
+| Cenário | Resultado |
+|---|---|
+| `super_admin` com ou sem `tenant_id` | ✅ |
+| `tenant_admin` com `tenant_id` (tem `view_reports` via seeder) | ✅ |
+| `board_member` com `tenant_id` (tem `view_reports` via seeder) | ✅ |
+| `executive` com `tenant_id` (tem `view_reports` via seeder) | ✅ |
+| `guest` com `tenant_id` (tem `view_reports` via seeder) | ✅ |
+| role custom sem `view_reports` | ❌ |
+| sem roles | ❌ |
+| `tenant_id === null` e não super_admin (mesmo com `view_reports`) | ❌ |
+| anónimo | ❌ |
+
+Nota: **não existe `Gate::before` global**; cada Gate/Policy trata `super_admin` explicitamente.
+
 ## Testes relacionados
 
 - `tests/Feature/AuthPermissionsTest.php` — seeder, tenants, users, guest, bootstrap e role `super_admin`.

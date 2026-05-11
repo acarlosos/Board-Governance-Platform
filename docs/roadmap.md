@@ -254,8 +254,8 @@ Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orient
 - 19A.3 DTOs imutáveis (`ExecutiveDashboardSnapshot`, `HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`, enum `PriorityUrgency`) — `final readonly`, `config/board.php` (`dashboard.*`), testes em `tests/Unit/Dashboard/Executive/Snapshot/` — **concluída** (namespace `App\Services\Dashboard\Executive\Snapshot`)
 - 19A.4 Providers internos (`HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`) — **concluída** (`tests/Unit/Dashboard/Executive/Providers/`)
 - 19A.5 `ExecutiveDashboardReadService` orquestrador + L2 `Cache::flexible` (Hero/Operations; KPI fora do L2) — **concluída** (`ExecutiveDashboardReadService.php`, testes feature + composition).
-- 19A.6 Gate único `view_executive_dashboard` registado em `AuthServiceProvider` — **em curso**
-- 19A.7 4 widgets Livewire (`Hero`, `KpiStrip`, `Operations`, `Priorities` com `deferLoading`) + `Dashboard` page actualizada
+- 19A.6 Gate único `view_executive_dashboard` registado em `AuthServiceProvider` — **concluída**
+- 19A.7 4 widgets Livewire (`Hero`, `KpiStrip`, `Operations`, `Priorities` com `deferLoading`) + `Dashboard` page actualizada — **em curso**
 - 19A.8 Testes obrigatórios (multi-tenancy, policies por item, anti-stampede, super_admin, shape estável)
 - 19A.9 Documentação final pós-implementação (sincronizar `features/dashboard.md`)
 

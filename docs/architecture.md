@@ -75,7 +75,8 @@ A camada de leitura para o **dashboard executivo** (Fase 19A) é desenhada para 
 
 - **Dashboard ≠ OperationalReports ≠ BI.** Cada camada responde a uma pergunta distinta (ver [`features/dashboard.md`](features/dashboard.md)).
 - **Widgets não consultam Eloquent.** Consomem o DTO devolvido pelo orquestrador.
-- **Gate único** `view_executive_dashboard` (registado em `AuthServiceProvider`) controla acesso à page e a todos os widgets executivos. Mantém-se `view_reports` para `OperationalReports`.
+- **Gate único** `view_executive_dashboard` (registado em `App\Providers\AuthServiceProvider`) controla acesso à page e a todos os widgets executivos. Mantém-se `view_reports` para `OperationalReports` (widgets legacy).
+- Não existe `Gate::before` global: cada Gate/Policy trata `super_admin` explicitamente.
 - **Tenancy explícita** via `ReportingContext`: `withoutGlobalScopes()` + `restrictToTenant()`. `super_admin` continua como único bypass.
 - **Anti-leak por item** em `Priorities` e `Activity`: cada candidato passa por `Gate::forUser($user)->allows('view', $item)` antes de entrar no DTO; items omitidos **somem sem mensagem** (anti-enumeração).
 - **Cache versionado** por chave (`v1` → `v2` ao mudar shape), com segmento de tenancy obrigatório, TTL ≤ 120 s e protecção anti-stampede (`Cache::flexible` ou `Cache::lock`). Convenção em [`.cursor/rules/cache.mdc`](../.cursor/rules/cache.mdc).

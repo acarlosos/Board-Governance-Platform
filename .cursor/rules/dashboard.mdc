@@ -91,7 +91,9 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - Widgets **não consultam Eloquent**. Consomem o snapshot do `ExecutiveDashboardReadService`.
 - **`deferLoading()` obrigatório (D7)** em Priorities, Activity e qualquer bloco secundário. Hero e KPI Strip carregam imediatamente.
 - **Período partilhado (D5)**: estado único na page (`Dashboard::$period`); comunicação para os widgets via `dispatch('dashboard:period-changed', period: $this->period)` + `#[On('dashboard:period-changed')]`. Proibido manter `period` duplicado em cada widget.
-- `canView()` e `canAccess()` via **gate único** `view_executive_dashboard` (registado em `AuthServiceProvider`); proibido `can('view_reports')` inline para o executive.
+- **Executive dashboard (19A.6)**: `canView()` (widgets executivos) e `canAccess()` (page executiva) via **gate único** `view_executive_dashboard` (registado em `App\Providers\AuthServiceProvider`).
+  - Proibido `can('view_reports')` inline no executive; o gate centraliza a regra.
+  - Widgets legacy `*StatsWidget` (Fase 14, D10) **mantêm** `view_reports` directo até 19B.5.
 
 ## Cache split (D1, D2, D3)
 
