@@ -64,12 +64,16 @@ class AdminPanelProvider extends PanelProvider
                     950 => '#240008',
                 ],
             ])
+            // CSS locais servidos directamente de `public/`. `$path` é obrigatório para
+            // que `php artisan filament:assets` (post-autoload-dump) não crashe ao chamar
+            // `copyAsset(string $from, string $to)` — apontamos para o ficheiro já presente
+            // em `public/`, resultando num copy-to-self (no-op seguro) em deploy.
             ->assets([
-                Css::make('bgp-panel')
+                Css::make('bgp-panel', public_path('css/app/bgp-panel.css'))
                     ->relativePublicPath('css/app/bgp-panel.css'),
-                Css::make('bgp-login')
+                Css::make('bgp-login', public_path('css/app/bgp-login.css'))
                     ->relativePublicPath('css/app/bgp-login.css'),
-                Css::make('bgp-dashboard')
+                Css::make('bgp-dashboard', public_path('css/app/bgp-dashboard.css'))
                     ->relativePublicPath('css/app/bgp-dashboard.css'),
             ], package: 'app')
             ->bootUsing(function (): void {

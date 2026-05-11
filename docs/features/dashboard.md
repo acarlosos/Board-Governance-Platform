@@ -317,6 +317,24 @@ Esta secção é o **relatório operacional** da Fase 19A.8 (validação e rampa
 
 **Justificação para não adicionar logs** (decisão arquitectural 19A.8): o blueprint admitia "opcionalmente logs mínimos, **somente se necessário** para medir performance em staging". Avaliação: Telescope (`Queries` + `Cache` panels) e `DB::listen` em rota de debug temporária dão visibilidade suficiente no ambiente de staging sem poluir produção. Adicionar `Log::info` permanente no read service introduz ruído em todos os pedidos e exige novos testes de canal de log. **Recomendação**: se QA staging confirmar que precisa de timing dedicado, abrir PR `feat(dashboard): add read service timing log` em 19B com cobertura de teste, **não** em 19A.8. Mantém-se o read service limpo.
 
+#### Hardening — fix de bug pré-existente exposto pelo deploy
+
+Durante a primeira tentativa de deploy do branch `feature/fase19`, o hook `composer.json` → `post-autoload-dump` → `@php artisan filament:upgrade` falhou com `Filament\Support\Commands\AssetsCommand::copyAsset(): Argument #1 ($from) must be of type string, null given`.
+
+**Causa raiz** (bug pré-existente desde Fase 14, latente até hoje): em `AdminPanelProvider`, os 3 assets locais (`bgp-panel`, `bgp-login`, `bgp-dashboard`) usavam `Css::make($id)->relativePublicPath(...)` **sem** passar o caminho de origem `$path`. `Asset::getPath()` devolve `null`; `AssetsCommand::copyAsset()` tipa `$from` como `string` e crasha ao iterar `FilamentAsset::getStyles()`. Bug é exposto em deploy real porque é a primeira vez que `filament:upgrade` (e portanto `filament:assets`) corre num ambiente onde os ficheiros são copiados a cada release Forge. O `bgp-dashboard` apenas adicionou mais uma instância do mesmo defeito.
+
+**Fix aplicado** (19A.8): passar `public_path('css/app/...')` como `$path` para os 3 assets em `AdminPanelProvider::panel()`. `copyAsset` faz copy-to-self (no-op seguro) em vez de crashar. Comentário inline documenta a razão.
+
+**Validação local**:
+
+```bash
+php artisan filament:assets   # ✅ Successfully published assets! (lista inclui bgp-panel/bgp-login/bgp-dashboard)
+php artisan filament:upgrade  # ✅ Successfully upgraded!
+php artisan test              # ✅ 286/286 verde
+```
+
+**Convenção daqui em diante**: qualquer CSS/JS local em `public/` registado via `FilamentAsset` (panel `assets([...])`) **tem de** passar `$path = public_path(...)` ou apontar para `resources/dist/...`. Se o source não existir em disco (ex.: gerado por Vite), apontar para o build output ou usar `loadedOnRequest()` — nunca deixar `$path` implícito a null.
+
 #### Cobertura automática (suite verde)
 
 | Domínio | Suite-alvo | Última execução |
