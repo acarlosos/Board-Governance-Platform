@@ -109,7 +109,7 @@ Detalhe operacional: [`features/dashboard.md`](features/dashboard.md), secção 
 | **D7** | `deferLoading()` | Obrigatório em Priorities, Activity e blocos secundários |
 | **D8** | Snapshot contract | **Implementado (19A.3):** DTOs `final readonly` em `App\Services\Dashboard\Executive\Snapshot` — shape estável, versionado, **API-ready** (ISO8601 + enum `->value` em `toArray()`). |
 | **D9** | Policy filtering | Item-a-item via `Gate::forUser($user)->allows('view', $item)`; sem mensagem "X omitidos" |
-| **D10** | Legacy widgets | `*StatsWidget` mantidos como fallback durante 19A; remoção só em **19B.5** |
+| **D10** | Legacy widgets | `*StatsWidget` mantidos como fallback durante 19A; remoção só em **19B.6** |
 
 #### Rationale e trade-offs (resumo)
 

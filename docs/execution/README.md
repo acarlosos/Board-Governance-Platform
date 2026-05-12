@@ -103,10 +103,11 @@ Sequência **obrigatória** antes do GO produção, na ordem:
 
 | # | Fase | Spec | Result | Estado |
 |---|---|---|---|---|
-| 1 | 19A.8 | [`19A.8-staging-validation.md`](19A.8-staging-validation.md) | [`19A.8-staging-validation.result.md`](19A.8-staging-validation.result.md) | **pendente QA staging** |
-| 2 | 19A.9 | [`19A.9-docs-final.md`](19A.9-docs-final.md) | [`19A.9-docs-final.result.md`](19A.9-docs-final.result.md) | **concluída** |
-| 3 | 17 | [`17-pre-launch-review.md`](17-pre-launch-review.md) | [`17-pre-launch-review.result.md`](17-pre-launch-review.result.md) | **GO condicional** (MySQL smoke pendente) |
-| 4 | 18 | [`18-production-deploy.md`](18-production-deploy.md) | [`18-production-deploy.result.md`](18-production-deploy.result.md) | **parcial** (backup L13 pendente) |
+| 1 | 19A.9 | [`19A.9-docs-final.md`](19A.9-docs-final.md) | [`19A.9-docs-final.result.md`](19A.9-docs-final.result.md) | **concluída** |
+| 2 | 17 | [`17-pre-launch-review.md`](17-pre-launch-review.md) | [`17-pre-launch-review.result.md`](17-pre-launch-review.result.md) | **GO condicional** (MySQL smoke pendente) |
+| 3 | 18 | [`18-production-deploy.md`](18-production-deploy.md) | [`18-production-deploy.result.md`](18-production-deploy.result.md) | **parcial** (backup remetido para 18.5) |
+| 4 | **18.5** | [`18.5-backup-mysqldump.md`](18.5-backup-mysqldump.md) | _(a criar pelo Executor)_ | **pronta para executar** — destrava `BC1` (substitui Spatie) |
+| 5 | 19A.8 | [`19A.8-staging-validation.md`](19A.8-staging-validation.md) | [`19A.8-staging-validation.result.md`](19A.8-staging-validation.result.md) | **pendente staging real** (QA humano + DevOps) |
 
 ### Concluídas
 
@@ -115,7 +116,7 @@ Sequência **obrigatória** antes do GO produção, na ordem:
 | 19B.1 | [`19B.1-cache-invalidation.md`](19B.1-cache-invalidation.md) | [`19B.1-cache-invalidation.result.md`](19B.1-cache-invalidation.result.md) | **concluída** (suite 317/317) |
 | 19B.2 | [`19B.2-dashboard-observability.md`](19B.2-dashboard-observability.md) | [`19B.2-dashboard-observability.result.md`](19B.2-dashboard-observability.result.md) | **concluída** (suite 328/328) |
 | 19B.3 | [`19B.3-projection-table.md`](19B.3-projection-table.md) | [`19B.3-projection-table.result.md`](19B.3-projection-table.result.md) | **concluída** (suite 341/341) |
-| 19B.4 | [`19B.4-api-dashboard-snapshot.md`](19B.4-api-dashboard-snapshot.md) | [`19B.4-api-dashboard-snapshot.result.md`](19B.4-api-dashboard-snapshot.result.md) | **concluída** (suite ≥351) |
+| 19B.4 | [`19B.4-api-dashboard-snapshot.md`](19B.4-api-dashboard-snapshot.md) | [`19B.4-api-dashboard-snapshot.result.md`](19B.4-api-dashboard-snapshot.result.md) | **concluída — excepção aprovada ao launch mode (early-access até pós-launch)** — ver [`.cursor/rules/launch-mode.mdc`](../../.cursor/rules/launch-mode.mdc) |
 
 ### Pós-MVP (não bloqueiam GO produção)
 

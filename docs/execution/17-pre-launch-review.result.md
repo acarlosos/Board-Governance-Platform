@@ -31,7 +31,7 @@ Relatório de [`17-pre-launch-review.md`](./17-pre-launch-review.md). Data: 2026
 
 ## 5. Suite
 
-- `php artisan test` (SQLite) — verde após alterações da sessão (total na linha final do `19A.9-docs-final.result.md` / CI).
+- `php artisan test` (SQLite) — **352/352**, **2481** assertions (2026-05-11).
 
 ## 6. Bloqueios
 

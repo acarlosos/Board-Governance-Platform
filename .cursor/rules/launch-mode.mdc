@@ -67,6 +67,12 @@ Qualquer desvio a este modo requer **GO explícito do utilizador no chat**, no f
 
 Sem GO explícito, Arquitecto e Executor **devolvem o pedido**, lembram o launch mode e propõem inscrever o pedido no backlog pós-MVP.
 
+### Excepções aprovadas (registo auditável)
+
+| Data | Item | Razão | Aprovado por |
+|---|---|---|---|
+| 2026-05-12 | **19B.4 — API `GET /api/v1/dashboard/snapshot`** | Já implementada antes da entrada em vigor do launch mode; reutiliza `view_executive_dashboard` + ability `dashboard:read` existentes; não aumenta risco operacional; não bloqueia deploy MVP. Classificada como **early-access até pós-launch** (sem comunicação pública até `v1.0.0+1`). | Owner |
+
 ## Encerramento
 
 Quando `v1.0.0` for taggeada e o deploy produção estiver verde:
