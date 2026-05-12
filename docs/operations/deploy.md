@@ -15,6 +15,16 @@ bash scripts/deploy.sh
 
 O script corre `composer install --no-dev`, `migrate --force`, caches de config/route/view, `filament:upgrade` e **`php artisan queue:restart`** (PO4 — workers pick up código novo após deploy).
 
+## Rollback operacional (caches + workers)
+
+Após reverter o checkout ou o symlink do release no servidor (Forge / artefacto anterior), repor caches alinhados ao código activo **sem** nova instalação Composer nem migrations:
+
+```bash
+bash scripts/rollback.sh
+```
+
+`migrate:rollback` só manualmente quando a release problemática introduziu migrações e a reversão for segura (ver runbook).
+
 ## Healthcheck
 
 - **Endpoint oficial:** `GET /health` — JSON `status`, `db`, `cache`, `app_env`; **200** se DB + cache OK, **503** caso contrário.

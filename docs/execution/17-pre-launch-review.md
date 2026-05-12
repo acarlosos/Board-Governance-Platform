@@ -35,7 +35,7 @@ Subitem 17.6 (docs) entra na 19A.9 (sync documental) — sem duplicação aqui.
   - Confirmar `IntegrationLog` sanitiza `config` antes de gravar (já feito; revalidar).
 - **17.7 — Testes finais:**
   - `php artisan test` 100 % verde em SQLite.
-  - Smoke matrix em **MySQL** real: criar `.env.testing.mysql`, correr `php artisan test --env=testing.mysql` numa sample (ao menos `Multi*Test`, `*PolicyTest`, `Auth*Test`).
+  - Smoke matrix em **MySQL** real: copiar `.env.testing.mysql.example` → `.env.testing.mysql`, correr `php artisan test --configuration=phpunit.mysql.xml` (subset opcional: `--filter=…`; ex.: `Multi*`, policies, auth — ver `docs/testing.md`).
   - Confirmar áreas obrigatórias de `tests.mdc` têm cobertura (matriz de auditoria no result).
 
 ## 4. Fora do escopo
@@ -64,7 +64,7 @@ Subitem 17.6 (docs) entra na 19A.9 (sync documental) — sem duplicação aqui.
 
 1. **Auditoria de policies** — listar `ls app/Policies/`. Para cada Policy, preencher tabela `model × tenant_id × scope verificado × super_admin tratado × cross-tenant teste existe`. Patch onde faltar.
 2. **Auditoria de logs e auditoria** — `rg 'Log::|logger\(' app/ --type=php` e listar **todas** as ocorrências. Para cada uma, classificar: ok / sanitizar / mover para `audit`. Patch quando necessário (≤ 5 linhas/ponto).
-3. **Smoke MySQL** — criar `.env.testing.mysql` (DB local MySQL 8). Correr subset crítico (`Multi*Test|*PolicyTest|Auth*Test|*ResourceTest`). Reportar timing e diferenças vs SQLite.
+3. **Smoke MySQL** — `cp .env.testing.mysql.example .env.testing.mysql` (MySQL 8 dedicado). Correr `php artisan test --configuration=phpunit.mysql.xml` com subset crítico se desejado (`--filter=…`). Reportar timing e diferenças vs SQLite em `docs/testing.md` se surgirem.
 4. **Cobrir gaps obrigatórios `tests.mdc`** — onde a auditoria revelar falta, escrever testes mínimos (allow + deny por policy; smoke create-meeting; smoke upload-document; smoke vote-submit). Não inflar com casos cosméticos.
 5. **Result + decisão Pre-Launch GO** — preencher matriz de auditoria, listar patches aplicados, listar testes novos, dar decisão Pre-Launch GO/NO-GO.
 
@@ -119,7 +119,7 @@ Uma linha por ocorrência `Log::*` em código produtivo:
 ## 10. Testes obrigatórios
 
 - `php artisan test` (suite completa SQLite) — verde.
-- `php artisan test --env=testing.mysql` (smoke MySQL) — verde no subset crítico.
+- `php artisan test --configuration=phpunit.mysql.xml` (smoke MySQL) — verde no subset crítico ou suite completa.
 - Para cada gap detectado: escrever test mínimo (allow + deny ou cross-tenant) usando Pest se já é o stack do projecto, senão PHPUnit.
 
 ## 11. Validação final

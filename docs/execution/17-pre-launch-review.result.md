@@ -27,12 +27,12 @@ Relatório de [`17-pre-launch-review.md`](./17-pre-launch-review.md). Data: 2026
 | Multi-tenancy | `tests/Feature/MultitenancyTest.php` | presente |
 | Policies / gates | disperso (`ViewExecutiveDashboardGateTest`, Filament/API) | não há pasta `tests/Feature/Policies/*` dedicada |
 | Reuniões / documentos / votos | feature tests por módulo | existentes na suite global |
-| **MySQL** (`--env=testing.mysql`) | **Não executado** | sem `.env.testing.mysql` configurado no Executor — **pendente DevOps** antes de GO produção |
+| **MySQL** (`phpunit.mysql.xml` + `.env.testing.mysql`) | **Infra pendente no Executor** | Ficheiros `phpunit.mysql.xml`, `.env.testing.mysql.example`, guardas no `TestCase` e `docs/testing.md` prontos; smoke completo requer MySQL 8 acessível (Docker/host) — **DevOps confirma antes de GO produção**. |
 
 ## 5. Suite
 
-- `php artisan test` (SQLite) — **352/352**, **2481** assertions (2026-05-11).
+- `php artisan test` (SQLite) — **359/359**, **2531** assertions (2026-05-12). Smoke MySQL: ver `docs/testing.md`; daemon Docker indisponível na última corrida automática do Executor.
 
 ## 6. Bloqueios
 
-- **Smoke MySQL:** pendente ambiente — não impede merge de código local se CI SQLite verde; **impede GO produção** até correr subset da spec.
+- **Smoke MySQL:** comandos documentados; execução completa **pendente** máquina com MySQL 8 até GO produção.
