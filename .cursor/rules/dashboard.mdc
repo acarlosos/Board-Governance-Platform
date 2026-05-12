@@ -93,7 +93,7 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **Período partilhado (D5)**: `Dashboard::$period` com `mount()` que define default (`ThisMonth`) e faz `dispatch('dashboard:period-changed', period: …)` para alinhar widgets **lazy** no primeiro paint; selector UI no `ExecutiveHeroWidget` (`wire:model.live` + `updatedPeriod()` re-emite o mesmo evento). Cada widget executivo mantém `$period` **espelhado** via `#[On('dashboard:period-changed')]` para `getViewData()` — proibido fontes de verdade divergentes (sem período só em sessão/query string).
 - **Executive dashboard (19A.6 + 19A.7)**: `canView()` dos widgets executivos via **`Gate::forUser($user)->allows('view_executive_dashboard')` AND `config('board.dashboard.use_executive_widgets')`**. `Dashboard::canAccess()` = **`Auth::check()`** (shell da página; sem gate não há 403 — widgets executivos ocultam-se).
   - Proibido `can('view_reports')` inline no executive; o gate centraliza a regra de autorização; a flag controla rollout UX.
-  - Widgets legacy `*StatsWidget` (Fase 14, D10) **mantêm** `view_reports` directo até 19B.5.
+  - Widgets legacy `*StatsWidget` (Fase 14, D10) **mantêm** `view_reports` directo até 19B.6.
 
 ### UI (19A.7)
 
@@ -108,7 +108,7 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **i18n:** `dashboard.executive.*` em `lang/{pt_BR,en,es}/dashboard.php`; não mexer no bloco legacy `dashboard.widgets.*` salvo copy dos legados.
 - **Coexistência / flag:** `false` → legados visíveis, executivos ocultos; `true` → executivos só com gate (`canView()`), legados ocultos; em ambos `Dashboard::canAccess()` = `Auth::check()`.
 - **19A.8 §12.C (decisão fechada):** user com `tenant_id = null` e **sem** `super_admin` **não** recebe o gate `view_executive_dashboard` (nem widgets executivos), mesmo que tenha `view_reports`. A regra vive no gate (`AuthServiceProvider`, ramo `tenant_id === null`) e é coberta por `ExecutiveDashboardPageTest::test_user_sem_tenant_sem_super_admin_sem_gate_mas_shell_dashboard_acessivel_decisao_19a8` (pode abrir a page autenticado; widgets executivos ficam ocultos). Não alterar o gate sem aprovação arquitectural.
-- **Remoção da flag + dos 6 legacy widgets:** **19B.5** (D10).
+- **Remoção da flag + dos 6 legacy widgets:** **19B.6** (D10).
 
 ### Invalidação de cache (19B.1)
 
@@ -117,6 +117,16 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **`updated`:** só invalida quando `KPI_FIELDS` intersecta `getChanges()`; `created` / `deleted` / `restored` invalidam sempre (com `tenant_id !== null`).
 - **L2 `flexible`:** o invalidador remove também `illuminate:cache:flexible:created:{l2Key}`.
 - Detalhe e tabela §3: `docs/features/dashboard.md` → **19B.1**.
+
+### Observabilidade (19B.2)
+
+- **D13:** counters em cache + comando `php artisan dashboard:cache-stats` (`--day=`, `--json`); sem APM externo.
+- **D14:** agregação diária (`:{Y-m-d}` em timezone `config('app.timezone')`); TTL dos counters **7 dias** (`ExecutiveDashboardObservability::COUNTER_TTL_SECONDS`).
+- **D15:** chaves apenas `dashboard:obs:{bucket}:{Y-m-d}` — **nunca** `tenant_id`, `t_*`, `user_*`, email ou PII em chaves de observability.
+- **D15a:** hit/miss estimados com `Cache::has()` antes de `remember` / `flexible` (race aceite).
+- **D16:** só `DashboardMetricsService::getMetrics`, `ExecutiveDashboardReadService::loadOrComputeShared` (sem instrumentar se `cacheSegment === 'none'`) e `ExecutiveDashboardCacheInvalidator` (**uma** notificação `recordInvalidation()` por `invalidateForTenant`, não por chave).
+- **D17:** stale-hit do `flexible` não exposto — fora do âmbito.
+- **D18:** leitura só CLI; shape JSON estável: `docs/execution/19B.2-dashboard-observability.md` §8.
 
 ## Cache split (D1, D2, D3)
 
@@ -150,7 +160,7 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 ## Legacy widgets (D10)
 
 - Os 6 `*StatsWidget` da Fase 14 (`TasksStatsWidget`, `MeetingsStatsWidget`, `MinutesStatsWidget`, `VotesStatsWidget`, `SignaturesStatsWidget`, `NotificationsStatsWidget`) **mantêm-se como fallback** durante toda a Fase 19A. **Não apagar nem mover** sem aprovação.
-- Remoção apenas em **19B.5**, depois de validação em produção do dashboard executivo (mitiga risco de UX regression e permite rollback rápido).
+- Remoção apenas em **19B.6**, depois de validação em produção do dashboard executivo (mitiga risco de UX regression e permite rollback rápido).
 
 ## Anti-padrões (proibidos)
 

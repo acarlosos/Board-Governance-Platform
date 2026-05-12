@@ -124,12 +124,12 @@ Detalhe operacional: [`features/dashboard.md`](features/dashboard.md), secção 
 | Risco | Mitigação 19A | Pendência 19B |
 |---|---|---|
 | **L1** — queries **overdue tasks** (`status IN(pending, in_progress)` + `due_date` &lt; agora) para KPI/dashboard | **Mitigado na 19A.2** — índice composto `tasks_tenant_status_due_date_idx` (`tenant_id`, `status`, `due_date`) | — |
-| Stampede em cold start (4 widgets paralelos) | D2 (`flexible`) | Pre-warm por job (19B.4) |
+| Stampede em cold start (4 widgets paralelos) | D2 (`flexible`) | Pre-warm por job (19B.5) |
 | Vazamento por item em feeds | D9 (policy item-a-item) | — |
 | Latência percebida em PATCH → snapshot | D1 (TTL 60 s aceite) | Invalidação por evento (19B.1) |
-| Tenants enterprise (> 50 k rows) | Índice overdue em `tasks` (19A.2); índices adicionais avaliados sem over-indexing | Projection model (19B.2) |
+| Tenants enterprise (> 50 k rows) | Índice overdue em `tasks` (19A.2); índices adicionais avaliados sem over-indexing | Projection model (19B.3) |
 | Bump de shape sem warm de cache | D8 (versionamento + procedimento documentado) | — |
-| Regressão UX vs Fase 14 | D10 (`*StatsWidget` fallback) | Remoção controlada em 19B.5 |
+| Regressão UX vs Fase 14 | D10 (`*StatsWidget` fallback) | Remoção controlada em 19B.6 |
 
 Estas decisões são **pré-condição** para 19A.2 (índices) e 19A.3 (DTOs). Qualquer desvio futuro a D1–D10 exige alteração desta tabela e bump da chave `dashboard_snapshot:v{n}`.
 

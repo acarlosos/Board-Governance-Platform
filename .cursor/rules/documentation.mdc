@@ -15,6 +15,8 @@ alwaysApply: true
 
 ## Ao finalizar uma funcionalidade (resposta ao utilizador)
 
+> Aplicável a alterações **sem** par `docs/execution/{fase}.md` / `.result.md`. Para fases com spec/result, vale a **"Resposta-padrão curta do Executor"** definida na secção "Especificações executáveis — `docs/execution/`" mais abaixo.
+
 Incluir sempre, de forma objetiva:
 
 1. **Arquivos alterados** (lista)
@@ -41,3 +43,28 @@ Incluir sempre, de forma objetiva:
 - Documentar **decisões técnicas importantes** em `docs/architecture.md` ou na feature, em linguagem objetiva.
 - Manter texto **útil para contexto do agente** e para humanos; evitar tutoriais genéricos de Laravel/Filament sem ligação ao código deste repositório.
 - **Não** criar documentação genérica desligada do que está ou vai ser implementado na Board.
+
+## Especificações executáveis — `docs/execution/`
+
+A partir de **19B.1**, toda fase nova nasce com um par de ficheiros markdown em [`docs/execution/`](../../docs/execution/):
+
+- **`{fase}-{slug}.md`** — *spec* (Arquitecto). Blueprint final aprovado em **14 secções** obrigatórias (índice no [`README` da pasta](../../docs/execution/README.md)).
+- **`{fase}-{slug}.result.md`** — *result* (Executor). **Relatório técnico oficial** de fecho em **11 secções** obrigatórias.
+
+### Regras
+
+1. **Templates obrigatórios** — começar por copiar [`_template.spec.md`](../../docs/execution/_template.spec.md) e [`_template.result.md`](../../docs/execution/_template.result.md). Manter ordem e número das secções.
+2. **Fonte única** — se existir `docs/execution/{fase}-{slug}.md`, o Executor **NÃO depende** do histórico do chat. A spec é a única instrução vinculativa.
+3. **Resposta-padrão curta do Executor no chat** — após executar uma fase, reportar **apenas**:
+   - link da **spec**;
+   - link do **result**;
+   - **status** (verde / vermelho / bloqueado);
+   - **testes** (1 linha — total + duração);
+   - **bloqueios**, se houver.
+   Detalhe técnico (lista de ficheiros, outputs, sentinelas, tabelas) vai **no `result.md`**, nunca no chat.
+4. **Decisões durante execução** — micro-ajustes do Executor que desviam ou estendem a spec ficam na **§4 do result** ("Decisões relevantes tomadas durante execução"), com ID `Dxx` (contínuo dentro da feature) ou referência explícita à decisão da spec afinada. Não inventar decisões fora desta secção.
+5. **`docs/features/{feature}.md` e `docs/roadmap.md` continuam canónicos** — `docs/execution/` é por **fase** (efémero ao roadmap, fonte da implementação); `docs/features/` é por **módulo** (vivo enquanto o módulo existir). Atualizar **ambos** ao fechar a fase.
+
+### Fases concluídas antes deste padrão
+
+Fases concluídas antes de **19B.1** (incluindo 19A.0–19A.8 e todas as fases 0–18) **não são retrocomidas** para `docs/execution/`. As suas fichas em `docs/features/` continuam canónicas. O par spec/result aplica-se apenas a fases **iniciadas** a partir desta convenção.

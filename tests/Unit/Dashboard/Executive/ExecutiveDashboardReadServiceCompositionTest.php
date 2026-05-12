@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Dashboard\DashboardMetricsService;
 use App\Services\Dashboard\Executive\ExecutiveDashboardReadService;
+use App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability;
 use App\Services\Dashboard\Executive\Providers\ActivityFeedProvider;
 use App\Services\Dashboard\Executive\Providers\HeroProvider;
 use App\Services\Dashboard\Executive\Providers\KpiStripProvider;
@@ -59,6 +60,7 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
             );
 
             $cache = Mockery::mock(CacheRepository::class);
+            $cache->shouldReceive('has')->once()->andReturn(false);
             $cache->shouldReceive('flexible')->once()->andReturn([
                 'hero' => $sharedHero->toArray(),
                 'operations' => $sharedOps->toArray(),
@@ -68,6 +70,8 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
             $actor = User::factory()->create(['tenant_id' => $tenant->id]);
             $actor->assignRole('tenant_admin');
 
+            $obs = app(ExecutiveDashboardObservability::class);
+
             $service = new ExecutiveDashboardReadService(
                 hero: new HeroProvider,
                 kpi: new KpiStripProvider(app(DashboardMetricsService::class)),
@@ -75,6 +79,7 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
                 priorities: new PrioritiesProvider,
                 activity: new ActivityFeedProvider,
                 cache: $cache,
+                observability: $obs,
             );
 
             $snapshot = $service->read($actor, DashboardMetricsPeriod::AllTime);

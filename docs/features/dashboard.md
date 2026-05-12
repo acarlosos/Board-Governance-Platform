@@ -44,6 +44,8 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 - `tests/Feature/Dashboard/Executive/Cache/CrossTenantCacheLeakageTest.php` (19B.1 — teste 16)
 - `tests/Feature/Dashboard/Executive/ExecutiveDashboardMetricsL1CacheHitTest.php` (19B.1)
 - `tests/Feature/Observers/Dashboard/*ObserverCacheTest.php`, `SignatureRequestSignerNoInvalidationTest.php`, `AuditLogNoInvalidationTest.php` (19B.1 — testes 9–15)
+- `tests/Unit/Dashboard/Executive/Observability/ExecutiveDashboardObservabilityTest.php` (19B.2)
+- `tests/Feature/Dashboard/Executive/Observability/L1L2InstrumentationTest.php`, `InvalidatorInstrumentationTest.php`, `CacheStatsCommandTest.php` (19B.2)
 - `tests/Feature/Dashboard/Executive/ExecutiveDashboardReadServiceTest.php` (19A.5 + chaves L1/L2)
 - `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest.php` (19A.5)
 - `tests/Feature/Filament/Dashboard/ExecutiveDashboardPageTest.php` (19A.7 — gate/flag/canView)
@@ -58,7 +60,7 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 
 ## Executive Dashboard (Fase 19A)
 
-> Estado: **19A.0–19A.7 concluídas**; **19B.1 concluída** (invalidação L1/L2 por tenant via observers). **19A.5**: `ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). A Fase 14 (KPIs legados + `OperationalReports`) **mantém-se** como fallback enquanto `board.dashboard.use_executive_widgets` estiver `false` (remoção dos 6 `*StatsWidget` em **19B.5**).
+> Estado: **19A.0–19A.7 concluídas**; **19B.1 concluída** (invalidação L1/L2 por tenant via observers); **19B.2 concluída** (observabilidade leve: counters + `dashboard:cache-stats`). **19A.5**: `ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). A Fase 14 (KPIs legados + `OperationalReports`) **mantém-se** como fallback enquanto `board.dashboard.use_executive_widgets` estiver `false` (remoção dos 6 `*StatsWidget` em **19B.6**).
 
 ### Objectivo
 
@@ -201,7 +203,7 @@ Fluxo textual (determinístico):
 - **Feature flag — coexistência com Fase 14**: `config('board.dashboard.use_executive_widgets')` (env `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS`, default `false`).
   - `false` → 6 `*StatsWidget` (Fase 14) visíveis, 4 executivos ocultos, `Dashboard::canAccess()` apenas exige autenticação.
   - `true` → 4 executivos visíveis **só** com gate `view_executive_dashboard` (`Executive*Widget::canView()`), 6 legacy ocultos por `canView()`; `Dashboard::canAccess()` apenas autenticação (utilizador sem gate vê página vazia, não 403).
-  - Activação de produção via env; remoção da flag + dos 6 legacy widgets em **19B.5** (D10).
+  - Activação de produção via env; remoção da flag + dos 6 legacy widgets em **19B.6** (D10).
 
 ### Estratégia de cache
 
@@ -275,7 +277,7 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 | **D7** | `deferLoading()` | **Obrigatório** para Priorities, Activity e qualquer bloco secundário. Hero e KPI Strip carregam imediatamente | Evita cascata de spinners e bloqueio de render principal |
 | **D8** | Snapshot contract | DTO `final readonly`; shape estável; **versionado** na chave de cache (`v1` → `v2` ao mudar shape); **API-ready** (datetimes ISO8601, enums como `->value`, sem objects Eloquent) | Permite reuso pelo endpoint `GET /api/v1/dashboard/snapshot` (Fase 19B) sem reescrita |
 | **D9** | Policy filtering | **Obrigatório item-a-item** em Priorities/Activity via `Gate::forUser($user)->allows('view', $item)`. Items omitidos **somem sem mensagem** ("X items ocultos" é proibido — anti-enumeração) | Evita vazamento entre utilizadores do mesmo tenant e enumeração lateral |
-| **D10** | Legacy widgets | `*StatsWidget` (Fase 14) **mantidos como fallback** durante toda a 19A. Remoção apenas em **19B.5**, depois de validação em produção | Permite rollback rápido se Hero/KPI Strip não convencer; mitiga risco de UX regression |
+| **D10** | Legacy widgets | `*StatsWidget` (Fase 14) **mantidos como fallback** durante toda a 19A. Remoção apenas em **19B.6**, depois de validação em produção | Permite rollback rápido se Hero/KPI Strip não convencer; mitiga risco de UX regression |
 
 #### Trade-offs explícitos
 
@@ -305,10 +307,11 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.8** (em curso): validação, hardening e rampa controlada (sem features novas). Pré-trabalho técnico e findings nesta ficha (secção "QA 19A.8 — findings"). Decisão arquitectural §12.C fechada e codificada no gate.
 - **19A.9**: actualizar esta ficha com estado pós-implementação.
 - **19B.1** (concluída): invalidação L1/L2 por `ExecutiveDashboardCacheInvalidator` + observers (`Task`, `Meeting`, `Vote`, `Minute`, `SignatureRequest`, `NotificationCenter`); chaves centralizadas em `ExecutiveDashboardCacheKeys`; D11 (sem flush `global` por evento de tenant); D12 (`KPI_FIELDS` + `updated` selectivo). Ver secção **19B.1 — Invalidação** abaixo.
-- **19B.2**: projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
-- **19B.3**: endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
-- **19B.4**: pre-warm de cache por job em horário de pico
-- **19B.5**: remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
+- **19B.2** (concluída): observabilidade leve — `ExecutiveDashboardObservability` (counters diários agregados L1 hit/miss, L2 hit/miss, invalidações), instrumentação em `DashboardMetricsService::getMetrics`, `ExecutiveDashboardReadService::loadOrComputeShared` (skip `none`) e `ExecutiveDashboardCacheInvalidator::invalidateForTenant`; comando `php artisan dashboard:cache-stats [--day=][--json]`. Ver secção **19B.2 — Observabilidade** abaixo e `docs/execution/19B.2-dashboard-observability.md`.
+- **19B.3**: projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
+- **19B.4**: endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
+- **19B.5**: pre-warm de cache por job em horário de pico
+- **19B.6**: remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
 
 ### 19B.1 — Invalidação inteligente de cache (D11, D12)
 
@@ -357,6 +360,35 @@ O `HeroProvider::countSignaturesPending` conta `SignatureRequest` por `status` (
 
 - Unit: `tests/Unit/Dashboard/Executive/Cache/ExecutiveDashboardCacheKeysTest.php`
 - Feature: `ExecutiveDashboardMetricsL1CacheHitTest`, `tests/Feature/Dashboard/Executive/Cache/ExecutiveDashboardCacheInvalidatorTest.php`, `CrossTenantCacheLeakageTest.php`, `tests/Feature/Observers/Dashboard/*` (invalidação por observer e casos negativos §5.5 / `AuditLog`)
+- Observabilidade 19B.2: `tests/Unit/Dashboard/Executive/Observability/ExecutiveDashboardObservabilityTest.php`, `tests/Feature/Dashboard/Executive/Observability/{L1L2InstrumentationTest,InvalidatorInstrumentationTest,CacheStatsCommandTest}.php`
+
+### 19B.2 — Observabilidade leve do cache (D13–D18)
+
+#### Decisões
+
+| ID | Regra |
+|----|--------|
+| **D13** | Observabilidade interna (counters em cache + comando Artisan); sem APM externo. |
+| **D14** | Granularidade diária (`:{Y-m-d}`); TTL dos counters **7 dias**. |
+| **D15** | Counters **agregados globalmente** — nunca `tenant_id` / `t_*` nas chaves `dashboard:obs:*`. |
+| **D15a** | Hit/miss vía `Cache::has()` antes de `remember` / `flexible` (race aceite). |
+| **D16** | Instrumentação apenas nos 3 call-sites acordados; `recordInvalidation()` **uma vez** por `invalidateForTenant`. |
+| **D17** | Stale-hit do `flexible` não contabilizado (gap). |
+| **D18** | Leitura só via `php artisan dashboard:cache-stats` (sem widget/API/DB). |
+
+#### Chaves de counter
+
+Ver `docs/execution/19B.2-dashboard-observability.md` §8 (`dashboard:obs:l1:hit:{Y-m-d}`, …).
+
+#### Código
+
+- `App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability`
+- `App\Console\Commands\Dashboard\CacheStatsCommand` (`dashboard:cache-stats`)
+- Instrumentação: `DashboardMetricsService`, `ExecutiveDashboardReadService::loadOrComputeShared`, `ExecutiveDashboardCacheInvalidator`
+
+#### Como ler `cache-stats`
+
+Ver exemplo JSON na rule `.cursor/rules/dashboard.mdc` (secção **Observabilidade (19B.2)**) ou executar `php artisan dashboard:cache-stats --json`.
 
 ### QA 19A.8 — findings
 

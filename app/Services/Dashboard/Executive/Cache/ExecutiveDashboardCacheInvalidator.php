@@ -2,6 +2,7 @@
 
 namespace App\Services\Dashboard\Executive\Cache;
 
+use App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 
 /**
@@ -16,6 +17,7 @@ final class ExecutiveDashboardCacheInvalidator
 
     public function __construct(
         private readonly CacheRepository $cache,
+        private readonly ExecutiveDashboardObservability $observability,
     ) {}
 
     public function invalidateForTenant(int $tenantId): void
@@ -35,5 +37,7 @@ final class ExecutiveDashboardCacheInvalidator
                 $this->cache->forget(self::FLEXIBLE_CREATED_PREFIX.$key);
             }
         }
+
+        $this->observability->recordInvalidation();
     }
 }

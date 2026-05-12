@@ -76,6 +76,7 @@ Chave `dashboard_snapshot:v1:t_42:this_month` que contenha **lista de items filt
 
 - **Implícita por TTL**: regra geral para caches sem call-site dedicado.
 - **Por evento (19B.1 — dashboard executivo)**: `ExecutiveDashboardCacheInvalidator` invalida L1 `dashboard_metrics:v1:…` e L2 `dashboard_snapshot:…:shared:plain` (incl. meta `illuminate:cache:flexible:created:{l2}`) por `t_{tenantId}`; **os únicos call-sites** nesta fase são os **observers Eloquent** listados em `docs/features/dashboard.md` (19B.1). **Não** usar tags Redis para este fluxo (compatibilidade `array`/`file` em testes).
+- **Observabilidade (19B.2)**: counters agregados `dashboard:obs:{l1|l2}:{hit|miss}:{Y-m-d}` e `dashboard:obs:invalidations:{Y-m-d}` — TTL 7 dias; **nunca** incluir `tenant_id` ou `t_*` neste prefixo (D15). Ver `ExecutiveDashboardObservability` e `dashboard:cache-stats`.
 - **`Cache::forget`**: granular; o invalidador encapsula o conjunto de chaves por período.
 
 ## Dashboard executivo — L1 vs L2 (`DashboardMetricsService` vs snapshot shared)

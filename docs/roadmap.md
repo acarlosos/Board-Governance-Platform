@@ -263,10 +263,11 @@ Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orient
 #### Fase 19B — Operacionalização avançada
 
 - 19B.1 Invalidação de cache por evento (`ExecutiveDashboardCacheKeys`, `ExecutiveDashboardCacheInvalidator`, observers em `Task`/`Meeting`/`Vote`/`Minute`/`SignatureRequest`/`NotificationCenter`) — **concluída** (ver `docs/features/dashboard.md` → 19B.1)
-- 19B.2 Projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
-- 19B.3 Endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
-- 19B.4 Pre-warm de cache por job em horário de pico
-- 19B.5 Remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
+- 19B.2 Observabilidade leve do cache executivo (`ExecutiveDashboardObservability`, comando `dashboard:cache-stats`) — **concluída** (ver `docs/execution/19B.2-dashboard-observability.md`)
+- 19B.3 Projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
+- 19B.4 Endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
+- 19B.5 Pre-warm de cache por job em horário de pico
+- 19B.6 Remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
 
 ## Ordem obrigatória
 

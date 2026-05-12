@@ -17,12 +17,17 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\Vote;
 use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys;
+use App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability;
 use App\Services\Reporting\ReportingContext;
 use Illuminate\Support\Facades\Cache;
 
 final class DashboardMetricsService
 {
     private const CACHE_TTL_SECONDS = 90;
+
+    public function __construct(
+        private readonly ExecutiveDashboardObservability $observability,
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -32,6 +37,12 @@ final class DashboardMetricsService
         $ctx = ReportingContext::fromUser($user);
 
         $key = ExecutiveDashboardCacheKeys::l1Key($ctx->cacheSegment(), $period);
+
+        if (Cache::has($key)) {
+            $this->observability->recordL1Hit();
+        } else {
+            $this->observability->recordL1Miss();
+        }
 
         return Cache::remember($key, now()->addSeconds(self::CACHE_TTL_SECONDS), fn (): array => $this->computeMetrics($ctx, $period));
     }

@@ -5,6 +5,7 @@ namespace App\Services\Dashboard\Executive;
 use App\Enums\DashboardMetricsPeriod;
 use App\Models\User;
 use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys;
+use App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability;
 use App\Services\Dashboard\Executive\Providers\ActivityFeedProvider;
 use App\Services\Dashboard\Executive\Providers\HeroProvider;
 use App\Services\Dashboard\Executive\Providers\KpiStripProvider;
@@ -26,6 +27,7 @@ final class ExecutiveDashboardReadService
         private readonly PrioritiesProvider $priorities,
         private readonly ActivityFeedProvider $activity,
         private readonly CacheRepository $cache,
+        private readonly ExecutiveDashboardObservability $observability,
     ) {}
 
     public function read(
@@ -64,9 +66,16 @@ final class ExecutiveDashboardReadService
             return $this->hydrateSharedFromPlain($this->buildSharedPlain($actor, $period));
         }
 
+        $l2Key = $this->sharedKey($ctx, $period);
+        if ($this->cache->has($l2Key)) {
+            $this->observability->recordL2Hit();
+        } else {
+            $this->observability->recordL2Miss();
+        }
+
         /** @var array{hero: array<string, mixed>, operations: array<string, mixed>} $plain */
         $plain = $this->cache->flexible(
-            $this->sharedKey($ctx, $period),
+            $l2Key,
             [
                 (int) config('board.dashboard.cache_stale_seconds', 60),
                 (int) config('board.dashboard.cache_expire_seconds', 120),
