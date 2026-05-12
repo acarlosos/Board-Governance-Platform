@@ -65,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        PreventRequestsDuringMaintenance::except(['/health', '/up']);
+        PreventRequestsDuringMaintenance::except(['/health']);
 
         Tenant::observe(TenantObserver::class);
         User::observe(UserObserver::class);

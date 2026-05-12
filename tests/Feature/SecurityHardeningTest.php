@@ -33,7 +33,7 @@ class SecurityHardeningTest extends TestCase
     public function test_security_headers_estao_presentes_em_resposta_web(): void
     {
         $middleware = new SecurityHeadersMiddleware;
-        $request = Request::create('/up', 'GET');
+        $request = Request::create('/health', 'GET');
 
         $response = $middleware->handle($request, fn (): Response => new Response('ok', 200));
 
