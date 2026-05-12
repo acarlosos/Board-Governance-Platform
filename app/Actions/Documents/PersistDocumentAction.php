@@ -54,14 +54,14 @@ final class PersistDocumentAction
             }
 
             if ($boardId) {
-                $board = Board::query()->withoutGlobalScopes()->find($boardId);
+                $board = Board::query()->withoutGlobalScopes()->find($boardId); // reason: board do payload; tenant restringido na validação.
                 if (! $board || (int) $board->tenant_id !== (int) $tenantId) {
                     $v->errors()->add('board_id', __('documents.validation.board_must_belong_to_tenant'));
                 }
             }
 
             if ($meetingId) {
-                $meeting = Meeting::query()->withoutGlobalScopes()->find($meetingId);
+                $meeting = Meeting::query()->withoutGlobalScopes()->find($meetingId); // reason: meeting do payload; tenant restringido na validação.
                 if (! $meeting || (int) $meeting->tenant_id !== (int) $tenantId) {
                     $v->errors()->add('meeting_id', __('documents.validation.meeting_must_belong_to_tenant'));
                     return;
@@ -130,12 +130,12 @@ final class PersistDocumentAction
             }
 
             $board = $boardId ? Board::query()->find($boardId) : null;
-            $board = $boardId ? Board::query()->withoutGlobalScopes()->find($boardId) : null;
+            $board = $boardId ? Board::query()->withoutGlobalScopes()->find($boardId) : null; // reason: update opcional por id; authorize aplica tenant.
             if ($boardId && (! $board || (int) $board->tenant_id !== (int) $tenantId)) {
                 $v->errors()->add('board_id', __('documents.validation.board_must_belong_to_tenant'));
             }
 
-            $meeting = $meetingId ? Meeting::query()->withoutGlobalScopes()->find($meetingId) : null;
+            $meeting = $meetingId ? Meeting::query()->withoutGlobalScopes()->find($meetingId) : null; // reason: idem board opcional.
             if ($meetingId && (! $meeting || (int) $meeting->tenant_id !== (int) $tenantId)) {
                 $v->errors()->add('meeting_id', __('documents.validation.meeting_must_belong_to_tenant'));
                 return;

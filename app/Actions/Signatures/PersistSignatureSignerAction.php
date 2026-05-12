@@ -96,7 +96,7 @@ final class PersistSignatureSignerAction
             $tenantId = $safe->tenant_id ?? null;
             $userId = $safe->user_id ?? null;
             if ($tenantId && $userId) {
-                $user = User::query()->withoutGlobalScopes()->find((int) $userId);
+                $user = User::query()->withoutGlobalScopes()->find((int) $userId); // reason: signer pode ser referenciado por id; validação tenant no fluxo.
                 if (! $user || (int) $user->tenant_id !== (int) $tenantId) {
                     $v->errors()->add('user_id', __('signature-signers.validation.user_must_belong_to_tenant'));
                 }

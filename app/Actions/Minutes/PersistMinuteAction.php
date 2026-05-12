@@ -39,7 +39,7 @@ final class PersistMinuteAction
                 return;
             }
 
-            $meeting = Meeting::query()->withoutGlobalScopes()->find($meetingId);
+            $meeting = Meeting::query()->withoutGlobalScopes()->find($meetingId); // reason: meeting do payload; tenant verificado na action.
             if (! $meeting || (int) $meeting->tenant_id !== (int) $tenantId) {
                 $v->errors()->add('meeting_id', __('minutes.validation.meeting_must_belong_to_tenant'));
             }
@@ -86,7 +86,7 @@ final class PersistMinuteAction
                 return;
             }
 
-            $meeting = Meeting::query()->withoutGlobalScopes()->find($meetingId);
+            $meeting = Meeting::query()->withoutGlobalScopes()->find($meetingId); // reason: meeting do payload; tenant verificado na action.
             if (! $meeting || (int) $meeting->tenant_id !== (int) $tenantId) {
                 $v->errors()->add('meeting_id', __('minutes.validation.meeting_must_belong_to_tenant'));
             }

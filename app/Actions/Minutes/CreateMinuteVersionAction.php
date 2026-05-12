@@ -38,7 +38,7 @@ final class CreateMinuteVersionAction
                 return DB::transaction(function () use ($actor, $minute, $data): MinuteVersion {
                     // Lock do "pai" para serializar criação de versões.
                     Minute::query()
-                        ->withoutGlobalScopes()
+                        ->withoutGlobalScopes() // reason: lock pessimista do minuto já validado; whereKey fixa o registo.
                         ->whereKey($minute->getKey())
                         ->lockForUpdate()
                         ->first();

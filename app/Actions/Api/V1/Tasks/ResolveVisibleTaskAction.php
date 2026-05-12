@@ -10,7 +10,7 @@ final class ResolveVisibleTaskAction
 {
     public function execute(User $actor, int $id): ?Task
     {
-        $builder = Task::query()->withoutGlobalScopes()->whereKey($id);
+        $builder = Task::query()->withoutGlobalScopes()->whereKey($id); // reason: API v1 — strip TenantScope; whereKey + policy resolve visibilidade.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {

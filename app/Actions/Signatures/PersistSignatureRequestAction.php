@@ -129,7 +129,7 @@ final class PersistSignatureRequestAction
                     if (! $integrationId) {
                         $v->errors()->add('integration_id', __('signatures.validation.docusign_requires_integration'));
                     } else {
-                        $integration = Integration::query()->withoutGlobalScopes()->find((int) $integrationId);
+                        $integration = Integration::query()->withoutGlobalScopes()->find((int) $integrationId); // reason: lookup por id do payload; tenant restringido na action.
                         if (! $integration
                             || (int) $integration->tenant_id !== (int) $tenantId
                             || $integration->status !== IntegrationStatus::Active
@@ -142,7 +142,7 @@ final class PersistSignatureRequestAction
                 } else {
                     // internal: não deve exigir integração
                     if ($integrationId) {
-                        $integration = Integration::query()->withoutGlobalScopes()->find((int) $integrationId);
+                        $integration = Integration::query()->withoutGlobalScopes()->find((int) $integrationId); // reason: lookup por id do payload; tenant restringido na action.
                         if (! $integration || (int) $integration->tenant_id !== (int) $tenantId) {
                             $v->errors()->add('integration_id', __('signatures.validation.integration_tenant_mismatch'));
                         }
@@ -197,7 +197,7 @@ final class PersistSignatureRequestAction
         }
 
         /** @var class-string<Model> $type */
-        return $type::query()->withoutGlobalScopes()->find((int) $id);
+        return $type::query()->withoutGlobalScopes()->find((int) $id); // reason: polimórfico; tenant do signature request já validado.
     }
 }
 

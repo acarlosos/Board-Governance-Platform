@@ -10,7 +10,7 @@ final class ResolveVisibleMeetingAction
 {
     public function execute(User $actor, int $id): ?Meeting
     {
-        $builder = Meeting::query()->withoutGlobalScopes()->with(['board'])->whereKey($id);
+        $builder = Meeting::query()->withoutGlobalScopes()->with(['board'])->whereKey($id); // reason: API v1 — strip TenantScope; visibilidade via tenant + policy.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {

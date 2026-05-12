@@ -16,7 +16,7 @@ final class MarkAllNotificationsAsReadApiAction
     {
         $markedAt = CarbonImmutable::now();
 
-        $builder = NotificationCenter::query()->withoutGlobalScopes();
+        $builder = NotificationCenter::query()->withoutGlobalScopes(); // reason: API v1 — strip TenantScope; tenant_id do actor no builder.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {

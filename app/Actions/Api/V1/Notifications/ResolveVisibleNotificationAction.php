@@ -10,7 +10,7 @@ final class ResolveVisibleNotificationAction
 {
     public function execute(User $actor, int $id): ?NotificationCenter
     {
-        $builder = NotificationCenter::query()->withoutGlobalScopes()->whereKey($id);
+        $builder = NotificationCenter::query()->withoutGlobalScopes()->whereKey($id); // reason: API v1 — strip TenantScope; tenant do actor aplicado abaixo.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {

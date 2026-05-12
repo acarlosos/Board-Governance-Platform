@@ -41,7 +41,7 @@ final class ListMeetingsAction
             'desc'
         );
 
-        $builder = Meeting::query()->withoutGlobalScopes()->with(['board']);
+        $builder = Meeting::query()->withoutGlobalScopes()->with(['board']); // reason: API v1 — strip TenantScope; tenant_id do actor no builder.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {
