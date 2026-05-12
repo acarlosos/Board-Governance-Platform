@@ -57,7 +57,7 @@ final class CastVoteAction
         $optionId = $data['vote_option_id'] ?? null;
         if ($optionId !== null) {
             $option = VoteOption::query()
-                ->withoutGlobalScopes()
+                ->withoutGlobalScopes() // reason: validar opção por id com vínculo explícito ao vote; evita falsos negativos do scope.
                 ->whereKey($optionId)
                 ->first();
 

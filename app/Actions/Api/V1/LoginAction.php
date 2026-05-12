@@ -47,7 +47,7 @@ final class LoginAction
         RateLimiter::hit($keyEmail, self::RATE_LIMIT_DECAY_SECONDS);
 
         /** @var ?User $user */
-        $user = User::query()->withoutGlobalScopes()->where('email', $email)->first();
+        $user = User::query()->withoutGlobalScopes()->where('email', $email)->first(); // reason: API login resolve utilizador por email antes de estabelecer tenant na sessão.
 
         $hash = $user?->password ?? '$2y$10$'.str_repeat('a', 53);
         $ok = Hash::check((string) $data['password'], $hash) && $user !== null;

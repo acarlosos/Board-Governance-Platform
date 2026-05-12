@@ -29,7 +29,7 @@ final class OperationsProvider
 
     private function countMinutesPendingReview(ReportingContext $ctx, DashboardMetricsPeriod $period): int
     {
-        $pending = Minute::query()->withoutGlobalScopes();
+        $pending = Minute::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($pending);
         $period->applyToCreatedAt($pending);
         $pending->where('status', MinuteStatus::InReview->value);
@@ -45,7 +45,7 @@ final class OperationsProvider
         $thisMonthStart = now()->copy()->startOfMonth();
         $thisMonthEnd = now()->copy()->endOfMonth();
 
-        $thisMonth = Meeting::query()->withoutGlobalScopes();
+        $thisMonth = Meeting::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($thisMonth);
         $thisMonth->whereNotNull($thisMonth->qualifyColumn('scheduled_at'))
             ->whereBetween($thisMonth->qualifyColumn('scheduled_at'), [$thisMonthStart, $thisMonthEnd]);
@@ -55,7 +55,7 @@ final class OperationsProvider
 
     private function countUnreadNotifications(ReportingContext $ctx, DashboardMetricsPeriod $period): int
     {
-        $unread = NotificationCenter::query()->withoutGlobalScopes();
+        $unread = NotificationCenter::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($unread);
         $period->applyToCreatedAt($unread);
         $unread->where('status', NotificationStatus::Unread->value);

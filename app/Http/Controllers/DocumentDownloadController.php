@@ -14,7 +14,7 @@ class DocumentDownloadController extends Controller
     public function download(int $document): StreamedResponse|BinaryFileResponse|Response
     {
         $document = Document::query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScopes() // reason: route model binding por id; authorize('view') garante tenant + permissão.
             ->findOrFail($document);
 
         $this->authorize('view', $document);

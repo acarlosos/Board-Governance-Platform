@@ -91,7 +91,7 @@ final class PrioritiesProvider
         bool $isTaskManager,
         int $fetchLimit,
     ): array {
-        $q = Task::query()->withoutGlobalScopes();
+        $q = Task::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($q);
         $q->whereNotIn('status', [TaskStatus::Completed, TaskStatus::Cancelled]);
 
@@ -138,7 +138,7 @@ final class PrioritiesProvider
         bool $isSignerManager,
         int $fetchLimit,
     ): array {
-        $q = SignatureRequestSigner::query()->withoutGlobalScopes();
+        $q = SignatureRequestSigner::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($q);
         $q->where('status', SignatureSignerStatus::Pending->value);
 
@@ -181,7 +181,7 @@ final class PrioritiesProvider
         bool $isVoteManager,
         int $fetchLimit,
     ): array {
-        $q = Vote::query()->withoutGlobalScopes();
+        $q = Vote::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($q);
         $q->where('status', VoteStatus::Open);
 

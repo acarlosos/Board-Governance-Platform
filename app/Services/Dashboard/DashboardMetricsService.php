@@ -77,7 +77,7 @@ final class DashboardMetricsService
      */
     private function taskMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Task::query()->withoutGlobalScopes();
+        $total = Task::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
@@ -110,7 +110,7 @@ final class DashboardMetricsService
      */
     private function meetingMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Meeting::query()->withoutGlobalScopes();
+        $total = Meeting::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
@@ -139,7 +139,7 @@ final class DashboardMetricsService
      */
     private function minuteMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Minute::query()->withoutGlobalScopes();
+        $total = Minute::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
@@ -165,7 +165,7 @@ final class DashboardMetricsService
      */
     private function voteMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Vote::query()->withoutGlobalScopes();
+        $total = Vote::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
@@ -191,7 +191,7 @@ final class DashboardMetricsService
      */
     private function signatureMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = SignatureRequest::query()->withoutGlobalScopes();
+        $total = SignatureRequest::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
@@ -221,7 +221,7 @@ final class DashboardMetricsService
      */
     private function notificationMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = NotificationCenter::query()->withoutGlobalScopes();
+        $total = NotificationCenter::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 

@@ -45,7 +45,7 @@ final class HeroProvider
 
     private function countTasksOverdue(ReportingContext $ctx): int
     {
-        $overdue = Task::query()->withoutGlobalScopes();
+        $overdue = Task::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($overdue);
         $overdue->whereIn('status', [TaskStatus::Pending->value, TaskStatus::InProgress->value])
             ->whereNotNull($overdue->qualifyColumn('due_date'))
@@ -56,7 +56,7 @@ final class HeroProvider
 
     private function countVotesOpen(ReportingContext $ctx, DashboardMetricsPeriod $period): int
     {
-        $open = Vote::query()->withoutGlobalScopes();
+        $open = Vote::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($open);
         $period->applyToCreatedAt($open);
         $open->where('status', VoteStatus::Open->value);
@@ -66,7 +66,7 @@ final class HeroProvider
 
     private function countSignaturesPending(ReportingContext $ctx, DashboardMetricsPeriod $period): int
     {
-        $pending = SignatureRequest::query()->withoutGlobalScopes();
+        $pending = SignatureRequest::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($pending);
         $period->applyToCreatedAt($pending);
         $pending->whereIn('status', [
@@ -80,7 +80,7 @@ final class HeroProvider
 
     private function firstUpcomingMeeting(ReportingContext $ctx): ?Meeting
     {
-        $q = Meeting::query()->withoutGlobalScopes();
+        $q = Meeting::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($q);
         $q->whereNotNull($q->qualifyColumn('scheduled_at'))
             ->where($q->qualifyColumn('scheduled_at'), '>=', now())
