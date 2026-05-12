@@ -2,6 +2,7 @@
 
 namespace App\Services\Reporting;
 
+use App\Models\Scopes\TenantScope;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -56,7 +57,7 @@ final class ReportingContext
     }
 
     /**
-     * Aplica filtro de tenant no builder (já sem {@see \App\Models\Scopes\TenantScope}).
+     * Aplica filtro de tenant no builder (já sem {@see TenantScope}).
      */
     public function restrictToTenant(Builder $builder): void
     {

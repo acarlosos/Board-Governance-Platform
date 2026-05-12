@@ -17,6 +17,7 @@ use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 final class LoginAction
 {
     private const RATE_LIMIT_MAX_ATTEMPTS = 5;
+
     private const RATE_LIMIT_DECAY_SECONDS = 60;
 
     public function __construct(
@@ -34,13 +35,13 @@ final class LoginAction
         $email = mb_strtolower(trim($data['email']));
         $ip = (string) request()?->ip();
 
-        $keyIp = 'api-login:ip:' . $ip;
-        $keyEmail = 'api-login:email:' . $email;
+        $keyIp = 'api-login:ip:'.$ip;
+        $keyEmail = 'api-login:email:'.$email;
 
         if (RateLimiter::tooManyAttempts($keyIp, self::RATE_LIMIT_MAX_ATTEMPTS)
             || RateLimiter::tooManyAttempts($keyEmail, self::RATE_LIMIT_MAX_ATTEMPTS)) {
             // 429 com envelope consistente via exception renderer (api/*).
-            throw new TooManyRequestsHttpException();
+            throw new TooManyRequestsHttpException;
         }
 
         RateLimiter::hit($keyIp, self::RATE_LIMIT_DECAY_SECONDS);
@@ -128,4 +129,3 @@ final class LoginAction
         ];
     }
 }
-
