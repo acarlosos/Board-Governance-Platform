@@ -105,8 +105,8 @@ Sequência **obrigatória** antes do GO produção, na ordem:
 |---|---|---|---|---|
 | 1 | 19A.9 | [`19A.9-docs-final.md`](19A.9-docs-final.md) | [`19A.9-docs-final.result.md`](19A.9-docs-final.result.md) | **concluída** |
 | 2 | 17 | [`17-pre-launch-review.md`](17-pre-launch-review.md) | [`17-pre-launch-review.result.md`](17-pre-launch-review.result.md) | **GO condicional** (MySQL smoke pendente) |
-| 3 | 18 | [`18-production-deploy.md`](18-production-deploy.md) | [`18-production-deploy.result.md`](18-production-deploy.result.md) | **parcial** (backup remetido para 18.5) |
-| 4 | **18.5** | [`18.5-backup-mysqldump.md`](18.5-backup-mysqldump.md) | _(a criar pelo Executor)_ | **pronta para executar** — destrava `BC1` (substitui Spatie) |
+| 3 | 18 | [`18-production-deploy.md`](18-production-deploy.md) | [`18-production-deploy.result.md`](18-production-deploy.result.md) | **parcial** (18.5 backup ✅; MySQL smoke / checklist pendentes) |
+| 4 | **18.5** | [`18.5-backup-mysqldump.md`](18.5-backup-mysqldump.md) | [`18.5-backup-mysqldump.result.md`](18.5-backup-mysqldump.result.md) | **concluída** — substitui Spatie (L13) |
 | 5 | 19A.8 | [`19A.8-staging-validation.md`](19A.8-staging-validation.md) | [`19A.8-staging-validation.result.md`](19A.8-staging-validation.result.md) | **pendente staging real** (QA humano + DevOps) |
 
 ### Concluídas

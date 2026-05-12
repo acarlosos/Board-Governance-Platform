@@ -11,6 +11,8 @@
 | S7 | DB user least privilege | sem SUPER global |
 | S8 | `storage/app/private` não servido directamente | URL directa → 404 |
 | S9 | `/health` 200 | `curl -sf https://…/health` |
-| S10 | Backup smoke | após instalar Spatie: `php artisan backup:run` manual |
+| S10 | Backup smoke | `php artisan backup:run` em staging → `ls -lh storage/app/backups/` mostra `bgp-{env}-*.sql.gz`; `gunzip -t ficheiro.sql.gz`; restore manual só em DB descartável (ver nota abaixo) |
 
 Marcar cada linha na checklist do PR de GO com data e responsável.
+
+**Restore manual (DB descartável):** `gunzip -c ficheiro.sql.gz | mysql -h HOST -u USER -p NOMEDABASE` (password no prompt; nunca `-pPASSWORD` na CLI).

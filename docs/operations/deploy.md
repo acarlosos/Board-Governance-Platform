@@ -17,17 +17,21 @@ O script corre `composer install --no-dev`, `migrate --force`, caches de config/
 
 ## Healthcheck
 
-- `GET /health` — canónico BGP: JSON `status`, `db`, `cache`, `app_env`; **200** se DB + cache OK, **503** caso contrário.
-- `GET /up` — **alias** do mesmo `HealthCheckController` (compatibilidade Laravel/Forge e probes antigos). **Decisão (parecer v1):** remover a rota built-in `health: '/up'` do `bootstrap/app.php` para evitar dois comportamentos distintos; ambos os caminhos expõem o mesmo probe (DB+cache) e ficam na lista de excepções de maintenance (`PreventRequestsDuringMaintenance::except`).
-- Monitor externo (ex.: UptimeRobot): preferir HTTPS a **`/health`** a cada 1–5 min; `/up` só se o template de infra ainda o exigir.
+- **Endpoint oficial:** `GET /health` — JSON `status`, `db`, `cache`, `app_env`; **200** se DB + cache OK, **503** caso contrário.
+- **Decisão (PO5 / PR):** não existe rota `GET /up`; probes e monitorização devem usar apenas `/health` (evita duplicar semântica com o health check mínimo do skeleton Laravel). A rota está em `PreventRequestsDuringMaintenance::except(['/health'])`.
+- Monitor externo (ex.: UptimeRobot): HTTPS a **`/health`** a cada 1–5 min.
 
 ## Scheduler
 
-Confirmar `php artisan schedule:list` inclui `dashboard:refresh-projections` e outras entradas definidas em `bootstrap/app.php`.
+Confirmar `php artisan schedule:list` inclui `dashboard:refresh-projections`, `backup:run`, `backup:clean` e outras entradas em `bootstrap/app.php`.
 
-## Backup
+## Backup (18.5 — `mysqldump` + gzip)
 
-**Pendente:** pacote `spatie/laravel-backup` sem release compatível com **Laravel 13** no momento da execução da fase 18 (ver `docs/execution/18-production-deploy.result.md`). Quando disponível: `composer require spatie/laravel-backup`, publicar config, agendar `backup:run` / `backup:clean`.
+- **Sem Spatie:** backup diário via Artisan `backup:run` (pipe `mysqldump` → `gzip`) e retenção com `backup:clean`. Credenciais apenas via ficheiro temporário `--defaults-file` (nunca `-p` na linha de comando).
+- Saída: `storage/app/backups/bgp-{APP_ENV}-{Y-m-d-His}.sql.gz` (directório ignorado pelo git excepto `.gitkeep`).
+- Agendamento: `backup:run` 03:00, `backup:clean` 03:30 (`bootstrap/app.php`).
+- Servidor: requer `mysqldump` e `gzip` no PATH (Ubuntu/Forge: `mysql-client`).
+- **Não inclui** ficheiros em `storage/app/private` (documentos) — ver runbook (D51).
 
 ## Fila
 

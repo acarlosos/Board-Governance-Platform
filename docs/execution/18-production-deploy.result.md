@@ -16,7 +16,7 @@ Relatório de [`18-production-deploy.md`](./18-production-deploy.md). Data: 2026
 
 | Item | Motivo |
 |------|--------|
-| 18.5 `spatie/laravel-backup` | `composer require spatie/laravel-backup` **falhou**: pacotes analisados exigem `illuminate/console` ^10–12; o projecto usa **Laravel 13** (`laravel/framework ^13`). **Aguardar** release compatível ou alternativa aprovada pelo Arquitecto. |
+| 18.5 Backup `mysqldump` | ✅ substituído Spatie — ver [`18.5-backup-mysqldump.result.md`](./18.5-backup-mysqldump.result.md) |
 | 18.3 Supervisor | Apenas documentado em `deploy.md` / runbook (sem ficheiros de servidor no repo). |
 | 18.4 Cron | Documentado; validação `schedule:list` em CI/local já coberta por outras fases. |
 
@@ -25,14 +25,14 @@ Relatório de [`18-production-deploy.md`](./18-production-deploy.md). Data: 2026
 | PO | Entrega |
 |----|---------|
 | **PO4** | `scripts/deploy.sh` — `php artisan queue:restart` no final (workers recarregam código). |
-| **PO5** | Removido `health: '/up'` do framework; `GET /up` e `GET /health` usam o mesmo `HealthCheckController`; `PreventRequestsDuringMaintenance::except(['/health','/up'])` em `AppServiceProvider`; decisão documentada em `docs/operations/deploy.md`. |
-| **PO6** | Comentários `// reason:` (ou docblock alargado) em `ReportingContext`, métricas/dashboard executivo, projection, comando refresh, download de documento, login/auditoria, `CastVoteAction`, recursos Filament com `SoftDeletingScope`. *Nota:* Actions API e demais Actions com `withoutGlobalScopes` seguem o mesmo contrato `ReportingContext` / policies — extensão futura possível com o mesmo padrão de comentário. |
+| **PO5** | Endpoint oficial **só** `GET /health`; rota `GET /up` removida; `PreventRequestsDuringMaintenance::except(['/health'])` (ver PR `feat/18.5-backup-po456`). |
+| **PO6** | Comentários `// reason:` em `ReportingContext`, métricas, providers executivos, projection, `RefreshProjectionsCommand`, download, login/auditoria, `CastVoteAction`, Filament (soft deletes), **Actions API v1**, actions de domínio e `DashboardMetricsService` (linhas secundárias). |
 | **PO8** | Working tree organizado em **commits separados** por fase (PO4 → PO5 → PO6 → docs/result). |
 
 ## 4. Smoke
 
 - `php artisan route:list --path=health` — rota `GET /health` registada.
-- `php artisan route:list --path=up` — rota `GET /up` registada (mesmo handler).
+- **Sem** rota `GET /up` (PO5).
 - `php artisan test --filter=HealthCheck` — verde.
 
 ## 5. GO produção
