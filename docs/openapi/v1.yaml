@@ -7,6 +7,7 @@ servers:
 tags:
   - name: Auth
   - name: Boards
+  - name: Dashboard
   - name: Meetings
   - name: Tasks
   - name: Notifications
@@ -144,6 +145,71 @@ components:
       properties:
         affected: { type: integer }
         marked_at: { type: string, format: date-time }
+    HeroSummary:
+      type: object
+      properties:
+        tasks_overdue: { type: integer }
+        votes_open: { type: integer }
+        signatures_pending: { type: integer }
+        next_meeting_at: { type: string, nullable: true }
+        next_meeting_id: { type: integer, nullable: true }
+    KpiStrip:
+      type: object
+      properties:
+        tasks:
+          type: object
+          additionalProperties: { type: integer }
+        meetings:
+          type: object
+          additionalProperties: { type: integer }
+        votes:
+          type: object
+          additionalProperties: { type: integer }
+        signatures:
+          type: object
+          additionalProperties: { type: integer }
+    OperationsBlock:
+      type: object
+      properties:
+        minutes_pending_review: { type: integer }
+        meetings_this_month: { type: integer }
+        notifications_unread: { type: integer }
+    PriorityItem:
+      type: object
+      properties:
+        resource_type: { type: string }
+        id: { type: integer }
+        title: { type: string }
+        urgency:
+          type: string
+          enum: [overdue, due_today, due_this_week, normal]
+        due_at: { type: string, nullable: true }
+    ActivityItem:
+      type: object
+      properties:
+        resource_type: { type: string }
+        resource_id: { type: integer, nullable: true }
+        summary: { type: string }
+        occurred_at: { type: string }
+    DashboardSnapshot:
+      type: object
+      required: [version, period, cache_segment, generated_at, hero, kpis, operations, priorities, activity]
+      properties:
+        version: { type: string, example: "v1" }
+        period:
+          type: string
+          enum: [this_month, last_30_days, all_time]
+        cache_segment: { type: string, example: "t_42" }
+        generated_at: { type: string, format: date-time }
+        hero: { $ref: "#/components/schemas/HeroSummary" }
+        kpis: { $ref: "#/components/schemas/KpiStrip" }
+        operations: { $ref: "#/components/schemas/OperationsBlock" }
+        priorities:
+          type: array
+          items: { $ref: "#/components/schemas/PriorityItem" }
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/ActivityItem" }
 security:
   - bearerAuth: []
 paths:
@@ -496,5 +562,34 @@ paths:
                     meta: { request_id: "req_123", api_version: "v1" }
         "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
         "403": { description: Forbidden, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+  /dashboard/snapshot:
+    get:
+      tags: [Dashboard]
+      summary: Snapshot completo do dashboard executivo
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: period
+          required: false
+          schema:
+            type: string
+            enum: [this_month, last_30_days, all_time]
+            default: this_month
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: "#/components/schemas/EnvelopeSuccess" }
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/DashboardSnapshot" }
+        "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "403": { description: Forbidden, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
+        "422": { description: Validation, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
         "429": { description: Rate limited, content: { application/json: { schema: { $ref: "#/components/schemas/EnvelopeError" } } } }
 

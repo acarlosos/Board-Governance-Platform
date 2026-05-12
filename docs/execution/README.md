@@ -1,5 +1,7 @@
 # `docs/execution/` — Especificações e resultados por fase
 
+> **🚧 Modo launch activo** — até GO produção (`v1.0.0`), só se executa o caminho mínimo MVP. Tudo o que estiver em "Pós-MVP" no índice abaixo está **bloqueado**. Regra completa: [`.cursor/rules/launch-mode.mdc`](../../.cursor/rules/launch-mode.mdc).
+
 Cada fase tem **dois** ficheiros markdown:
 
 | Ficheiro | Quem produz | Quando |
@@ -95,7 +97,29 @@ Detalhe técnico (lista de ficheiros, output de comandos, sentinelas, tabelas de
 
 ## Índice
 
+### Caminho mínimo até produção estável (MVP)
+
+Sequência **obrigatória** antes do GO produção, na ordem:
+
+| # | Fase | Spec | Result | Estado |
+|---|---|---|---|---|
+| 1 | 19A.8 | [`19A.8-staging-validation.md`](19A.8-staging-validation.md) | [`19A.8-staging-validation.result.md`](19A.8-staging-validation.result.md) | **pendente QA staging** |
+| 2 | 19A.9 | [`19A.9-docs-final.md`](19A.9-docs-final.md) | [`19A.9-docs-final.result.md`](19A.9-docs-final.result.md) | **concluída** |
+| 3 | 17 | [`17-pre-launch-review.md`](17-pre-launch-review.md) | [`17-pre-launch-review.result.md`](17-pre-launch-review.result.md) | **GO condicional** (MySQL smoke pendente) |
+| 4 | 18 | [`18-production-deploy.md`](18-production-deploy.md) | [`18-production-deploy.result.md`](18-production-deploy.result.md) | **parcial** (backup L13 pendente) |
+
+### Concluídas
+
 | Fase | Spec | Result | Estado |
 |---|---|---|---|
 | 19B.1 | [`19B.1-cache-invalidation.md`](19B.1-cache-invalidation.md) | [`19B.1-cache-invalidation.result.md`](19B.1-cache-invalidation.result.md) | **concluída** (suite 317/317) |
 | 19B.2 | [`19B.2-dashboard-observability.md`](19B.2-dashboard-observability.md) | [`19B.2-dashboard-observability.result.md`](19B.2-dashboard-observability.result.md) | **concluída** (suite 328/328) |
+| 19B.3 | [`19B.3-projection-table.md`](19B.3-projection-table.md) | [`19B.3-projection-table.result.md`](19B.3-projection-table.result.md) | **concluída** (suite 341/341) |
+| 19B.4 | [`19B.4-api-dashboard-snapshot.md`](19B.4-api-dashboard-snapshot.md) | [`19B.4-api-dashboard-snapshot.result.md`](19B.4-api-dashboard-snapshot.result.md) | **concluída** (suite ≥351) |
+
+### Pós-MVP (não bloqueiam GO produção)
+
+| Fase | Spec | Result | Estado |
+|---|---|---|---|
+| 19B.5 | [`19B.5-cache-prewarm.md`](19B.5-cache-prewarm.md) | _(condicional)_ | **rascunho** — descartar se `hit_ratio` L2 ≥ 80 % em produção |
+| 19B.6 | _(spec a criar quando 19B.4/19B.5 estiverem resolvidas)_ | — | **adiada** — remoção dos `*StatsWidget` legacy após soak |

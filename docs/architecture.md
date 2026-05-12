@@ -88,9 +88,9 @@ A camada de leitura para o **dashboard executivo** (Fase 19A) é desenhada para 
 - Hero/KPI/Operations agregados globalmente (`isGlobalScope()`).
 - `Priorities` e `Activity` desactivados ou com `LIMIT` agressivo, para não varrer milhões de rows em runtime.
 
-### Pendência futura — projection model (Fase 19B)
+### Pendência resolvida — projection L3 (19B.3)
 
-Para tenants enterprise (> 50 k tasks/votes/notifications), prevê-se uma **projection table** `tenant_dashboard_snapshots` populada por job a cada N minutos, evitando `COUNT(*)` em runtime. A camada `ExecutiveDashboardReadService` continuará como ponto de entrada — apenas a fonte de dados muda.
+A **projection table** `tenant_dashboard_snapshots` está implementada (refresh por job + flag `BGP_DASHBOARD_USE_PROJECTION`); ver [`features/dashboard.md`](features/dashboard.md) secção **19B.3** e `docs/execution/19B.3-projection-table.md`.
 
 Detalhe operacional: [`features/dashboard.md`](features/dashboard.md), secção "Executive Dashboard (Fase 19A)".
 
@@ -127,7 +127,7 @@ Detalhe operacional: [`features/dashboard.md`](features/dashboard.md), secção 
 | Stampede em cold start (4 widgets paralelos) | D2 (`flexible`) | Pre-warm por job (19B.5) |
 | Vazamento por item em feeds | D9 (policy item-a-item) | — |
 | Latência percebida em PATCH → snapshot | D1 (TTL 60 s aceite) | Invalidação por evento (19B.1) |
-| Tenants enterprise (> 50 k rows) | Índice overdue em `tasks` (19A.2); índices adicionais avaliados sem over-indexing | Projection model (19B.3) |
+| Tenants enterprise (> 50 k rows) | Índice overdue em `tasks` (19A.2); índices adicionais avaliados sem over-indexing | Projection L3 `tenant_dashboard_snapshots` (**19B.3**) |
 | Bump de shape sem warm de cache | D8 (versionamento + procedimento documentado) | — |
 | Regressão UX vs Fase 14 | D10 (`*StatsWidget` fallback) | Remoção controlada em 19B.6 |
 

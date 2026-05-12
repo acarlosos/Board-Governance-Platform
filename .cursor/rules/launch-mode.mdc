@@ -1,0 +1,76 @@
+# Launch mode — caminho mínimo até v1.0.0
+
+> **Rule temporária**, vigente até GO produção (`v1.0.0` taggeada em git). Quando concluída, mover para `.cursor/rules/archived/launch-mode.mdc` ou apagar.
+
+## Princípio único
+
+Até `v1.0.0`, o Arquitecto e o Executor **só** trabalham no caminho mínimo até produção estável. Tudo o resto fica em backlog. Velocidade de entrega, estabilidade e baixo risco prevalecem sobre completude funcional.
+
+## Trabalho permitido nesta janela
+
+- Specs MVP e respectivos `result.md`:
+  - [`docs/execution/19A.8-staging-validation.md`](../../docs/execution/19A.8-staging-validation.md)
+  - [`docs/execution/19A.9-docs-final.md`](../../docs/execution/19A.9-docs-final.md)
+  - [`docs/execution/17-pre-launch-review.md`](../../docs/execution/17-pre-launch-review.md)
+  - [`docs/execution/18-production-deploy.md`](../../docs/execution/18-production-deploy.md)
+- Correcções pontuais detectadas pelas auditorias 17.4 / 17.5 / 17.7 (≤ 5 linhas por ponto; refactor maior abre issue separada).
+- Documentação operacional em `docs/operations/*` (deploy, runbook, security checklist).
+- **Hotfixes** a bugs críticos que bloqueiem o GO produção (com nota no PR).
+- Manutenção da suite de testes verde.
+
+## Trabalho bloqueado nesta janela
+
+- Novas features. Em particular (lista não exaustiva — vale o princípio): subitens **10.2-10.5**, **12.4**, **13.3-13.5**, **14.4-14.6**, **19B.4**, **19B.5**, **19B.6**.
+- Refactor estrutural não trivial.
+- Optimizações de performance sem dados reais de produção (subitens **17.1, 17.2, 17.3** do roadmap — só entram pós-launch).
+- Mudanças em DTO shape, gates já fechados, TTLs de cache, drivers de stack (queue/cache/session/mail).
+- Novas decisões arquitecturais (`Dxx`). As decisões em vigor já estão consolidadas em `docs/architecture.md` e `docs/features/dashboard.md`.
+- Novos módulos / novas tabelas / novas migrations (excepto as estritamente exigidas pelas 4 specs MVP — ex.: `health_checks` opcional ou `backup_*` do package).
+- Pre-warm de cache, projection table extra, endpoint API novo (já tudo classificado como Pós-MVP).
+
+## Manutenção do pipeline
+
+- Arquitecto mantém sempre **1-2 specs MVP prontas** para o Executor (actualmente: 4 prontas → 19A.8 / 19A.9 / 17 / 18).
+- Executor responde no chat **apenas** com a resposta-padrão curta de [`docs/execution/README.md`](../../docs/execution/README.md) (link spec + link result + status + testes + bloqueios).
+- Detalhe técnico vai exclusivamente para `result.md`.
+
+## Papel duplo do Arquitecto: QA técnico/operacional
+
+Até `v1.0.0`, o Arquitecto acumula o papel de **QA técnico/operacional** das fases MVP. Responsabilidades adicionais:
+
+- Rever `result.md` de cada fase concluída antes do merge.
+- Validar aderência à spec respectiva (item-a-item das secções §3 / §6 / §11 da spec).
+- Validar **staging checklist** em 19A.8 (P1–P6 performance, V1–V9 visual, matriz de 7 perfis, multi-tenant smoke).
+- Validar **segurança / multi-tenancy / anti-leak** nas auditorias de 17 (matrizes Policies + Logs + áreas obrigatórias `tests.mdc`).
+- Validar **evidência de rollback** (flag OFF em 19A.8; Forge "Activate previous release" + `migrate:rollback` documentado em 18).
+- Validar **deploy readiness** em 18: `/health` 200, backup smoke verde, 10/10 itens do checklist S1–S10.
+- Emitir **GO / NO-GO técnico** por fase e, no fim, GO/NO-GO global de `v1.0.0`.
+
+O Executor continua responsável **apenas** por implementação + preencher `result.md`. O QA humano em staging (19A.8) opera em paralelo e escala bloqueios operacionais ao Arquitecto.
+
+### Formato canónico de revisão (Arquitecto/QA)
+
+Toda revisão de `result.md` responde **exclusivamente** nestes 6 pontos. Sem narrativa longa. Detalhe técnico vive no `result.md` da fase.
+
+1. **aprovado / não aprovado**
+2. **bloqueios críticos** — impedem o commit/merge (lista curta, sem prosa)
+3. **riscos médios** — não bloqueiam; vigiar pós-launch
+4. **correções obrigatórias** — antes do commit/merge (ficheiro + linha + acção)
+5. **correções opcionais** — qualidade; podem ir para issue separada
+6. **recomendação de produção** — `avançar para próxima fase` / `segurar` / `segurar com follow-up` / (apenas em 18 e 19A.8) `GO v1.0.0` / `NO-GO v1.0.0`
+
+## Excepção
+
+Qualquer desvio a este modo requer **GO explícito do utilizador no chat**, no formato:
+
+> "Abrir excepção <razão> — fora do launch mode."
+
+Sem GO explícito, Arquitecto e Executor **devolvem o pedido**, lembram o launch mode e propõem inscrever o pedido no backlog pós-MVP.
+
+## Encerramento
+
+Quando `v1.0.0` for taggeada e o deploy produção estiver verde:
+
+1. Mover este ficheiro para `.cursor/rules/archived/launch-mode.mdc` (ou apagar).
+2. Reabrir backlog pós-MVP em `docs/roadmap.md` (10.2-10.5, 12.4, 13.3-13.5, 14.4-14.6, 17.1-17.3, 19B.4-19B.6, etc.).
+3. Notificar Arquitecto e Executor que o modo regressa ao roadmap normal.

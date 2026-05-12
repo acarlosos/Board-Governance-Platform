@@ -31,6 +31,7 @@ final class DomainReadOnlyApiTest extends TestCase
         $this->getJson('/api/v1/meetings')->assertStatus(401);
         $this->getJson('/api/v1/tasks')->assertStatus(401);
         $this->getJson('/api/v1/notifications')->assertStatus(401);
+        $this->getJson('/api/v1/dashboard/snapshot')->assertStatus(401);
     }
 
     public function test_domain_endpoints_exigem_ability(): void
@@ -330,4 +331,3 @@ final class DomainReadOnlyApiTest extends TestCase
             ->assertStatus(403);
     }
 }
-

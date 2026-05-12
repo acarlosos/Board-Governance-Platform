@@ -64,6 +64,37 @@ Toda resposta JSON da API v1 segue um envelope consistente com:
 
 Base path: `/api/v1`
 
+### Dashboard
+
+#### GET `/dashboard/snapshot`
+
+Devolve o snapshot completo do dashboard executivo (`ExecutiveDashboardSnapshot`), serializado em **snake_case** (DTO 19A.3).
+
+**Auth / abilities (D27, D28)**
+
+- Middleware: `abilities:reports:read` (reuso da ability de `view_reports` — **não** existe `dashboard:read` separada).
+- Controller: `Gate::authorize('view_executive_dashboard')` (19A.6). **Permitido** só se ability **e** gate passam.
+
+**Query**
+
+- `period` opcional: `this_month` | `last_30_days` | `all_time` (default `this_month`).
+
+**Rate limit (D31)**
+
+- 60 pedidos/min por utilizador (chave `api:v1:dashboard:snapshot:user:{id}`).
+
+**Códigos de erro (API)**
+
+- `401` / `unauthenticated` — sem bearer válido.
+- `403` / `forbidden_ability` — token sem `reports:read`.
+- `403` / `forbidden_policy` — gate `view_executive_dashboard` negado (ex.: sem `view_reports`, `tenant_id` nulo sem super_admin).
+- `422` / `validation_failed` — `period` inválido.
+- `429` / `rate_limited` — limite excedido.
+
+**Fora de escopo (D32–D33)**
+
+- Sem write em `/dashboard/*`; sem `v2` nesta fase; tenancy apenas via utilizador autenticado (sem `?tenant_id=`).
+
 ### Auth
 
 #### POST `/auth/login`
@@ -338,6 +369,8 @@ Quando um utilizador pede abilities no `login` ou ao criar token adicional, o si
 - `manage_notifications` → `{notifications:read}`
 - `view_reports` → `{reports:read}`
 
+O endpoint **`GET /dashboard/snapshot`** (19B.4) reutiliza **`reports:read`** no token e ainda exige o gate **`view_executive_dashboard`** no controller (intersecção obrigatória).
+
 Permissões administrativas de plataforma/conta (ex.: `manage_tenants`, `manage_users`, `manage_settings`, `manage_security`) não são expostas como abilities na API v1, salvo decisão explícita posterior.
 
 ## Rate limiting (sugestão inicial)
@@ -348,6 +381,7 @@ Valores sujeitos a ajuste após testes de carga/segurança:
 - `POST /auth/tokens`: 10/min por user
 - `DELETE /auth/tokens/{id}`: 30/min por user
 - `GET /auth/me` e `GET /auth/tokens`: 60/min por user
+- `GET /dashboard/snapshot`: 60/min por user (19B.4)
 
 ## Auditoria (eventos)
 

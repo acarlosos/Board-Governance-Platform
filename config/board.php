@@ -42,8 +42,10 @@ return [
         // Coexistência widgets executivos (19A.7) vs legados (Fase 14).
         // false (default) → legados visíveis, executivos ocultos.
         // true            → executivos visíveis, legados ocultos.
-        // Remover esta flag e os legados em 19B.5.
+        // Remover esta flag e os legados em 19B.6.
         'use_executive_widgets' => env('BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS', false),
+
+        // L3 projection (19B.3): leitura via tabela quando true; job/comando populam independentemente.
+        'use_projection' => env('BGP_DASHBOARD_USE_PROJECTION', false),
     ],
 ];
-

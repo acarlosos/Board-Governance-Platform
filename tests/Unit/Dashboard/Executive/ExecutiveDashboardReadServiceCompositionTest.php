@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Dashboard\DashboardMetricsService;
 use App\Services\Dashboard\Executive\ExecutiveDashboardReadService;
 use App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability;
+use App\Services\Dashboard\Executive\Projection\DashboardProjectionService;
 use App\Services\Dashboard\Executive\Providers\ActivityFeedProvider;
 use App\Services\Dashboard\Executive\Providers\HeroProvider;
 use App\Services\Dashboard\Executive\Providers\KpiStripProvider;
@@ -41,7 +42,10 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
     public function test_composicao_reidrata_hero_e_operations_a_partir_do_payload_plain_do_l2(): void
     {
         try {
-            Config::set(['board.dashboard.snapshot_version' => 'vunit']);
+            Config::set([
+                'board.dashboard.snapshot_version' => 'vunit',
+                'board.dashboard.use_projection' => false,
+            ]);
 
             $this->seed(RolesAndPermissionsSeeder::class);
 
@@ -80,6 +84,7 @@ final class ExecutiveDashboardReadServiceCompositionTest extends TestCase
                 activity: new ActivityFeedProvider,
                 cache: $cache,
                 observability: $obs,
+                projection: app(DashboardProjectionService::class),
             );
 
             $snapshot = $service->read($actor, DashboardMetricsPeriod::AllTime);

@@ -35,7 +35,7 @@ alwaysApply: false
 
 - **`read(User, DashboardMetricsPeriod)`** é o único ponto de entrada HTTP/widgets/API para o snapshot (orquestra providers + L2).
 - **`KpiStrip`** (`KpiStripProvider`) é obtido **antes / fora** do `Cache::flexible` partilhado (**anti cache duplo** sobre `DashboardMetricsService`, que já é L1 próprio `dashboard_metrics:v1:…`).
-- **`Hero` + `Operations`** são persistidos no bloco **L2 shared** via **`Cache::flexible([stale,expire], …)`** com chave `dashboard_snapshot:{snapshot_version}:{cacheSegment}:{period}:shared:plain` (valor = arrays `toArray()`, não objectos DTO — evita falhas de `unserialize`) e TTL de `config board.dashboard.cache_stale_seconds` / `cache_expire_seconds`.
+- **`Hero` + `Operations`**: (1) **L3 projection** opcional — tabela `tenant_dashboard_snapshots` quando `board.dashboard.use_projection` é `true` e `cacheSegment` é `t_{tenantId}` (19B.3, D19–D25); se válida, **skip** do `flexible` L2. (2) **L2 shared** — `Cache::flexible([stale,expire], …)` com chave `dashboard_snapshot:{snapshot_version}:{cacheSegment}:{period}:shared:plain` (valor = arrays `toArray()`, não objectos DTO) e TTL de `config board.dashboard.cache_stale_seconds` / `cache_expire_seconds`.
 - **`Priorities` + `Activity`** são sempre computados em cada `read` (**D3**); **nunca** entram na chave `:shared`.
 - **`super_admin`** em modo global: **`cacheSegment()` = `global`** → chave `:global:` — feeds per-user continuam **`[]`** pelos providers (D4).
 - **`ReportingContext::cacheSegment() === 'none'`** (`User` sem tenant e não global): **early return** sem `Cache::flexible` sobre o bloco Hero/Operations (**R4 blueprint**); sempre recalculado nesse pedido.
@@ -118,6 +118,16 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **L2 `flexible`:** o invalidador remove também `illuminate:cache:flexible:created:{l2Key}`.
 - Detalhe e tabela §3: `docs/features/dashboard.md` → **19B.1**.
 
+### Projection (19B.3)
+
+- **D19:** `tenant_dashboard_snapshots.payload` = apenas **Hero + Operations** (shape alinhado ao L2 plain); Priorities/Activity **fora** da projection.
+- **D20:** `RefreshTenantDashboardSnapshotJob` + `dashboard:refresh-projections` (schedule cada **5 min** em `bootstrap/app.php`, `withoutOverlapping(10)`); após `forget` L1/L2, `ExecutiveDashboardCacheInvalidator` chama `DashboardProjectionService::markStale($tenantId)`.
+- **D21:** `ExecutiveDashboardReadService::loadOrComputeShared` consulta `findValid` **antes** de `Cache::flexible` quando a flag está activa.
+- **D22:** sem projection para `cacheSegment === 'global'` ou `'none'`.
+- **D23:** `board.dashboard.use_projection` / env `BGP_DASHBOARD_USE_PROJECTION` (default `false`); com `false` ignora-se a tabela na leitura; o job pode continuar a popular.
+- **D24:** válido = `is_stale=false` **e** `refreshed_at >= now()-10min` **e** `payload.version` === `config('board.dashboard.snapshot_version')`.
+- **D25:** tabela normal Eloquent (sem materialised view DB nativa).
+
 ### Observabilidade (19B.2)
 
 - **D13:** counters em cache + comando `php artisan dashboard:cache-stats` (`--day=`, `--json`); sem APM externo.
@@ -131,6 +141,7 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 ## Cache split (D1, D2, D3)
 
 - **Hero / KPI / Operations**: **partilhado por tenant** + período. **TTL 60 s lógico** via `Cache::flexible(stale=60, expire=120, …)` (D1). **Anti-stampede obrigatório** (D2): padrão `Cache::flexible`; `Cache::lock` apenas se `flexible` for insuficiente (cálculo > 30 s).
+- **L3 projection (19B.3):** opcional (`tenant_dashboard_snapshots`); quando válida e flag `use_projection` activa, o read service **salta** o `flexible` L2 para Hero/Operations; caso contrário mantém-se D1/D2.
 - **Priorities / Activity**: **per-user, NÃO cacheado partilhado** (D3) — depende de policies do utilizador; cache partilhado vazaria. Caso de excepção (raro): cache per-user com chave `…:user_{id}` e TTL ≤ 30 s, documentado na ficha.
 - Convenção transversal: ver `.cursor/rules/cache.mdc`.
 

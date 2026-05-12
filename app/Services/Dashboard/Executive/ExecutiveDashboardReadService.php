@@ -6,6 +6,7 @@ use App\Enums\DashboardMetricsPeriod;
 use App\Models\User;
 use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys;
 use App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability;
+use App\Services\Dashboard\Executive\Projection\DashboardProjectionService;
 use App\Services\Dashboard\Executive\Providers\ActivityFeedProvider;
 use App\Services\Dashboard\Executive\Providers\HeroProvider;
 use App\Services\Dashboard\Executive\Providers\KpiStripProvider;
@@ -28,6 +29,7 @@ final class ExecutiveDashboardReadService
         private readonly ActivityFeedProvider $activity,
         private readonly CacheRepository $cache,
         private readonly ExecutiveDashboardObservability $observability,
+        private readonly DashboardProjectionService $projection,
     ) {}
 
     public function read(
@@ -64,6 +66,22 @@ final class ExecutiveDashboardReadService
     ): array {
         if ($ctx->cacheSegment() === 'none') {
             return $this->hydrateSharedFromPlain($this->buildSharedPlain($actor, $period));
+        }
+
+        if (
+            (bool) config('board.dashboard.use_projection', false)
+            && ! $ctx->isGlobalScope()
+            && $ctx->tenantId() !== null
+        ) {
+            $valid = $this->projection->findValid((int) $ctx->tenantId(), $period);
+            if ($valid !== null) {
+                $plain = $valid->payload;
+
+                return $this->hydrateSharedFromPlain([
+                    'hero' => is_array($plain) ? ($plain['hero'] ?? []) : [],
+                    'operations' => is_array($plain) ? ($plain['operations'] ?? []) : [],
+                ]);
+            }
         }
 
         $l2Key = $this->sharedKey($ctx, $period);

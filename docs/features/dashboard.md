@@ -46,6 +46,8 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 - `tests/Feature/Observers/Dashboard/*ObserverCacheTest.php`, `SignatureRequestSignerNoInvalidationTest.php`, `AuditLogNoInvalidationTest.php` (19B.1 — testes 9–15)
 - `tests/Unit/Dashboard/Executive/Observability/ExecutiveDashboardObservabilityTest.php` (19B.2)
 - `tests/Feature/Dashboard/Executive/Observability/L1L2InstrumentationTest.php`, `InvalidatorInstrumentationTest.php`, `CacheStatsCommandTest.php` (19B.2)
+- `tests/Unit/Models/TenantDashboardSnapshotTest.php`, `tests/Feature/Dashboard/Executive/Projection/*.php` (19B.3)
+- `tests/Feature/Api/V1/Dashboard/{DashboardSnapshotEndpointTest,DashboardSnapshotCrossTenantTest}.php` (19B.4)
 - `tests/Feature/Dashboard/Executive/ExecutiveDashboardReadServiceTest.php` (19A.5 + chaves L1/L2)
 - `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest.php` (19A.5)
 - `tests/Feature/Filament/Dashboard/ExecutiveDashboardPageTest.php` (19A.7 — gate/flag/canView)
@@ -60,7 +62,7 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 
 ## Executive Dashboard (Fase 19A)
 
-> Estado: **19A.0–19A.7 concluídas**; **19B.1 concluída** (invalidação L1/L2 por tenant via observers); **19B.2 concluída** (observabilidade leve: counters + `dashboard:cache-stats`). **19A.5**: `ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). A Fase 14 (KPIs legados + `OperationalReports`) **mantém-se** como fallback enquanto `board.dashboard.use_executive_widgets` estiver `false` (remoção dos 6 `*StatsWidget` em **19B.6**).
+> Estado: **19A.0–19A.7 concluídas**; **19B.1 concluída** (invalidação L1/L2 por tenant via observers); **19B.2 concluída** (observabilidade leve: counters + `dashboard:cache-stats`); **19B.3 concluída** (projection L3 `tenant_dashboard_snapshots`, flag `BGP_DASHBOARD_USE_PROJECTION`). **19A.5**: `ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). A Fase 14 (KPIs legados + `OperationalReports`) **mantém-se** como fallback enquanto `board.dashboard.use_executive_widgets` estiver `false` (remoção dos 6 `*StatsWidget` em **19B.6**).
 
 ### Objectivo
 
@@ -170,6 +172,7 @@ Fluxo textual (determinístico):
 |--------|-----------------|--------------|
 | L1 KPI | `dashboard_metrics:v1:{segmento}:{period}` | resultado de {@see DashboardMetricsService} (90 s) |
 | L2 snapshot shared | `dashboard_snapshot:{snapshot_version}:{segmento}:{period}:shared:plain` | array serializado `{ hero, operations }` (apenas escalares / sub-arrays — **sem** objectos PHP DTO) via `flexible` (stale/expire de `config board.dashboard`); reidratação com `HeroSummary::fromArray` / `OperationsBlock::fromArray` |
+| L3 projection | tabela `tenant_dashboard_snapshots` (`tenant_id`, `period`, `payload` JSON, `is_stale`, `refreshed_at`) | Pré-cálculo Hero+Operations (D19); leitura opcional quando `board.dashboard.use_projection` é `true` e `cacheSegment` é `t_{id}` (D22); válido se `is_stale=false`, `refreshed_at >= now()-10min` e `payload.version` coincide com `board.dashboard.snapshot_version` (D24); refresh via `RefreshTenantDashboardSnapshotJob` + `dashboard:refresh-projections` (schedule 5 min em `bootstrap/app.php`); `ExecutiveDashboardCacheInvalidator` chama `markStale` por tenant (D20) |
 | *(nunca na L2)* | — | KPI strip, feeds Priorities / Activity |
 
 ### Limites de widgets (Filament/Livewire)
@@ -308,8 +311,8 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.9**: actualizar esta ficha com estado pós-implementação.
 - **19B.1** (concluída): invalidação L1/L2 por `ExecutiveDashboardCacheInvalidator` + observers (`Task`, `Meeting`, `Vote`, `Minute`, `SignatureRequest`, `NotificationCenter`); chaves centralizadas em `ExecutiveDashboardCacheKeys`; D11 (sem flush `global` por evento de tenant); D12 (`KPI_FIELDS` + `updated` selectivo). Ver secção **19B.1 — Invalidação** abaixo.
 - **19B.2** (concluída): observabilidade leve — `ExecutiveDashboardObservability` (counters diários agregados L1 hit/miss, L2 hit/miss, invalidações), instrumentação em `DashboardMetricsService::getMetrics`, `ExecutiveDashboardReadService::loadOrComputeShared` (skip `none`) e `ExecutiveDashboardCacheInvalidator::invalidateForTenant`; comando `php artisan dashboard:cache-stats [--day=][--json]`. Ver secção **19B.2 — Observabilidade** abaixo e `docs/execution/19B.2-dashboard-observability.md`.
-- **19B.3**: projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
-- **19B.4**: endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
+- **19B.3** (concluída): projection table `tenant_dashboard_snapshots` + `DashboardProjectionService` + job `RefreshTenantDashboardSnapshotJob` + comando `dashboard:refresh-projections`; leitura condicionada a `BGP_DASHBOARD_USE_PROJECTION`; invalidador marca `is_stale`. Ver secção **19B.3 — Projection** abaixo e `docs/execution/19B.3-projection-table.md`.
+- **19B.4** (concluída): `GET /api/v1/dashboard/snapshot` — snapshot executivo JSON (`ExecutiveDashboardSnapshot`); ability `reports:read` + gate `view_executive_dashboard`; ver `docs/features/api.md` (secção Dashboard) e `docs/execution/19B.4-api-dashboard-snapshot.md`.
 - **19B.5**: pre-warm de cache por job em horário de pico
 - **19B.6**: remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
 
@@ -330,7 +333,7 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 | L2 | `ExecutiveDashboardCacheKeys::l2Key('t_5', ThisMonth)` | `dashboard_snapshot:v1:t_5:this_month:shared:plain` |
 | L2 meta (`Cache::flexible`) | prefixo `ExecutiveDashboardCacheInvalidator::FLEXIBLE_CREATED_PREFIX` + chave L2 | `illuminate:cache:flexible:created:dashboard_snapshot:v1:t_5:this_month:shared:plain` |
 
-`invalidateForTenant` percorre os **3** períodos de `DashboardMetricsPeriod::filterOptions()` e faz `forget` em L1, L2 e meta `flexible:created` para cada L2.
+`invalidateForTenant` percorre os **3** períodos de `DashboardMetricsPeriod::filterOptions()` e faz `forget` em L1, L2 e meta `flexible:created` para cada L2; em seguida marca as projections L3 do tenant como stale (`DashboardProjectionService::markStale`, 19B.3).
 
 #### Mapa evento → observer (§3)
 
@@ -390,7 +393,40 @@ Ver `docs/execution/19B.2-dashboard-observability.md` §8 (`dashboard:obs:l1:hit
 
 Ver exemplo JSON na rule `.cursor/rules/dashboard.mdc` (secção **Observabilidade (19B.2)**) ou executar `php artisan dashboard:cache-stats --json`.
 
-### QA 19A.8 — findings
+### 19B.3 — Projection table (L3, D19–D25)
+
+#### Decisões
+
+| ID | Regra |
+|----|--------|
+| **D19** | `payload` guarda apenas **Hero + Operations** (mesmo shape que L2 plain); Priorities/Activity permanecem sempre frescos em cada `read()`. |
+| **D20** | Refresh híbrido: job + comando `dashboard:refresh-projections`; após invalidação L1/L2, `markStale($tenantId)` nas linhas do tenant. |
+| **D21** | `ExecutiveDashboardReadService::loadOrComputeShared` consulta projection **antes** de `Cache::flexible` quando a flag está activa. |
+| **D22** | Sem projection para `global` ou `none`. |
+| **D23** | `board.dashboard.use_projection` / env `BGP_DASHBOARD_USE_PROJECTION` (default `false`); com `false` o read service ignora a tabela; o job pode continuar a popular dados. |
+| **D24** | Válido: `is_stale=false` e `refreshed_at >= now()-10min` e `payload.version` igual ao config. |
+| **D25** | Tabela normal (sem materialised view nativa). |
+
+#### Código
+
+- `App\Models\TenantDashboardSnapshot`
+- `App\Services\Dashboard\Executive\Projection\DashboardProjectionService`
+- `App\Jobs\Dashboard\RefreshTenantDashboardSnapshotJob`
+- `App\Console\Commands\Dashboard\RefreshProjectionsCommand`
+- Integração: `ExecutiveDashboardReadService`, `ExecutiveDashboardCacheInvalidator`
+
+#### Testes
+
+- `tests/Unit/Models/TenantDashboardSnapshotTest.php`
+- `tests/Feature/Dashboard/Executive/Projection/{DashboardProjectionServiceTest,ProjectionReadServiceTest,RefreshProjectionJobTest,RefreshProjectionsCommandTest,ProjectionCrossTenantTest}.php`
+
+### Exposição via API (19B.4)
+
+O contrato `ExecutiveDashboardSnapshot` está disponível em **`GET /api/v1/dashboard/snapshot`** (ver `docs/features/api.md`, secção **Dashboard**): ability Sanctum **`reports:read`** + gate **`view_executive_dashboard`**; query opcional `period`; rate limit 60/min por utilizador. Esquema OpenAPI em `docs/openapi/v1.yaml` (`paths./dashboard/snapshot`).
+
+### QA 19A.8 — findings (arquivado)
+
+> **Histórico congelado** (evidência estática pré-staging). O relatório operacional oficial da validação em staging é [`docs/execution/19A.8-staging-validation.result.md`](../execution/19A.8-staging-validation.result.md) — preencher após GO QA.
 
 Esta secção é o **relatório operacional** da Fase 19A.8 (validação e rampa controlada). Não substitui o QA em staging real — é a evidência produzida pelo Arquitecto a partir do código + suite de testes, complementada pela checklist a ser confirmada por QA humano antes do GO produção.
 
@@ -434,7 +470,7 @@ php artisan test              # ✅ 286/286 verde
 | Providers internos (Hero/KPI/Operations/Priorities/Activity) | `tests/Unit/Dashboard/Executive/Providers/` | 21 testes verde (provém 19A.4) |
 | Read service (composition + cache flow + anti-leakage) | `tests/Feature/Dashboard/Executive/` + `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest` | verde (provém 19A.5) |
 | Snapshot DTOs shape + serialização | `tests/Unit/Dashboard/Executive/Snapshot/` | verde (provém 19A.3) |
-| Regressão API + Auth + Filament + multitenancy | `php artisan test` completo | 286/286 verde, 1941 assertions, ≈ 13 s |
+| Regressão API + Auth + Filament + multitenancy | `php artisan test` completo | verde (352/352 na última execução local do Executor; actualizar após cada release) |
 
 #### Comportamento por perfil — tabela canónica (validada pelo gate)
 

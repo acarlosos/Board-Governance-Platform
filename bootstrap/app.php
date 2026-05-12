@@ -1,10 +1,19 @@
 <?php
 
+use App\Http\Middleware\SecurityHeadersMiddleware;
+use App\Http\Middleware\SetLocale;
+use App\Services\Api\ApiResponder;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Exceptions\MissingAbilityException;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -14,16 +23,22 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('dashboard:refresh-projections')
+            ->everyFiveMinutes()
+            ->withoutOverlapping(10)
+            ->runInBackground();
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\SecurityHeadersMiddleware::class,
+            SetLocale::class,
+            SecurityHeadersMiddleware::class,
         ]);
 
         $middleware->alias([
             // Sanctum abilities for token-scoped access (API v1).
-            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
-            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+            'abilities' => CheckAbilities::class,
+            'ability' => CheckForAnyAbility::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -32,24 +47,29 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return app(\App\Services\Api\ApiResponder::class)->validationFailed($e);
+            return app(ApiResponder::class)->validationFailed($e);
         });
 
-        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
             }
 
-            return app(\App\Services\Api\ApiResponder::class)->unauthorized('unauthorized', __('auth.unauthenticated'));
+            return app(ApiResponder::class)->unauthorized('unauthenticated', __('auth.unauthenticated'));
         });
 
-        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, Request $request) {
+        $exceptions->render(function (AuthorizationException $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
             }
 
-            // Mensagem consistente para 403; não vazar detalhes internos.
-            return app(\App\Services\Api\ApiResponder::class)->forbidden('forbidden', 'Forbidden');
+            // Na maior parte dos fluxos HTTP, `prepareException` já transformou isto
+            // em `AccessDeniedHttpException` — ver handler `HttpExceptionInterface`.
+            if ($e instanceof MissingAbilityException) {
+                return app(ApiResponder::class)->forbidden('forbidden_ability', 'Forbidden');
+            }
+
+            return app(ApiResponder::class)->forbidden('forbidden_policy', 'Forbidden');
         });
 
         $exceptions->render(function (HttpExceptionInterface $e, Request $request) {
@@ -58,7 +78,17 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             $status = $e->getStatusCode();
-            $responder = app(\App\Services\Api\ApiResponder::class);
+            $responder = app(ApiResponder::class);
+
+            if ($status === 403) {
+                $previous = $e->getPrevious();
+                if ($previous instanceof MissingAbilityException) {
+                    return $responder->forbidden('forbidden_ability', 'Forbidden');
+                }
+                if ($previous instanceof AuthorizationException) {
+                    return $responder->forbidden('forbidden_policy', 'Forbidden');
+                }
+            }
 
             return match ($status) {
                 401 => $responder->unauthorized('unauthorized', __('auth.unauthenticated')),

@@ -232,6 +232,7 @@ Fase 16 iniciada com especificação antes de código. Ficha: [`features/api.md`
 - 17.5 Revisão de logs
 - 17.6 Revisão de documentação
 - 17.7 Testes finais
+- **Subset MVP (17.4+17.5+17.7):** [`docs/execution/17-pre-launch-review.md`](docs/execution/17-pre-launch-review.md) — result [`docs/execution/17-pre-launch-review.result.md`](docs/execution/17-pre-launch-review.result.md)
 
 ### Fase 18 — Deploy
 
@@ -242,6 +243,7 @@ Fase 16 iniciada com especificação antes de código. Ficha: [`features/api.md`
 - 18.5 Backup
 - 18.6 Monitoramento
 - 18.7 Checklist de segurança
+- **Foundation MVP (parcial):** [`docs/execution/18-production-deploy.md`](docs/execution/18-production-deploy.md) — result [`docs/execution/18-production-deploy.result.md`](docs/execution/18-production-deploy.result.md)
 
 ### Fase 19 — Executive Dashboard
 
@@ -250,22 +252,22 @@ Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orient
 #### Fase 19A — Foundation + implementação
 
 - 19A.0 Documentação + rules arquitecturais (`docs/features/dashboard.md`, `docs/architecture.md`, `.cursor/rules/dashboard.mdc`, `.cursor/rules/cache.mdc`, `.cursor/rules/livewire.mdc`) — **concluída**
-- 19A.1 **Formal architecture decisions** (D1–D10: TTL/`Cache::flexible`, anti-stampede, cache split per-user/per-tenant, super_admin, período via dispatch/On, 4 widgets, deferLoading, snapshot DTO `final readonly` versionado, policy filtering item-a-item, legacy `*StatsWidget` como fallback) — **em curso**. Detalhe: [`features/dashboard.md`](features/dashboard.md) → "Formal Decisions" e [`architecture.md`](architecture.md) → "Decisões formais (Fase 19A.1)"
+- 19A.1 **Formal architecture decisions** (D1–D10) — **concluída** (ver [`features/dashboard.md`](features/dashboard.md) → "Formal Decisions" e [`architecture.md`](architecture.md) → "Decisões formais (Fase 19A.1)")
 - 19A.2 Índice DB para query **overdue** em `tasks` — **concluída**: `tasks_tenant_status_due_date_idx` (`tenant_id`, `status`, `due_date`). **Sem** índices adicionais em `meetings`, `votes`, `signature_requests`, `signature_request_signers`, `notifications_center`, `audit_logs`, `minutes`, `documents` nesta sub-fase (over-indexing evitado). Detalhe: [`features/dashboard.md`](features/dashboard.md) → Performance.
 - 19A.3 DTOs imutáveis (`ExecutiveDashboardSnapshot`, `HeroSummary`, `KpiStrip`, `OperationsBlock`, `PriorityItem`, `ActivityItem`, enum `PriorityUrgency`) — `final readonly`, `config/board.php` (`dashboard.*`), testes em `tests/Unit/Dashboard/Executive/Snapshot/` — **concluída** (namespace `App\Services\Dashboard\Executive\Snapshot`)
 - 19A.4 Providers internos (`HeroProvider`, `KpiStripProvider`, `OperationsProvider`, `PrioritiesProvider`, `ActivityFeedProvider`) — **concluída** (`tests/Unit/Dashboard/Executive/Providers/`)
 - 19A.5 `ExecutiveDashboardReadService` orquestrador + L2 `Cache::flexible` (Hero/Operations; KPI fora do L2) — **concluída** (`ExecutiveDashboardReadService.php`, testes feature + composition).
 - 19A.6 Gate único `view_executive_dashboard` registado em `AuthServiceProvider` — **concluída**
 - 19A.7 4 widgets Livewire executivos (`Hero` / `KpiStrip` / `Operations` / `Priorities` com `deferLoading` em C/D) + page `Dashboard` via gate `view_executive_dashboard` + feature flag `board.dashboard.use_executive_widgets` (default `false`) para coexistência com os 6 `*StatsWidget` legacy + assets CSS `bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) — **concluída**
-- 19A.8 Testes obrigatórios (multi-tenancy, policies por item, anti-stampede, super_admin, shape estável) — **em curso**
-- 19A.9 Documentação final pós-implementação (sincronizar `features/dashboard.md`)
+- 19A.8 Validação staging + rampa (QA humano; **sem código**) — **pendente staging** — spec [`docs/execution/19A.8-staging-validation.md`](docs/execution/19A.8-staging-validation.md), result [`docs/execution/19A.8-staging-validation.result.md`](docs/execution/19A.8-staging-validation.result.md)
+- 19A.9 Documentação final pós-19A/19B (sync `dashboard.md` / `architecture.md` / `roadmap`) — **concluída** — [`docs/execution/19A.9-docs-final.result.md`](docs/execution/19A.9-docs-final.result.md)
 
 #### Fase 19B — Operacionalização avançada
 
 - 19B.1 Invalidação de cache por evento (`ExecutiveDashboardCacheKeys`, `ExecutiveDashboardCacheInvalidator`, observers em `Task`/`Meeting`/`Vote`/`Minute`/`SignatureRequest`/`NotificationCenter`) — **concluída** (ver `docs/features/dashboard.md` → 19B.1)
 - 19B.2 Observabilidade leve do cache executivo (`ExecutiveDashboardObservability`, comando `dashboard:cache-stats`) — **concluída** (ver `docs/execution/19B.2-dashboard-observability.md`)
-- 19B.3 Projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
-- 19B.4 Endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
+- 19B.3 Projection table `tenant_dashboard_snapshots` (L3, flag `BGP_DASHBOARD_USE_PROJECTION`, job + comando `dashboard:refresh-projections`) — **concluída** (ver `docs/features/dashboard.md` → 19B.3, `docs/execution/19B.3-projection-table.md`)
+- 19B.4 Endpoint `GET /api/v1/dashboard/snapshot` (ability `reports:read` + gate `view_executive_dashboard`, OpenAPI) — **concluída** (ver `docs/features/api.md`, `docs/execution/19B.4-api-dashboard-snapshot.md`)
 - 19B.5 Pre-warm de cache por job em horário de pico
 - 19B.6 Remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
 

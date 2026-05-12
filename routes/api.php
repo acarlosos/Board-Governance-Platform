@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BoardsController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\MeetingsController;
 use App\Http\Controllers\Api\V1\NotificationsController;
 use App\Http\Controllers\Api\V1\TasksController;
@@ -90,10 +91,14 @@ Route::prefix('v1')->group(function (): void {
         Route::post('notifications/read-all', [NotificationsController::class, 'readAll'])
             ->middleware('abilities:notifications:write')
             ->name('api.v1.notifications.read_all');
+
+        Route::get('dashboard/snapshot', [DashboardController::class, 'snapshot'])
+            ->middleware('abilities:reports:read')
+            ->name('api.v1.dashboard.snapshot');
+
         Route::post('notifications/{id}/read', [NotificationsController::class, 'markRead'])
             ->middleware('abilities:notifications:write')
             ->name('api.v1.notifications.read')
             ->whereNumber('id');
     });
 });
-

@@ -3,6 +3,7 @@
 namespace App\Services\Dashboard\Executive\Cache;
 
 use App\Services\Dashboard\Executive\Observability\ExecutiveDashboardObservability;
+use App\Services\Dashboard\Executive\Projection\DashboardProjectionService;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 
 /**
@@ -18,6 +19,7 @@ final class ExecutiveDashboardCacheInvalidator
     public function __construct(
         private readonly CacheRepository $cache,
         private readonly ExecutiveDashboardObservability $observability,
+        private readonly DashboardProjectionService $projection,
     ) {}
 
     public function invalidateForTenant(int $tenantId): void
@@ -35,6 +37,13 @@ final class ExecutiveDashboardCacheInvalidator
             $this->cache->forget($key);
             if (str_ends_with($key, ':shared:plain')) {
                 $this->cache->forget(self::FLEXIBLE_CREATED_PREFIX.$key);
+            }
+        }
+
+        if (str_starts_with($cacheSegment, 't_')) {
+            $tenantId = (int) substr($cacheSegment, 2);
+            if ($tenantId > 0) {
+                $this->projection->markStale($tenantId);
             }
         }
 
