@@ -75,7 +75,7 @@ A camada de leitura para o **dashboard executivo** (Fase 19A) é desenhada para 
 
 - **Dashboard ≠ OperationalReports ≠ BI.** Cada camada responde a uma pergunta distinta (ver [`features/dashboard.md`](features/dashboard.md)).
 - **Widgets não consultam Eloquent.** Consomem o DTO devolvido pelo orquestrador.
-- **Gate único** `view_executive_dashboard` (registado em `App\Providers\AuthServiceProvider`) controla acesso à page e a todos os widgets executivos **quando** a feature flag `board.dashboard.use_executive_widgets` está activa (**19A.7** — não é permissão Spatie; ver [`features/auth-permissions.md`](features/auth-permissions.md)). Mantém-se `view_reports` para `OperationalReports` e para os widgets legacy `*StatsWidget`.
+- **Gate único** `view_executive_dashboard` (registado em `App\Providers\AuthServiceProvider`) controla **só** os widgets executivos (`Executive*Widget::canView()`) **quando** a feature flag `board.dashboard.use_executive_widgets` está activa (**19A.7** — não é permissão Spatie; ver [`features/auth-permissions.md`](features/auth-permissions.md)). A página `Dashboard` aceita qualquer utilizador autenticado (evita 403 pós-login sem roles); mantém-se `view_reports` para `OperationalReports` e para os widgets legacy `*StatsWidget`.
 - Não existe `Gate::before` global: cada Gate/Policy trata `super_admin` explicitamente.
 - **Tenancy explícita** via `ReportingContext`: `withoutGlobalScopes()` + `restrictToTenant()`. `super_admin` continua como único bypass.
 - **Anti-leak por item** em `Priorities` e `Activity`: cada candidato passa por `Gate::forUser($user)->allows('view', $item)` antes de entrar no DTO; items omitidos **somem sem mensagem** (anti-enumeração).

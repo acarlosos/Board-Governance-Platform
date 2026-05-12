@@ -42,7 +42,7 @@ Os testes em **`Tests\Unit`** que estendem `PHPUnit\Framework\TestCase` **não**
 
 ```bash
 php artisan test
-php artisan test --filter=ExampleTest
+php artisan test --filter=LocaleTest
 ```
 
 Após alterar migrações, o `RefreshDatabase` volta a aplicá-las ao ficheiro SQLite de testes.

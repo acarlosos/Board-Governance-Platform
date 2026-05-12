@@ -11,7 +11,7 @@ class LocaleTest extends TestCase
     {
         $this->assertSame('pt_BR', config('app.locale'));
 
-        $response = $this->get(route('home'));
+        $response = $this->get(route('testing.locale-smoke'));
 
         $response->assertOk();
         $response->assertSee(__('messages.welcome.heading', [], 'pt_BR'), false);
@@ -21,7 +21,7 @@ class LocaleTest extends TestCase
     {
         $user = User::factory()->create(['locale' => 'es']);
 
-        $response = $this->actingAs($user)->get(route('home'));
+        $response = $this->actingAs($user)->get(route('testing.locale-smoke'));
 
         $response->assertOk();
         $response->assertSee(__('messages.welcome.heading', [], 'es'), false);
@@ -31,7 +31,7 @@ class LocaleTest extends TestCase
     {
         $user = User::factory()->create(['locale' => 'invalid_locale']);
 
-        $response = $this->actingAs($user)->get(route('home'));
+        $response = $this->actingAs($user)->get(route('testing.locale-smoke'));
 
         $response->assertOk();
         $response->assertSee(__('messages.welcome.heading', [], 'pt_BR'), false);

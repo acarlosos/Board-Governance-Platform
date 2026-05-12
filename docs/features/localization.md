@@ -70,7 +70,7 @@ _Nenhuma específica nesta fase._
 
 ## Testes relacionados
 
-- `tests/Feature/LocaleTest.php` — convidado (pt_BR), utilizador `es`, `locale` inválido.
+- `tests/Feature/LocaleTest.php` — convidado (pt_BR), utilizador `es`, `locale` inválido; usa a rota `testing.locale-smoke` (`/_testing/locale-smoke`, só `APP_ENV=local|testing`) para obter HTML 200 com `messages.welcome.heading` após `SetLocale`.
 
 ## Pendências futuras
 

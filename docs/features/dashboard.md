@@ -170,7 +170,7 @@ Fluxo textual (determinístico):
 - **Máximo 4 widgets Livewire** no dashboard executivo. `StatsSecondary` consolida-se em `OperationsBlock`/`OperationsWidget`.
 - Widgets **não consultam Eloquent** — consomem o snapshot do service.
 - `Operations` e `ExecutivePrioritiesWidget` (Priorities + Activity) carregam com **`deferLoading()`** (`$isLazy = true`) para não bloquear a renderização inicial.
-- `canView()` de cada widget executivo e `canAccess()` da page: **gate** `view_executive_dashboard` **e** `config('board.dashboard.use_executive_widgets')` (sem `can('view_reports')` inline nos executivos).
+- `canView()` de cada widget executivo: **gate** `view_executive_dashboard` **e** `config('board.dashboard.use_executive_widgets')` (sem `can('view_reports')` inline nos executivos). `Dashboard::canAccess()` exige apenas **autenticação** (shell da página; dados executivos ficam atrás do gate nos widgets).
 
 ### UI — Fase 19A.7
 
@@ -195,7 +195,7 @@ Fluxo textual (determinístico):
 - **i18n**: `lang/{pt_BR,en,es}/dashboard.php`, key root `dashboard.executive.*`. Bloco legacy `dashboard.widgets.*` permanece enquanto a flag puder estar `false`.
 - **Feature flag — coexistência com Fase 14**: `config('board.dashboard.use_executive_widgets')` (env `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS`, default `false`).
   - `false` → 6 `*StatsWidget` (Fase 14) visíveis, 4 executivos ocultos, `Dashboard::canAccess()` apenas exige autenticação.
-  - `true` → 4 executivos visíveis, 6 legacy ocultos por `canView()`, `Dashboard::canAccess()` exige gate `view_executive_dashboard`.
+  - `true` → 4 executivos visíveis **só** com gate `view_executive_dashboard` (`Executive*Widget::canView()`), 6 legacy ocultos por `canView()`; `Dashboard::canAccess()` apenas autenticação (utilizador sem gate vê página vazia, não 403).
   - Activação de produção via env; remoção da flag + dos 6 legacy widgets em **19B.5** (D10).
 
 ### Estratégia de cache
@@ -296,7 +296,7 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.4** (concluída): providers internos (5 classes em `App\Services\Dashboard\Executive\Providers`) + testes em `tests/Unit/Dashboard/Executive/Providers/`.
 - **19A.5** (concluída): `ExecutiveDashboardReadService` em `ExecutiveDashboardReadService.php` + L2 `Cache::flexible` (Hero/Operations); KPI fora do L2 — testes em `ExecutiveDashboardReadServiceTest` e composition.
 - **19A.6** (concluída): gate `view_executive_dashboard` registado em `app/Providers/AuthServiceProvider.php` (wrapper sobre `view_reports` + `super_admin`).
-- **19A.7** (concluída): 4 widgets Livewire em `App\Filament\Admin\Widgets\Executive` + views Blade `bgp-dashboard__*` + asset CSS `public/css/app/bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) + `Dashboard::canAccess()` via gate `view_executive_dashboard`. Coexistência regida pela feature flag `board.dashboard.use_executive_widgets` (default `false`): `false` mantém os 6 `*StatsWidget` legacy visíveis, `true` activa o conjunto executivo e oculta os legacy. Testes em `tests/Feature/Filament/Dashboard/` (page + 4 widgets + smoke).
+- **19A.7** (concluída): 4 widgets Livewire em `App\Filament\Admin\Widgets\Executive` + views Blade `bgp-dashboard__*` + asset CSS `public/css/app/bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) + gate `view_executive_dashboard` nos `Executive*Widget::canView()`; `Dashboard::canAccess()` = autenticado. Coexistência regida pela feature flag `board.dashboard.use_executive_widgets` (default `false`): `false` mantém os 6 `*StatsWidget` legacy visíveis, `true` activa o conjunto executivo e oculta os legacy. Testes em `tests/Feature/Filament/Dashboard/` (page + 4 widgets + smoke).
 - **19A.8** (em curso): validação, hardening e rampa controlada (sem features novas). Pré-trabalho técnico e findings nesta ficha (secção "QA 19A.8 — findings"). Decisão arquitectural §12.C fechada e codificada no gate.
 - **19A.9**: actualizar esta ficha com estado pós-implementação.
 - **19B**: invalidação por evento, projection table, endpoint `GET /api/v1/dashboard/snapshot`, remoção dos `*StatsWidget` legacy.
@@ -311,7 +311,7 @@ Esta secção é o **relatório operacional** da Fase 19A.8 (validação e rampa
 |---|---|---|
 | `BGP_DASHBOARD_USE_EXECUTIVE_WIDGETS=false` documentado no `.env.example` | ✅ aplicado | `.env.example` (linha final, com comentário "Fase 19A.7 — true ativa…") |
 | 5 perfis seedados (`super_admin`, `tenant_admin`, `board_member`, `executive`, `guest`) | ✅ confirmado | `database/seeders/RolesAndPermissionsSeeder.php` |
-| Teste §12.C — user sem `tenant_id` + sem super_admin não acessa | ✅ adicionado e verde | `ExecutiveDashboardPageTest::test_can_access_retorna_false_para_user_sem_tenant_e_sem_super_admin_decisao_19a8` |
+| Teste §12.C — user sem `tenant_id` + sem super_admin: sem gate/widgets executivos; shell dashboard OK | ✅ adicionado e verde | `ExecutiveDashboardPageTest::test_user_sem_tenant_sem_super_admin_sem_gate_mas_shell_dashboard_acessivel_decisao_19a8` |
 | Decisão §12.C registada na rule | ✅ aplicado | `.cursor/rules/dashboard.mdc` (secção "UI (19A.7)") |
 | Logs no `ExecutiveDashboardReadService` | ❌ **não aplicado**, ver justificação abaixo | — |
 
@@ -339,7 +339,7 @@ php artisan test              # ✅ 286/286 verde
 
 | Domínio | Suite-alvo | Última execução |
 |---|---|---|
-| Gate, flag, `canAccess`, `canView` | `tests/Feature/Filament/Dashboard/ExecutiveDashboardPageTest` | 9 testes verde (incl. §12.C) |
+| Gate, flag, `canAccess`, `canView` | `tests/Feature/Filament/Dashboard/ExecutiveDashboardPageTest` | verde (incl. §12.C + GET `/admin` sem gate) |
 | Render dos 4 widgets executivos (Livewire) | `tests/Feature/Filament/Dashboard/Widgets/Executive*WidgetTest` | 12 testes verde |
 | Smoke render da Page com flag on/off | `tests/Feature/Filament/Dashboard/ExecutiveDashboardSmokeTest` | 2 testes verde |
 | Providers internos (Hero/KPI/Operations/Priorities/Activity) | `tests/Unit/Dashboard/Executive/Providers/` | 21 testes verde (provém 19A.4) |
@@ -353,13 +353,13 @@ Comportamento derivado de `AuthServiceProvider::view_executive_dashboard` + `Das
 
 | Perfil | `view_reports`? | `tenant_id`? | super_admin? | Gate `view_executive_dashboard` | `Dashboard::canAccess()` (flag ON) | Widgets executivos visíveis? |
 |---|---|---|---|---|---|---|
-| **super_admin** | sim (todas) | opcional | **sim** (bypass) | ✅ | ✅ | sim — Hero/KPI/Operations agregados globais; Priorities/Activity vazios por D4 |
-| **tenant_admin** | sim | sim | não | ✅ | ✅ | sim (snapshot do tenant) |
-| **board_member** | sim | sim | não | ✅ | ✅ | sim (Priorities/Activity filtrados por policy item-a-item, D9) |
-| **executive** | sim | sim | não | ✅ | ✅ | sim |
-| **guest** | sim (seed actual) | sim | não | ✅ | ✅ | sim — **ver observação 1** |
-| **user com role mas sem `view_reports`** | não | sim | não | ❌ | ❌ | não (gate nega) |
-| **user sem `tenant_id`** (não super_admin) | sim ou não | **null** | não | ❌ (§12.C) | ❌ (§12.C) | não — **decisão fechada e testada** |
+| **super_admin** | sim (todas) | opcional | **sim** (bypass) | ✅ | ✅ (auth) | sim — Hero/KPI/Operations agregados globais; Priorities/Activity vazios por D4 |
+| **tenant_admin** | sim | sim | não | ✅ | ✅ (auth) | sim (snapshot do tenant) |
+| **board_member** | sim | sim | não | ✅ | ✅ (auth) | sim (Priorities/Activity filtrados por policy item-a-item, D9) |
+| **executive** | sim | sim | não | ✅ | ✅ (auth) | sim |
+| **guest** | sim (seed actual) | sim | não | ✅ | ✅ (auth) | sim — **ver observação 1** |
+| **user com role mas sem `view_reports`** | não | sim | não | ❌ | ✅ (auth) | não (gate nega nos widgets) |
+| **user sem `tenant_id`** (não super_admin) | sim ou não | **null** | não | ❌ (§12.C) | ✅ (auth) | não — **decisão fechada e testada** |
 | **anónimo** | n/a | n/a | n/a | ❌ | ❌ | não |
 
 **Observação 1 — role `guest` tem `view_reports` na seed actual.** Não é bug; é uma decisão herdada da Fase 14 (`RolesAndPermissionsSeeder` linhas 72-77). Implicação: com flag ON, "guest" tem acesso ao Executive Dashboard. Não bloqueia 19A.8 — apenas é **finding para revisão de produto**: se "guest" não deveria ver indicadores executivos, alterar a seed em PR separado (não escopo desta fase). Recomendação: confirmar com Product antes da rampa.

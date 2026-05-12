@@ -91,14 +91,14 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - Widgets **não consultam Eloquent**. Consomem o snapshot do `ExecutiveDashboardReadService`.
 - **`deferLoading()` obrigatório (D7)** em Priorities, Activity e qualquer bloco secundário. Hero e KPI Strip carregam imediatamente.
 - **Período partilhado (D5)**: `Dashboard::$period` com `mount()` que define default (`ThisMonth`) e faz `dispatch('dashboard:period-changed', period: …)` para alinhar widgets **lazy** no primeiro paint; selector UI no `ExecutiveHeroWidget` (`wire:model.live` + `updatedPeriod()` re-emite o mesmo evento). Cada widget executivo mantém `$period` **espelhado** via `#[On('dashboard:period-changed')]` para `getViewData()` — proibido fontes de verdade divergentes (sem período só em sessão/query string).
-- **Executive dashboard (19A.6 + 19A.7)**: `canView()` (widgets executivos) e `canAccess()` (page) via **`Gate::forUser($user)->allows('view_executive_dashboard')` AND `config('board.dashboard.use_executive_widgets')`**.
+- **Executive dashboard (19A.6 + 19A.7)**: `canView()` dos widgets executivos via **`Gate::forUser($user)->allows('view_executive_dashboard')` AND `config('board.dashboard.use_executive_widgets')`**. `Dashboard::canAccess()` = **`Auth::check()`** (shell da página; sem gate não há 403 — widgets executivos ocultam-se).
   - Proibido `can('view_reports')` inline no executive; o gate centraliza a regra de autorização; a flag controla rollout UX.
   - Widgets legacy `*StatsWidget` (Fase 14, D10) **mantêm** `view_reports` directo até 19B.5.
 
 ### UI (19A.7)
 
 - **4 widgets executivos:** `ExecutiveHeroWidget`, `ExecutiveKpiStripWidget`, `ExecutiveOperationsWidget`, `ExecutivePrioritiesWidget` (`App\Filament\Admin\Widgets\Executive\`, views `resources/views/filament/admin/widgets/executive/`, CSS `bgp-dashboard__*` em `public/css/app/bgp-dashboard.css` registado no `AdminPanelProvider`).
-- **`canView` / `canAccess`:** gate `view_executive_dashboard` **e** feature flag `board.dashboard.use_executive_widgets` (default `false`).
+- **`canView` (executivos):** gate `view_executive_dashboard` **e** feature flag `board.dashboard.use_executive_widgets` (default `false`). **`canAccess` (Dashboard):** `Auth::check()`.
 - **`ExecutivePrioritiesWidget`:** duas secções **verticais empilhadas** — Prioridades (topo) + Atividade recente (baixo); não criar 5º widget Livewire.
 - **`cacheSegment`:** nunca na UI (Blade, `toArray()` exposto ao HTML, JSON inline); é telemetria interna do snapshot/L2.
 - **`generatedAt`:** apresentar como **«Atualizado às HH:MM»** (timezone `config('app.timezone')`; fallback i18n).
@@ -106,8 +106,8 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **Ordem fixa A→B→C→D** (sort `10`/`11`/`12`/`13`), desktop/tablet/mobile.
 - **`deferLoading` (D7)** em `Operations` e `Priorities` (`protected static bool $isLazy = true`); Hero e KPI **não** lazy (`$isLazy = false`).
 - **i18n:** `dashboard.executive.*` em `lang/{pt_BR,en,es}/dashboard.php`; não mexer no bloco legacy `dashboard.widgets.*` salvo copy dos legados.
-- **Coexistência / flag:** `false` → legados visíveis, executivos ocultos, `Dashboard::canAccess()` = `Auth::check()`; `true` → executivos visíveis, legados ocultos (`canView()`), `canAccess()` exige gate.
-- **19A.8 §12.C (decisão fechada):** user com `tenant_id = null` e **sem** `super_admin` **não** acessa o Executive Dashboard, mesmo que tenha `view_reports`. A regra vive no gate (`AuthServiceProvider`, ramo `tenant_id === null`) e é coberta por `ExecutiveDashboardPageTest::test_can_access_retorna_false_para_user_sem_tenant_e_sem_super_admin_decisao_19a8`. Não criar Page vazia para este caso; também não alterar o gate sem aprovação arquitectural.
+- **Coexistência / flag:** `false` → legados visíveis, executivos ocultos; `true` → executivos só com gate (`canView()`), legados ocultos; em ambos `Dashboard::canAccess()` = `Auth::check()`.
+- **19A.8 §12.C (decisão fechada):** user com `tenant_id = null` e **sem** `super_admin` **não** recebe o gate `view_executive_dashboard` (nem widgets executivos), mesmo que tenha `view_reports`. A regra vive no gate (`AuthServiceProvider`, ramo `tenant_id === null`) e é coberta por `ExecutiveDashboardPageTest::test_user_sem_tenant_sem_super_admin_sem_gate_mas_shell_dashboard_acessivel_decisao_19a8` (pode abrir a page autenticado; widgets executivos ficam ocultos). Não alterar o gate sem aprovação arquitectural.
 - **Remoção da flag + dos 6 legacy widgets:** **19B.5** (D10).
 
 ## Cache split (D1, D2, D3)
@@ -162,7 +162,7 @@ Quando a alteração tocar este domínio:
 
 1. Tenant A não vê snapshot do tenant B (cache keys distintas + dados isolados).
 2. `super_admin` global vê agregados; Priorities/Activity respeitam limite.
-3. User sem `view_executive_dashboard` recebe 403 / widgets vazios.
+3. User sem `view_executive_dashboard` vê **widgets executivos vazios/ocultos** (sem 403 na `Dashboard` por falta de gate).
 4. Item filtrado por policy `view` **não aparece** no DTO/render.
 5. Shape do snapshot estável para tenant vazio.
 6. Cache hit-rate confirmado (1ª chamada calcula; 2ª dentro do TTL não bate no DB).
