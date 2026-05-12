@@ -7,6 +7,7 @@
 - **Base sólida primeiro** (`.cursor/rules/foundation-first.mdc`): só avançar para módulos avançados depois de tenancy, autenticação, permissões e auditoria estarem estáveis.
 - **Incremental** (`.cursor/rules/incremental.mdc`): unidades pequenas, testes obrigatórios nas áreas críticas (`.cursor/rules/tests.mdc`).
 - **Sem features especulativas**: módulos futuros (Office 365, DocuSign, etc.) só entram quando a fase correspondente abrir.
+- **Especificação executável por fase**: blueprint final de cada fase vive em [`execution/{fase}-{slug}.md`](execution/) — fonte única que o Executor consome, sem prompt paralelo no chat. Padrão registado em [`.cursor/rules/documentation.mdc`](../.cursor/rules/documentation.mdc).
 
 ## Estado actual
 
@@ -261,7 +262,7 @@ Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orient
 
 #### Fase 19B — Operacionalização avançada
 
-- 19B.1 Invalidação de cache por evento (observers em `Task`/`Meeting`/`Vote`/`Signature`/`Notification`)
+- 19B.1 Invalidação de cache por evento (`ExecutiveDashboardCacheKeys`, `ExecutiveDashboardCacheInvalidator`, observers em `Task`/`Meeting`/`Vote`/`Minute`/`SignatureRequest`/`NotificationCenter`) — **concluída** (ver `docs/features/dashboard.md` → 19B.1)
 - 19B.2 Projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
 - 19B.3 Endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
 - 19B.4 Pre-warm de cache por job em horário de pico

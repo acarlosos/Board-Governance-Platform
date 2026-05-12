@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Dashboard\DashboardMetricsService;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys;
 use App\Services\Reporting\ReportingContext;
 use App\Services\Reports\ReportsService;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -95,7 +96,7 @@ class DashboardTest extends TestCase
         $this->assertSame(10, $m['tasks']['total_tasks']);
     }
 
-    public function test_dashboard_cache_servico_retorna_mesmo_total_antes_do_ttl_mesmo_com_novos_registos(): void
+    public function test_dashboard_metrics_l1_e_invalidado_ao_criar_tasks_e_forget_manual_funciona(): void
     {
         Cache::flush();
 
@@ -109,18 +110,19 @@ class DashboardTest extends TestCase
         $service = $this->dashboardService();
         $first = $service->getMetrics($admin, DashboardMetricsPeriod::AllTime);
 
+        $this->assertSame(1, $first['tasks']['total_tasks']);
+
         Task::factory()->count(10)->create(['tenant_id' => $tenant->id]);
 
         $second = $service->getMetrics($admin, DashboardMetricsPeriod::AllTime);
 
-        $this->assertSame($first['tasks']['total_tasks'], $second['tasks']['total_tasks']);
+        $this->assertSame(11, $second['tasks']['total_tasks']);
 
-        Cache::forget(sprintf(
-            '%s:%s:%s',
-            'dashboard_metrics:v1',
+        $l1 = ExecutiveDashboardCacheKeys::l1Key(
             't_'.$tenant->id,
-            DashboardMetricsPeriod::AllTime->value
-        ));
+            DashboardMetricsPeriod::AllTime,
+        );
+        Cache::forget($l1);
 
         $afterForget = $service->getMetrics($admin, DashboardMetricsPeriod::AllTime);
 

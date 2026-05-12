@@ -7,6 +7,8 @@ use App\Enums\TaskStatus;
 use App\Models\Task;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheInvalidator;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys;
 use App\Services\Dashboard\Executive\ExecutiveDashboardReadService;
 use App\Services\Reporting\ReportingContext;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -22,26 +24,14 @@ final class ExecutiveDashboardReadServiceTest extends TestCase
         return app(ExecutiveDashboardReadService::class);
     }
 
-    /**
-     * Replica o formato de {@see ExecutiveDashboardReadService} (chave L2).
-     */
     private function expectedSharedCacheKey(ReportingContext $ctx, DashboardMetricsPeriod $period): string
     {
-        return sprintf(
-            'dashboard_snapshot:%s:%s:%s:shared:plain',
-            (string) config('board.dashboard.snapshot_version', 'v1'),
-            $ctx->cacheSegment(),
-            $period->value,
-        );
+        return ExecutiveDashboardCacheKeys::l2Key($ctx->cacheSegment(), $period);
     }
 
     private function expectedMetricsCacheKey(ReportingContext $ctx, DashboardMetricsPeriod $period): string
     {
-        return sprintf(
-            'dashboard_metrics:v1:%s:%s',
-            $ctx->cacheSegment(),
-            $period->value,
-        );
+        return ExecutiveDashboardCacheKeys::l1Key($ctx->cacheSegment(), $period);
     }
 
     protected function setUp(): void
@@ -189,6 +179,7 @@ final class ExecutiveDashboardReadServiceTest extends TestCase
         $this->assertNotNull(Cache::get($sharedKey), 'L2 shared deveria existir após read');
 
         Cache::forget($sharedKey);
+        Cache::forget(ExecutiveDashboardCacheInvalidator::FLEXIBLE_CREATED_PREFIX.$sharedKey);
 
         $this->assertNull(Cache::get($sharedKey));
         $this->assertNotNull(Cache::get($metricsKey), 'forget L2 não deve limpar L1');

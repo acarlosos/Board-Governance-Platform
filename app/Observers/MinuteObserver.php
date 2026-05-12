@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\AuditAction;
 use App\Models\Minute;
 use App\Services\Audit\AuditLoggerService;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheInvalidator;
 
 class MinuteObserver
 {
@@ -21,9 +22,19 @@ class MinuteObserver
         'deleted_at',
     ];
 
-    public function __construct(private readonly AuditLoggerService $audit)
-    {
-    }
+    /**
+     * @var list<string>
+     */
+    private const KPI_FIELDS = [
+        'status',
+        'deleted_at',
+        'tenant_id',
+    ];
+
+    public function __construct(
+        private readonly AuditLoggerService $audit,
+        private readonly ExecutiveDashboardCacheInvalidator $dashboardCacheInvalidator,
+    ) {}
 
     public function created(Minute $minute): void
     {
@@ -33,6 +44,8 @@ class MinuteObserver
             oldValues: [],
             newValues: $minute->only(self::AUDITABLE_FIELDS),
         );
+
+        $this->invalidateExecutiveDashboardCache($minute);
     }
 
     public function updated(Minute $minute): void
@@ -55,6 +68,10 @@ class MinuteObserver
             oldValues: $old,
             newValues: $minute->only(array_keys($dirty)),
         );
+
+        if (array_intersect_key($dirty, array_flip(self::KPI_FIELDS)) !== []) {
+            $this->invalidateExecutiveDashboardCache($minute);
+        }
     }
 
     public function deleted(Minute $minute): void
@@ -65,6 +82,8 @@ class MinuteObserver
             oldValues: $minute->only(self::AUDITABLE_FIELDS),
             newValues: [],
         );
+
+        $this->invalidateExecutiveDashboardCache($minute);
     }
 
     public function restored(Minute $minute): void
@@ -75,6 +94,16 @@ class MinuteObserver
             oldValues: [],
             newValues: $minute->only(self::AUDITABLE_FIELDS),
         );
+
+        $this->invalidateExecutiveDashboardCache($minute);
+    }
+
+    private function invalidateExecutiveDashboardCache(Minute $minute): void
+    {
+        if ($minute->tenant_id === null) {
+            return;
+        }
+
+        $this->dashboardCacheInvalidator->invalidateForTenant((int) $minute->tenant_id);
     }
 }
-

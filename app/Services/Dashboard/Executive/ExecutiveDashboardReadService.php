@@ -4,6 +4,7 @@ namespace App\Services\Dashboard\Executive;
 
 use App\Enums\DashboardMetricsPeriod;
 use App\Models\User;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys;
 use App\Services\Dashboard\Executive\Providers\ActivityFeedProvider;
 use App\Services\Dashboard\Executive\Providers\HeroProvider;
 use App\Services\Dashboard\Executive\Providers\KpiStripProvider;
@@ -113,11 +114,6 @@ final class ExecutiveDashboardReadService
 
     private function sharedKey(ReportingContext $ctx, DashboardMetricsPeriod $period): string
     {
-        return sprintf(
-            'dashboard_snapshot:%s:%s:%s:shared:plain',
-            (string) config('board.dashboard.snapshot_version', 'v1'),
-            $ctx->cacheSegment(),
-            $period->value,
-        );
+        return ExecutiveDashboardCacheKeys::l2Key($ctx->cacheSegment(), $period);
     }
 }

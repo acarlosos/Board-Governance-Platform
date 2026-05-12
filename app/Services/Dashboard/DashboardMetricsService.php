@@ -16,14 +16,13 @@ use App\Models\SignatureRequest;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Vote;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys;
 use App\Services\Reporting\ReportingContext;
 use Illuminate\Support\Facades\Cache;
 
 final class DashboardMetricsService
 {
     private const CACHE_TTL_SECONDS = 90;
-
-    private const CACHE_PREFIX = 'dashboard_metrics:v1';
 
     /**
      * @return array<string, mixed>
@@ -32,7 +31,7 @@ final class DashboardMetricsService
     {
         $ctx = ReportingContext::fromUser($user);
 
-        $key = sprintf('%s:%s:%s', self::CACHE_PREFIX, $ctx->cacheSegment(), $period->value);
+        $key = ExecutiveDashboardCacheKeys::l1Key($ctx->cacheSegment(), $period);
 
         return Cache::remember($key, now()->addSeconds(self::CACHE_TTL_SECONDS), fn (): array => $this->computeMetrics($ctx, $period));
     }

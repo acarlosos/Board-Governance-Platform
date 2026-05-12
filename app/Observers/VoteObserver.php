@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\AuditAction;
 use App\Models\Vote;
 use App\Services\Audit\AuditLoggerService;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheInvalidator;
 
 class VoteObserver
 {
@@ -22,9 +23,19 @@ class VoteObserver
         'deleted_at',
     ];
 
-    public function __construct(private readonly AuditLoggerService $audit)
-    {
-    }
+    /**
+     * @var list<string>
+     */
+    private const KPI_FIELDS = [
+        'status',
+        'deleted_at',
+        'tenant_id',
+    ];
+
+    public function __construct(
+        private readonly AuditLoggerService $audit,
+        private readonly ExecutiveDashboardCacheInvalidator $dashboardCacheInvalidator,
+    ) {}
 
     public function created(Vote $vote): void
     {
@@ -34,6 +45,8 @@ class VoteObserver
             oldValues: [],
             newValues: $vote->only(self::AUDITABLE_FIELDS),
         );
+
+        $this->invalidateExecutiveDashboardCache($vote);
     }
 
     public function updated(Vote $vote): void
@@ -56,6 +69,10 @@ class VoteObserver
             oldValues: $old,
             newValues: $vote->only(array_keys($dirty)),
         );
+
+        if (array_intersect_key($dirty, array_flip(self::KPI_FIELDS)) !== []) {
+            $this->invalidateExecutiveDashboardCache($vote);
+        }
     }
 
     public function deleted(Vote $vote): void
@@ -66,6 +83,8 @@ class VoteObserver
             oldValues: $vote->only(self::AUDITABLE_FIELDS),
             newValues: [],
         );
+
+        $this->invalidateExecutiveDashboardCache($vote);
     }
 
     public function restored(Vote $vote): void
@@ -76,6 +95,16 @@ class VoteObserver
             oldValues: [],
             newValues: $vote->only(self::AUDITABLE_FIELDS),
         );
+
+        $this->invalidateExecutiveDashboardCache($vote);
+    }
+
+    private function invalidateExecutiveDashboardCache(Vote $vote): void
+    {
+        if ($vote->tenant_id === null) {
+            return;
+        }
+
+        $this->dashboardCacheInvalidator->invalidateForTenant((int) $vote->tenant_id);
     }
 }
-

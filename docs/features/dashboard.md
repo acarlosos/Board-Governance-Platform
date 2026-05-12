@@ -32,14 +32,19 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 
 - **Consultas:** `withoutGlobalScopes()` apenas em conjunto com **filtro explícito** de tenant via `ReportingContext::restrictToTenant()` (exceto vista global só para utilizadores com bypass de tenancy).
 - **Performance:** apenas `COUNT`/`GROUP BY`; sem coleções grandes.
-- **Cache:** não obrigatório invalidar nesta fase; TTL fixo baixo mitiga inconsistência temporal.
+- **Cache:** invalidação por TTL continua válida; **19B.1** adiciona invalidação por observers para L1/L2 do dashboard executivo (ver secção 19B.1).
 
 ## Testes relacionados
 
 - `tests/Feature/DashboardTest.php`
 - `tests/Unit/Dashboard/Executive/Snapshot/` (19A.3)
 - `tests/Unit/Dashboard/Executive/Providers/` (19A.4)
-- `tests/Feature/Dashboard/Executive/ExecutiveDashboardReadServiceTest.php` (19A.5)
+- `tests/Unit/Dashboard/Executive/Cache/ExecutiveDashboardCacheKeysTest.php` (19B.1 — testes 1–4)
+- `tests/Feature/Dashboard/Executive/Cache/ExecutiveDashboardCacheInvalidatorTest.php` (19B.1 — testes 5–8)
+- `tests/Feature/Dashboard/Executive/Cache/CrossTenantCacheLeakageTest.php` (19B.1 — teste 16)
+- `tests/Feature/Dashboard/Executive/ExecutiveDashboardMetricsL1CacheHitTest.php` (19B.1)
+- `tests/Feature/Observers/Dashboard/*ObserverCacheTest.php`, `SignatureRequestSignerNoInvalidationTest.php`, `AuditLogNoInvalidationTest.php` (19B.1 — testes 9–15)
+- `tests/Feature/Dashboard/Executive/ExecutiveDashboardReadServiceTest.php` (19A.5 + chaves L1/L2)
 - `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest.php` (19A.5)
 - `tests/Feature/Filament/Dashboard/ExecutiveDashboardPageTest.php` (19A.7 — gate/flag/canView)
 - `tests/Feature/Filament/Dashboard/ExecutiveDashboardSmokeTest.php` (19A.7 — render Page com flag on/off)
@@ -53,7 +58,7 @@ Expor **KPIs agregados** por organização (`tenant_id`) no painel Filament, com
 
 ## Executive Dashboard (Fase 19A)
 
-> Estado: **19A.0–19A.7 concluídas** (read path 19A.5 + gate 19A.6 + UI 19A.7). **19A.5**: `ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). A Fase 14 (KPIs legados + `OperationalReports`) **mantém-se** como fallback enquanto `board.dashboard.use_executive_widgets` estiver `false` (remoção dos 6 `*StatsWidget` em **19B.5**).
+> Estado: **19A.0–19A.7 concluídas**; **19B.1 concluída** (invalidação L1/L2 por tenant via observers). **19A.5**: `ExecutiveDashboardReadService` (`read()` → `ExecutiveDashboardSnapshot`, L2 `Cache::flexible` só sobre Hero/Operations). A Fase 14 (KPIs legados + `OperationalReports`) **mantém-se** como fallback enquanto `board.dashboard.use_executive_widgets` estiver `false` (remoção dos 6 `*StatsWidget` em **19B.5**).
 
 ### Objectivo
 
@@ -299,7 +304,59 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.7** (concluída): 4 widgets Livewire em `App\Filament\Admin\Widgets\Executive` + views Blade `bgp-dashboard__*` + asset CSS `public/css/app/bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) + gate `view_executive_dashboard` nos `Executive*Widget::canView()`; `Dashboard::canAccess()` = autenticado. Coexistência regida pela feature flag `board.dashboard.use_executive_widgets` (default `false`): `false` mantém os 6 `*StatsWidget` legacy visíveis, `true` activa o conjunto executivo e oculta os legacy. Testes em `tests/Feature/Filament/Dashboard/` (page + 4 widgets + smoke).
 - **19A.8** (em curso): validação, hardening e rampa controlada (sem features novas). Pré-trabalho técnico e findings nesta ficha (secção "QA 19A.8 — findings"). Decisão arquitectural §12.C fechada e codificada no gate.
 - **19A.9**: actualizar esta ficha com estado pós-implementação.
-- **19B**: invalidação por evento, projection table, endpoint `GET /api/v1/dashboard/snapshot`, remoção dos `*StatsWidget` legacy.
+- **19B.1** (concluída): invalidação L1/L2 por `ExecutiveDashboardCacheInvalidator` + observers (`Task`, `Meeting`, `Vote`, `Minute`, `SignatureRequest`, `NotificationCenter`); chaves centralizadas em `ExecutiveDashboardCacheKeys`; D11 (sem flush `global` por evento de tenant); D12 (`KPI_FIELDS` + `updated` selectivo). Ver secção **19B.1 — Invalidação** abaixo.
+- **19B.2**: projection table `tenant_dashboard_snapshots` (refresh por job a cada N minutos) para tenants enterprise
+- **19B.3**: endpoint `GET /api/v1/dashboard/snapshot` com ability `dashboard:read` (requer `features/api-write.md` + OpenAPI)
+- **19B.4**: pre-warm de cache por job em horário de pico
+- **19B.5**: remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
+
+### 19B.1 — Invalidação inteligente de cache (D11, D12)
+
+#### Decisões
+
+| ID | Regra |
+|----|--------|
+| **D11** | Não invalidar o segmento `global` por eventos de mutação de um tenant. O cache `cacheSegment === 'global'` expira apenas por TTL natural (evita invalidar agregados de plataforma em cada PATCH de qualquer organização). |
+| **D12** | `created` / `deleted` / `restored` invalidam sempre L1+L2 do tenant (`invalidateForTenant`). Em `updated`, invalidar só se `array_intersect_key($model->getChanges(), array_flip(KPI_FIELDS))` for não vazio. |
+
+#### Chaves (formato exacto)
+
+| Camada | Função | Exemplo (`tenant_id=5`, `this_month`, `snapshot_version=v1`) |
+|--------|--------|----------------------------------------------------------------|
+| L1 | `ExecutiveDashboardCacheKeys::l1Key('t_5', ThisMonth)` | `dashboard_metrics:v1:t_5:this_month` |
+| L2 | `ExecutiveDashboardCacheKeys::l2Key('t_5', ThisMonth)` | `dashboard_snapshot:v1:t_5:this_month:shared:plain` |
+| L2 meta (`Cache::flexible`) | prefixo `ExecutiveDashboardCacheInvalidator::FLEXIBLE_CREATED_PREFIX` + chave L2 | `illuminate:cache:flexible:created:dashboard_snapshot:v1:t_5:this_month:shared:plain` |
+
+`invalidateForTenant` percorre os **3** períodos de `DashboardMetricsPeriod::filterOptions()` e faz `forget` em L1, L2 e meta `flexible:created` para cada L2.
+
+#### Mapa evento → observer (§3)
+
+| Observer | Modelo | `KPI_FIELDS` (subset `updated`) | Invalidação |
+|----------|--------|--------------------------------|---------------|
+| `TaskObserver` | `Task` | `status`, `due_date`, `completed_at`, `deleted_at`, `tenant_id` | `created`, `updated` (se KPI), `deleted`, `restored` |
+| `MeetingObserver` | `Meeting` | `status`, `scheduled_at`, `deleted_at`, `tenant_id` | idem |
+| `VoteObserver` | `Vote` | `status`, `deleted_at`, `tenant_id` | idem |
+| `MinuteObserver` | `Minute` | `status`, `deleted_at`, `tenant_id` | idem |
+| `SignatureRequestObserver` | `SignatureRequest` | `status`, `deleted_at`, `tenant_id` | idem |
+| `NotificationCenterObserver` | `NotificationCenter` | `status`, `read_at`, `deleted_at`, `tenant_id` | idem + `deleted` / `restored` (soft deletes) |
+
+**Não** invalidar a partir de `AuditLog`, `SignatureRequestSignerObserver` nem qualquer outro call-site em 19B.1.
+
+#### Pendência arquitectural (assinaturas)
+
+O `HeroProvider::countSignaturesPending` conta `SignatureRequest` por `status` (`draft`/`sent`/`failed`). Quando um `SignatureRequestSigner` assina mas o **parent** `SignatureRequest` permanece `sent` (ainda há signers pendentes), só o signer é `updated` — **não** há invalidação L2 nessa fase (por decisão explícita de não observar o signer). O pedido completo dispara `SignatureRequestObserver` quando o parent transita (ex.: `completed`). Até lá, L1/L2 podem mostrar contagem de pedidos “pendentes” coerente com **pedidos** abertos; se no futuro os KPIs passarem a depender de linhas de signer sem `save()` no parent, reabrir desenho (fora do âmbito 19B.1).
+
+#### Código
+
+- `App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheKeys`
+- `App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheInvalidator`
+- `ExecutiveDashboardReadService::sharedKey()` delega em `ExecutiveDashboardCacheKeys::l2Key()`
+- `DashboardMetricsService::getMetrics()` delega em `ExecutiveDashboardCacheKeys::l1Key()`
+
+#### Testes
+
+- Unit: `tests/Unit/Dashboard/Executive/Cache/ExecutiveDashboardCacheKeysTest.php`
+- Feature: `ExecutiveDashboardMetricsL1CacheHitTest`, `tests/Feature/Dashboard/Executive/Cache/ExecutiveDashboardCacheInvalidatorTest.php`, `CrossTenantCacheLeakageTest.php`, `tests/Feature/Observers/Dashboard/*` (invalidação por observer e casos negativos §5.5 / `AuditLog`)
 
 ### QA 19A.8 — findings
 

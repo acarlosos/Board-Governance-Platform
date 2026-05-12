@@ -110,6 +110,14 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - **19A.8 §12.C (decisão fechada):** user com `tenant_id = null` e **sem** `super_admin` **não** recebe o gate `view_executive_dashboard` (nem widgets executivos), mesmo que tenha `view_reports`. A regra vive no gate (`AuthServiceProvider`, ramo `tenant_id === null`) e é coberta por `ExecutiveDashboardPageTest::test_user_sem_tenant_sem_super_admin_sem_gate_mas_shell_dashboard_acessivel_decisao_19a8` (pode abrir a page autenticado; widgets executivos ficam ocultos). Não alterar o gate sem aprovação arquitectural.
 - **Remoção da flag + dos 6 legacy widgets:** **19B.5** (D10).
 
+### Invalidação de cache (19B.1)
+
+- **D11:** não invalidar `cacheSegment === 'global'` por eventos de mutação de um tenant; TTL natural mantém agregados de plataforma estáveis.
+- **D12:** `ExecutiveDashboardCacheInvalidator` + `ExecutiveDashboardCacheKeys`; observers `Task`, `Meeting`, `Vote`, `Minute`, `SignatureRequest`, `NotificationCenter` (não `SignatureRequestSignerObserver`, não `AuditLog`).
+- **`updated`:** só invalida quando `KPI_FIELDS` intersecta `getChanges()`; `created` / `deleted` / `restored` invalidam sempre (com `tenant_id !== null`).
+- **L2 `flexible`:** o invalidador remove também `illuminate:cache:flexible:created:{l2Key}`.
+- Detalhe e tabela §3: `docs/features/dashboard.md` → **19B.1**.
+
 ## Cache split (D1, D2, D3)
 
 - **Hero / KPI / Operations**: **partilhado por tenant** + período. **TTL 60 s lógico** via `Cache::flexible(stale=60, expire=120, …)` (D1). **Anti-stampede obrigatório** (D2): padrão `Cache::flexible`; `Cache::lock` apenas se `flexible` for insuficiente (cálculo > 30 s).
@@ -153,7 +161,7 @@ Classes: `App\Services\Dashboard\Executive\Providers\HeroProvider`, `KpiStripPro
 - Adicionar 5º widget Livewire ao dashboard executivo sem aprovação arquitectural (viola D6).
 - Ler `DashboardMetricsService` **fora** de `KpiStripProvider` (violando a regra da camada Executive `Providers`; Hero/Operations têm perguntas alinhadas ao **seu** DTO — não usar o service como «atalho KPI» dentro de outros providers).
 - Widget executivo com `period` que **não** reacciona a `dashboard:period-changed` (viola D5).
-- TTL > 60 s no snapshot partilhado sem invalidação por evento (viola D1; reservado para 19B.1).
+- TTL > 60 s no snapshot partilhado sem invalidação por evento (viola D1; **19B.1** cobre invalidação por tenant, não altera TTL).
 - `super_admin` em modo global a popular Priorities/Activity (viola D4).
 
 ## Testes obrigatórios (`tests.mdc`)

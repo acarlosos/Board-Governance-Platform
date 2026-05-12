@@ -3,7 +3,9 @@
 namespace App\Observers;
 
 use App\Enums\AuditAction;
+use App\Models\Meeting;
 use App\Services\Audit\AuditLoggerService;
+use App\Services\Dashboard\Executive\Cache\ExecutiveDashboardCacheInvalidator;
 
 final class MeetingObserver
 {
@@ -23,18 +25,35 @@ final class MeetingObserver
         'created_by',
     ];
 
-    public function created(\App\Models\Meeting $meeting): void
+    /**
+     * @var list<string>
+     */
+    private const KPI_FIELDS = [
+        'status',
+        'scheduled_at',
+        'deleted_at',
+        'tenant_id',
+    ];
+
+    public function __construct(
+        private readonly AuditLoggerService $audit,
+        private readonly ExecutiveDashboardCacheInvalidator $dashboardCacheInvalidator,
+    ) {}
+
+    public function created(Meeting $meeting): void
     {
-        app(AuditLoggerService::class)->log(
+        $this->audit->log(
             AuditAction::Created,
             $meeting,
             oldValues: [],
             newValues: $this->onlyAllowed($meeting->getAttributes()),
             tenantId: (int) $meeting->tenant_id,
         );
+
+        $this->invalidateExecutiveDashboardCache($meeting);
     }
 
-    public function updated(\App\Models\Meeting $meeting): void
+    public function updated(Meeting $meeting): void
     {
         $changes = $this->onlyAllowed($meeting->getChanges());
         if ($changes === []) {
@@ -50,35 +69,52 @@ final class MeetingObserver
             ? AuditAction::StatusChanged
             : AuditAction::Updated;
 
-        app(AuditLoggerService::class)->log(
+        $this->audit->log(
             $action,
             $meeting,
             oldValues: $original,
             newValues: $changes,
             tenantId: (int) $meeting->tenant_id,
         );
+
+        if (array_intersect_key($changes, array_flip(self::KPI_FIELDS)) !== []) {
+            $this->invalidateExecutiveDashboardCache($meeting);
+        }
     }
 
-    public function deleted(\App\Models\Meeting $meeting): void
+    public function deleted(Meeting $meeting): void
     {
-        app(AuditLoggerService::class)->log(
+        $this->audit->log(
             AuditAction::Deleted,
             $meeting,
             oldValues: $this->onlyAllowed($meeting->getOriginal()),
             newValues: [],
             tenantId: (int) $meeting->tenant_id,
         );
+
+        $this->invalidateExecutiveDashboardCache($meeting);
     }
 
-    public function restored(\App\Models\Meeting $meeting): void
+    public function restored(Meeting $meeting): void
     {
-        app(AuditLoggerService::class)->log(
+        $this->audit->log(
             AuditAction::Restored,
             $meeting,
             oldValues: [],
             newValues: $this->onlyAllowed($meeting->getAttributes()),
             tenantId: (int) $meeting->tenant_id,
         );
+
+        $this->invalidateExecutiveDashboardCache($meeting);
+    }
+
+    private function invalidateExecutiveDashboardCache(Meeting $meeting): void
+    {
+        if ($meeting->tenant_id === null) {
+            return;
+        }
+
+        $this->dashboardCacheInvalidator->invalidateForTenant((int) $meeting->tenant_id);
     }
 
     /**
@@ -90,4 +126,3 @@ final class MeetingObserver
         return array_intersect_key($values, array_flip(self::AUDITABLE_FIELDS));
     }
 }
-
