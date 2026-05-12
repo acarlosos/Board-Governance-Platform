@@ -15,6 +15,8 @@ Route::get('/docs/api', function () {
 })->name('docs.api');
 
 Route::get('/health', HealthCheckController::class)->name('health');
+// Compat Laravel / Forge: mesmo probe operacional que /health (DB+cache); ver docs/operations/deploy.md § Healthcheck.
+Route::get('/up', HealthCheckController::class);
 
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/documents/{document}/download', [DocumentDownloadController::class, 'download'])

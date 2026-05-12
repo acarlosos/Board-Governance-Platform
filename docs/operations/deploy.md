@@ -13,12 +13,13 @@ Na raiz do projecto:
 bash scripts/deploy.sh
 ```
 
-O script corre `composer install --no-dev`, `migrate --force`, caches de config/route/view e `filament:upgrade`.
+O script corre `composer install --no-dev`, `migrate --force`, caches de config/route/view, `filament:upgrade` e **`php artisan queue:restart`** (PO4 — workers pick up código novo após deploy).
 
 ## Healthcheck
 
-- `GET /health` — JSON `status`, `db`, `cache`, `app_env`; **200** se DB + cache OK, **503** caso contrário.
-- Monitor externo (ex.: UptimeRobot): ping HTTPS a `/health` a cada 1–5 min.
+- `GET /health` — canónico BGP: JSON `status`, `db`, `cache`, `app_env`; **200** se DB + cache OK, **503** caso contrário.
+- `GET /up` — **alias** do mesmo `HealthCheckController` (compatibilidade Laravel/Forge e probes antigos). **Decisão (parecer v1):** remover a rota built-in `health: '/up'` do `bootstrap/app.php` para evitar dois comportamentos distintos; ambos os caminhos expõem o mesmo probe (DB+cache) e ficam na lista de excepções de maintenance (`PreventRequestsDuringMaintenance::except`).
+- Monitor externo (ex.: UptimeRobot): preferir HTTPS a **`/health`** a cada 1–5 min; `/up` só se o template de infra ainda o exigir.
 
 ## Scheduler
 

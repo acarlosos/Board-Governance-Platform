@@ -25,6 +25,7 @@ use App\Observers\SignatureRequestSignerObserver;
 use App\Observers\NotificationTemplateObserver;
 use App\Observers\NotificationCenterObserver;
 use App\Services\Tenancy\TenantResolver;
+use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -42,6 +43,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        PreventRequestsDuringMaintenance::except(['/health', '/up']);
+
         \App\Models\Tenant::observe(TenantObserver::class);
         \App\Models\User::observe(UserObserver::class);
         \App\Models\Board::observe(BoardObserver::class);
