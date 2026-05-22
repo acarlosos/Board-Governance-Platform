@@ -32,20 +32,31 @@ Os testes em **`Tests\Unit`** que estendem `PHPUnit\Framework\TestCase` **não**
 | Diferenças de motor | Poucas: a suite foi escrita para ambos; não há testes que exijam APIs só SQLite. | Exige `pdo_mysql`, charset `utf8mb4`, permissões `CREATE`/`DROP` na base de smoke. |
 | Segurança | `.env.testing` versionado com `:memory:`. | `.env.testing.mysql` **não** vai para o git; o `TestCase` recusa nomes de base que não terminem em sufixo dedicado. |
 
-Até à data da última actualização deste documento, **não** há asserts condicionais por driver na pasta `tests/`; qualquer diferença futura (ex.: tipos JSON, `strict` SQL) deve ser registada aqui e, se necessário, corrigida no código ou na migração.
+Não há asserts condicionais por driver em `tests/`. No subset crítico 17.7 (2026-05-22), **241/241** testes passaram em ambos os motores; o número de **assertions** no PHPUnit pode divergir (ex.: **1842** SQLite vs **2324** MySQL no mesmo subset) por `RefreshDatabase`/`migrate:fresh` real e auditoria persistida — **não** indica falha funcional se todos os testes estiverem verdes.
+
+| Métrica (subset 17.7) | SQLite | MySQL 8 (`bgp_smoke_test`) |
+|------------------------|--------|----------------------------|
+| Testes | 241 | 241 |
+| Duração (indicativa) | ~12 s | ~27 s |
+| Falhas observadas | 0 | 0 |
 
 ## Smoke MySQL — passos
 
-1. Criar uma base **vazia** dedicada (ex.: `bgp_smoke_test`) num MySQL 8 local ou container.
-2. `cp .env.testing.mysql.example .env.testing.mysql` e preencher `DB_*`, mantendo `APP_ENV=testing.mysql` e `TESTING_MYSQL_SMOKE=true`.
-3. Correr a suite (completa ou subset com `--filter`):
+1. Criar base dedicada: `CREATE DATABASE bgp_smoke_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+2. `cp .env.testing.mysql.example .env.testing.mysql` — preencher `DB_*` e `DB_PASSWORD` se aplicável.
+3. Script reproduzível (recomendado):
    ```bash
-   php artisan test --configuration=phpunit.mysql.xml
-   php artisan test --configuration=phpunit.mysql.xml --filter=MultitenancyTest
+   bash scripts/smoke-mysql-17.7.sh
    ```
-4. Subset mínimo sugerido na spec 17.7: `Multi*`, `*Policy*`, `Auth*` — ajustar o `--filter` em regex conforme o runner local.
+4. Ou manualmente:
+   ```bash
+   php artisan migrate:fresh --force --env=testing.mysql
+   vendor/bin/phpunit -c phpunit.mysql.xml tests/Feature/MultitenancyTest.php
+   ```
 
-**Nota:** `php artisan test --env=testing.mysql` **não** substitui o `phpunit.xml` embutido; o perfil MySQL correcto é **`--configuration=phpunit.mysql.xml`** (ou `vendor/bin/phpunit -c phpunit.mysql.xml`).
+**Comando preferido:** `vendor/bin/phpunit -c phpunit.mysql.xml` (exit code 0 quando verde). `php artisan test --configuration=phpunit.mysql.xml` pode reportar exit **1** apesar de testes verdes (Laravel só define `runningUnitTests()` para `APP_ENV=testing`; o `TestCase` aceita também `testing.mysql`).
+
+Subset 17.7 (pastas): Auth (`AuthPermissionsTest`, `Api/V1/AuthApiTest`, `Unit/Auth/`), Policies (`SecurityHardeningTest`, `BoardsTest`, `MeetingsTest`, `AuditLogsTest`), MultiTenant (`MultitenancyTest`), Dashboard (`Feature|Unit|Observers/Dashboard`, `Filament/Dashboard`), Api (`tests/Feature/Api`).
 
 ## Como validar o isolamento
 
