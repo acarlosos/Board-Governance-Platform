@@ -34,9 +34,10 @@ abstract class TestCase extends BaseTestCase
      */
     protected function assertApplicationUsesIsolatedTestDatabase(Application $app): void
     {
+        // Laravel só considera runningUnitTests() quando env === 'testing'; o smoke MySQL usa testing.mysql.
         Assert::assertTrue(
-            $app->runningUnitTests(),
-            'A aplicação tem de estar em modo de testes PHPUnit.'
+            $app->runningUnitTests() || $app->environment('testing.mysql'),
+            'APP_ENV tem de ser testing (phpunit.xml) ou testing.mysql (phpunit.mysql.xml).'
         );
 
         if ($app->environment('testing.mysql')) {
