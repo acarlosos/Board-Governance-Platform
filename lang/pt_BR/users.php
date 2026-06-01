@@ -13,8 +13,10 @@ return [
         'name' => 'Nome',
         'email' => 'E-mail',
         'password' => 'Senha',
+        'password_helper_create' => 'Mínimo 8 caracteres, com maiúsculas, minúsculas, números e símbolos (ex.: AlterarEstaSenha1!).',
         'password_helper_edit' => 'Deixe em branco para manter a senha atual.',
         'tenant' => 'Tenant',
+        'tenant_helper' => 'Obrigatório para utilizadores da organização. Escolha o tenant criado antes de guardar.',
         'locale' => 'Idioma',
         'status' => 'Estado',
         'roles' => 'Papéis',
@@ -43,5 +45,6 @@ return [
         'tenant_mismatch' => 'Operação não permitida para este tenant.',
         'roles_not_allowed' => 'Um ou mais papéis não são permitidos para o seu perfil.',
         'roles_required_unless_super' => 'Selecione pelo menos um papel, ou ative «Super administrador (plataforma)».',
+        'tenant_required_for_org_user' => 'Selecione o tenant da organização para este utilizador.',
     ],
 ];

@@ -11,12 +11,14 @@ use App\Enums\IntegrationStatus;
 use App\Enums\IntegrationType;
 use App\Filament\Admin\Resources\Integrations\Pages\ManageIntegrations;
 use App\Filament\Admin\Resources\Integrations\RelationManagers\IntegrationLogsRelationManager;
-use App\Integrations\IntegrationConfigSchemaRegistry;
 use App\Models\Integration;
 use App\Models\User;
+use App\Support\Filament\FormatBackedEnumState;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -252,15 +254,15 @@ class IntegrationResource extends Resource
                 TextColumn::make('type')
                     ->label(__('integrations.fields.type'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('integrations.type.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('integrations.type.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('provider')
                     ->label(__('integrations.fields.provider'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('integrations.provider.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('integrations.provider.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('status')
                     ->label(__('integrations.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('integrations.status.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('integrations.status.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('tenant.name')
                     ->label(__('integrations.fields.tenant'))
                     ->toggleable()
@@ -307,7 +309,10 @@ class IntegrationResource extends Resource
 
                 EditAction::make()
                     ->label(__('actions.edit'))
-                    ->using(fn (Integration $record, array $data): Integration => app(PersistIntegrationAction::class)->update(auth()->user(), $record, $data)),
+                    ->using(fn (Integration $record, array $data, HasActions $livewire): Integration => RemapValidationToMountedAction::run(
+                        fn (): Integration => app(PersistIntegrationAction::class)->update(auth()->user(), $record, $data),
+                        $livewire,
+                    )),
                 DeleteAction::make()->label(__('actions.delete')),
                 RestoreAction::make()->label(__('actions.restore')),
                 ForceDeleteAction::make()->label(__('actions.force_delete')),
@@ -337,7 +342,7 @@ class IntegrationResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]); // reason: apenas SoftDeletingScope; incluir trashed no admin; TenantScope mantém-se no query base.
 
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -355,4 +360,3 @@ class IntegrationResource extends Resource
         return $query->where('tenant_id', $user->tenant_id);
     }
 }
-

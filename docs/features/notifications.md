@@ -54,7 +54,8 @@ Criar uma base central de **notificações internas** (canal `database`) e **tem
 - `related_type/related_id` (se informado) deve ser do **mesmo tenant** e `related_type` só aceita classes na whitelist: `Task`, `SignatureRequest`, `Minute`, `Vote`, `Document`, `Meeting` (caso contrário `ValidationException`).
 - Templates globais (`tenant_id = null`) funcionam como **fallback**, mas `tenant_admin` **não edita** templates globais.
 - Override: template do tenant sobrescreve global por `key + locale + channel`.
-- Nesta fase **não envia e-mail real** e **não dispara automaticamente** eventos a partir de Tasks/Signatures/Minutes/Votes.
+- Nesta fase **não envia e-mail real** (SMTP) em disparos automáticos.
+- **Gatilho automático (votações):** ao abrir votação (`OpenVoteAction` → `NotifyVoteOpenedParticipantsAction`), template `vote_opened`, canal `database`, para participantes activos da reunião (excepto quem abriu). Tasks, assinaturas e atas continuam sem disparo automático.
 
 ## Segurança
 
@@ -64,7 +65,8 @@ Criar uma base central de **notificações internas** (canal `database`) e **tem
 ## Filament (Admin)
 
 - `NotificationTemplateResource` — CRUD com fallback/global visível e bloqueio de edição no backend.
-- `NotificationCenterResource` — leitura + ações: marcar como lida e reenviar (fake) para canal email.
+- `NotificationCenterResource` — leitura + ações: marcar como lida e reenviar (fake) para canal email (gestores).
+- **Sino na topbar** (`NotificationCenterBell`, activado via `databaseNotifications` no painel): ícone com badge de não lidas **à esquerda do menu do utilizador**; qualquer utilizador autenticado com `tenant_id` vê **as próprias** notificações; clique abre painel lateral, marca como lida e redireciona para o recurso relacionado quando há permissão (`Vote`, `Meeting`, `Minute`, `Task`).
 
 ## Seeders
 
@@ -77,9 +79,11 @@ Criar uma base central de **notificações internas** (canal `database`) e **tem
 ## Testes relacionados
 
 - `tests/Feature/NotificationsTest.php`
+- `tests/Feature/Votes/VoteOpenedNotificationsTest.php`
+- `tests/Feature/Filament/NotificationCenterBellTest.php`
 
 ## Pendências futuras
 
-- Disparos automáticos (Fase 13/14 conforme roadmap) com regras de negócio claras.
+- Disparos automáticos para Tasks, assinaturas e atas (e fecho/cancelamento de votações).
 - Integração real SMTP por tenant via módulo Integrations.
 

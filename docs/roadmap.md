@@ -268,8 +268,8 @@ Evolução do dashboard interno (Fase 14) para um **dashboard executivo** orient
 - 19B.2 Observabilidade leve do cache executivo (`ExecutiveDashboardObservability`, comando `dashboard:cache-stats`) — **concluída** (ver `docs/execution/19B.2-dashboard-observability.md`)
 - 19B.3 Projection table `tenant_dashboard_snapshots` (L3, flag `BGP_DASHBOARD_USE_PROJECTION`, job + comando `dashboard:refresh-projections`) — **concluída** (ver `docs/features/dashboard.md` → 19B.3, `docs/execution/19B.3-projection-table.md`)
 - 19B.4 Endpoint `GET /api/v1/dashboard/snapshot` (ability `reports:read` + gate `view_executive_dashboard`, OpenAPI) — **concluída** (ver `docs/features/api.md`, `docs/execution/19B.4-api-dashboard-snapshot.md`)
-- 19B.5 Pre-warm de cache por job em horário de pico
-- 19B.6 Remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo)
+- 19B.5 Pre-warm de cache por job em horário de pico — **rascunho / condicional** (ver [`docs/execution/19B.5-cache-prewarm.md`](docs/execution/19B.5-cache-prewarm.md); descartar se `hit_ratio` L2 ≥ 80 % em produção)
+- 19B.6 Remoção dos `*StatsWidget` legacy (após validação em produção do dashboard executivo) — **pendente**
 
 ## Ordem obrigatória
 

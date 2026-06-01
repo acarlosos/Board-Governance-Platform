@@ -20,7 +20,7 @@ final class ReportsService
     public function tasksByStatus(User $user, DashboardMetricsPeriod $period): array
     {
         $ctx = ReportingContext::fromUser($user);
-        $q = Task::query()->withoutGlobalScopes();
+        $q = Task::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($q);
         $period->applyToCreatedAt($q);
 
@@ -50,7 +50,7 @@ final class ReportsService
             $end = $start->copy()->endOfMonth();
             $key = $start->format('Y-m');
 
-            $q = Meeting::query()->withoutGlobalScopes();
+            $q = Meeting::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
             $ctx->restrictToTenant($q);
             $q->whereNotNull($q->qualifyColumn('scheduled_at'))
                 ->whereBetween($q->qualifyColumn('scheduled_at'), [$start, $end]);
@@ -67,7 +67,7 @@ final class ReportsService
     public function votesByStatus(User $user, DashboardMetricsPeriod $period): array
     {
         $ctx = ReportingContext::fromUser($user);
-        $q = Vote::query()->withoutGlobalScopes();
+        $q = Vote::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($q);
         $period->applyToCreatedAt($q);
 
@@ -85,7 +85,7 @@ final class ReportsService
     public function signaturesByStatus(User $user, DashboardMetricsPeriod $period): array
     {
         $ctx = ReportingContext::fromUser($user);
-        $q = SignatureRequest::query()->withoutGlobalScopes();
+        $q = SignatureRequest::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($q);
         $period->applyToCreatedAt($q);
 

@@ -31,6 +31,14 @@ return [
         'reopen' => 'Reabrir para edición',
     ],
 
+    'notifications' => [
+        'submitted_for_review' => 'Acta enviada para revisión.',
+        'approved' => 'Aprobación registrada.',
+        'rejected' => 'Rechazo registrado.',
+        'reopened' => 'Acta reabierta para edición.',
+        'archived' => 'Acta archivada.',
+    ],
+
     'status' => [
         'draft' => 'Borrador',
         'in_review' => 'En revisión',
@@ -58,4 +66,3 @@ return [
         'content_required' => 'El contenido es obligatorio.',
     ],
 ];
-

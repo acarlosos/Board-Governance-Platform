@@ -14,9 +14,14 @@ use App\Filament\Admin\Resources\Votes\RelationManagers\VoteOptionsRelationManag
 use App\Filament\Admin\Resources\Votes\RelationManagers\VoteResponsesRelationManager;
 use App\Models\User;
 use App\Models\Vote;
+use App\Support\Filament\FormatBackedEnumState;
+use App\Support\Filament\NotifyActionValidation;
+use App\Support\Filament\RelationManagerModalAction;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -28,9 +33,11 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -38,6 +45,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\ValidationException;
 
 class VoteResource extends Resource
 {
@@ -153,6 +161,7 @@ class VoteResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('title')
                     ->label(__('votes.fields.title'))
@@ -164,11 +173,16 @@ class VoteResource extends Resource
                 TextColumn::make('type')
                     ->label(__('votes.fields.type'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('votes.types.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('votes.types.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('status')
                     ->label(__('votes.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('votes.status.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('votes.status.'.FormatBackedEnumState::value($state))),
+                TextColumn::make('options_count')
+                    ->label(__('votes.fields.options'))
+                    ->counts('options')
+                    ->alignEnd()
+                    ->sortable(),
                 TextColumn::make('responses_count')
                     ->label(__('votes.fields.responses'))
                     ->counts('responses')
@@ -192,18 +206,49 @@ class VoteResource extends Resource
             ->actions([
                 EditAction::make()
                     ->label(__('actions.edit'))
+                    ->modalWidth(Width::FiveExtraLarge)
                     ->visible(fn (Vote $record): bool => $record->status === VoteStatus::Draft)
-                    ->using(function (Vote $record, array $data): Vote {
-                        $data['status'] = VoteStatus::Draft->value;
-                        return app(PersistVoteAction::class)->update(auth()->user(), $record, $data);
+                    ->using(function (Vote $record, array $data, HasActions $livewire): Vote {
+                        return RemapValidationToMountedAction::run(function () use ($record, $data): Vote {
+                            $data['status'] = VoteStatus::Draft->value;
+
+                            return app(PersistVoteAction::class)->update(auth()->user(), $record, $data);
+                        }, $livewire);
                     }),
+
+                RelationManagerModalAction::make(
+                    name: 'options',
+                    label: __('vote-options.section_main'),
+                    relationManager: VoteOptionsRelationManager::class,
+                    icon: Heroicon::OutlinedListBullet,
+                    pageClass: ManageVotes::class,
+                    visible: fn (Vote $record): bool => $record->status === VoteStatus::Draft
+                        && (auth()->user()?->can('update', $record) ?? false),
+                ),
 
                 Action::make('open')
                     ->label(__('votes.actions.open'))
                     ->icon(Heroicon::OutlinedPlay)
                     ->visible(fn (Vote $record): bool => $record->status === VoteStatus::Draft)
+                    ->disabled(fn (Vote $record): bool => ! self::voteHasEnoughOptions($record))
+                    ->tooltip(fn (Vote $record): ?string => self::voteHasEnoughOptions($record)
+                        ? null
+                        : __('votes.validation.open_requires_two_options'))
                     ->requiresConfirmation()
-                    ->action(fn (Vote $record) => app(OpenVoteAction::class)->open(auth()->user(), $record)),
+                    ->action(function (Vote $record): void {
+                        try {
+                            app(OpenVoteAction::class)->open(auth()->user(), $record);
+                        } catch (ValidationException $exception) {
+                            NotifyActionValidation::send($exception);
+
+                            return;
+                        }
+
+                        Notification::make()
+                            ->title(__('votes.notifications.opened'))
+                            ->success()
+                            ->send();
+                    }),
 
                 Action::make('close')
                     ->label(__('votes.actions.close'))
@@ -283,7 +328,7 @@ class VoteResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]); // reason: apenas SoftDeletingScope; incluir trashed no admin; TenantScope mantém-se no query base.
 
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -308,5 +353,9 @@ class VoteResource extends Resource
             $p->where('user_id', $user->id);
         });
     }
-}
 
+    public static function voteHasEnoughOptions(Vote $vote): bool
+    {
+        return $vote->options()->count() >= 2;
+    }
+}

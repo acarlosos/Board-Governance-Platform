@@ -8,8 +8,11 @@ use App\Enums\NotificationTemplateStatus;
 use App\Filament\Admin\Resources\Notifications\Pages\ManageNotificationTemplates;
 use App\Models\NotificationTemplate;
 use App\Models\User;
+use App\Support\Filament\FormatBackedEnumState;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -158,11 +161,11 @@ class NotificationTemplateResource extends Resource
                 TextColumn::make('channel')
                     ->label(__('notification-templates.fields.channel'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('notifications.channel.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('notifications.channel.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('status')
                     ->label(__('notification-templates.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('notification-templates.status.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('notification-templates.status.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('tenant.name')
                     ->label(__('notification-templates.fields.tenant'))
                     ->toggleable()
@@ -184,7 +187,10 @@ class NotificationTemplateResource extends Resource
             ->actions([
                 EditAction::make()
                     ->label(__('actions.edit'))
-                    ->using(fn (NotificationTemplate $record, array $data) => app(PersistNotificationTemplateAction::class)->update(auth()->user(), $record, $data)),
+                    ->using(fn (NotificationTemplate $record, array $data, HasActions $livewire) => RemapValidationToMountedAction::run(
+                        fn () => app(PersistNotificationTemplateAction::class)->update(auth()->user(), $record, $data),
+                        $livewire,
+                    )),
                 DeleteAction::make()->label(__('actions.delete')),
                 RestoreAction::make()->label(__('actions.restore')),
                 ForceDeleteAction::make()->label(__('actions.force_delete')),
@@ -207,7 +213,7 @@ class NotificationTemplateResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]); // reason: apenas SoftDeletingScope; incluir trashed no admin; TenantScope mantém-se no query base.
 
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -228,4 +234,3 @@ class NotificationTemplateResource extends Resource
         });
     }
 }
-

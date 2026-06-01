@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Gerir **conselhos** (Boards) por tenant: criar boards, definir estado e gerir membros (papéis/estado/entrada/saída), com isolamento multi-tenant, policies e auditoria.
+Gerir **conselhos** (Boards) por tenant: criar boards, definir estado e gerir membros (papéis/estado/entrada/saída), com isolamento multi-tenant, policies e auditoria. No admin: **Criar**, **Editar** e **Membros** usam **modal** na listagem (`ManageBoards`; RelationManager de membros via `RelationManagerModalAction`, alinhado a reuniões).
 
 ## Tabelas envolvidas
 
@@ -22,8 +22,8 @@ Gerir **conselhos** (Boards) por tenant: criar boards, definir estado e gerir me
   - `board_member` vê apenas boards onde é membro **ativo**.
 - `App\Policies\BoardMemberPolicy`
   - `super_admin` vê e gere tudo.
-  - `tenant_admin` e `manage_boards` gerem membros no próprio tenant.
-  - `board_member` pode ver membros do board onde participa.
+  - `viewAny` / `create` (assinatura só `User`, compatível com Filament): gestão por `tenant_admin` / `manage_boards`; `board_member` pode listar (`viewAny`) mas não criar.
+  - `view` / `update` / `delete` no registo: gestores no tenant; `board_member` só **vê** membros de boards onde participa ativamente.
 
 ## Services / Actions envolvidos
 
@@ -39,6 +39,7 @@ Gerir **conselhos** (Boards) por tenant: criar boards, definir estado e gerir me
 - `Board.status`: `active`, `inactive`, `archived`.
 - Membro (`BoardMember`) tem `role` e `status` (`active`/`inactive`) e datas opcionais `joined_at` / `left_at`.
 - Um utilizador não pode existir como **membro ativo duplicado** no mesmo board.
+- Ao **criar uma reunião** com este conselho, os membros activos passam automaticamente a participantes iniciais da reunião (ver [meetings.md](meetings.md)); alterações posteriores no conselho não actualizam reuniões já criadas.
 
 ## Regras de segurança
 
@@ -49,6 +50,7 @@ Gerir **conselhos** (Boards) por tenant: criar boards, definir estado e gerir me
 ## Testes relacionados
 
 - `tests/Feature/BoardsTest.php` — isolamento por tenant (create/query), policies (permit/deny), auditoria (Board/BoardMember), bloqueio de membro cross-tenant e duplicidade de membro ativo.
+- `tests/Feature/Filament/Boards/ManageBoardsMembersActionTest.php` — acção **Membros** na listagem (visível para quem `update` no board; oculta para `board_member` sem `manage_boards`).
 
 ## Pendências futuras
 

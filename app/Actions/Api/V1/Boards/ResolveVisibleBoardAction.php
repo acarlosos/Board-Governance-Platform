@@ -10,7 +10,7 @@ final class ResolveVisibleBoardAction
 {
     public function execute(User $actor, int $id): ?Board
     {
-        $builder = Board::query()->withoutGlobalScopes()->whereKey($id);
+        $builder = Board::query()->withoutGlobalScopes()->whereKey($id); // reason: API v1 — strip TenantScope; visibilidade via tenant + policy.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {

@@ -6,9 +6,11 @@ use App\Actions\Documents\PersistDocumentAction;
 use App\Actions\Documents\UploadDocumentVersionAction;
 use App\Filament\Admin\Resources\Documents\DocumentResource;
 use App\Models\Document;
+use App\Support\Filament\RemapValidationToMountedAction;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Support\Enums\Width;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -22,18 +24,19 @@ class ManageDocuments extends ManageRecords
             CreateAction::make()
                 ->label(__('actions.create'))
                 ->modalWidth(Width::FiveExtraLarge)
-                ->using(function (array $data): Document {
-                    /** @var TemporaryUploadedFile $file */
-                    $file = $data['initial_file'];
-                    unset($data['initial_file']);
+                ->using(function (array $data, HasActions&HasSchemas $livewire): Document {
+                    return RemapValidationToMountedAction::run(function () use ($data): Document {
+                        /** @var TemporaryUploadedFile $file */
+                        $file = $data['initial_file'];
+                        unset($data['initial_file']);
 
-                    $document = app(PersistDocumentAction::class)->create(auth()->user(), $data);
+                        $document = app(PersistDocumentAction::class)->create(auth()->user(), $data);
 
-                    app(UploadDocumentVersionAction::class)->upload(auth()->user(), $document, $file);
+                        app(UploadDocumentVersionAction::class)->upload(auth()->user(), $document, $file);
 
-                    return $document->fresh();
+                        return $document->fresh();
+                    }, $livewire);
                 }),
         ];
     }
 }
-

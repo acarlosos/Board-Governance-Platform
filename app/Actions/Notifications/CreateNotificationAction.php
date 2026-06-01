@@ -105,7 +105,7 @@ final class CreateNotificationAction
                 return;
             }
 
-            $user = User::query()->withoutGlobalScopes()->find((int) $safe->user_id);
+            $user = User::query()->withoutGlobalScopes()->find((int) $safe->user_id); // reason: destinatário por id; tenant da notificação aplicado no create.
             if (! $user || (int) $user->tenant_id !== (int) $tenantId) {
                 $v->errors()->add('user_id', __('notifications.validation.user_must_belong_to_tenant'));
             }
@@ -164,7 +164,7 @@ final class CreateNotificationAction
 
         /** @var class-string<Model> $relatedType */
         // lookup interno sem scope, mas sempre validando tenant_id depois
-        return $relatedType::query()->withoutGlobalScopes()->find((int) $relatedId);
+        return $relatedType::query()->withoutGlobalScopes()->find((int) $relatedId); // reason: polimórfico; tenant da notificação já fixado.
     }
 
     /**

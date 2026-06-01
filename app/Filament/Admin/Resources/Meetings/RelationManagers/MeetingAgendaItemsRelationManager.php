@@ -6,6 +6,7 @@ use App\Actions\Meetings\PersistMeetingAgendaItemAction;
 use App\Enums\MeetingAgendaItemStatus;
 use App\Models\Meeting;
 use App\Models\MeetingAgendaItem;
+use App\Support\Filament\RemapValidationToMountedAction;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Component;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,6 +24,18 @@ use Illuminate\Database\Eloquent\Model;
 class MeetingAgendaItemsRelationManager extends RelationManager
 {
     protected static string $relationship = 'agendaItems';
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('meeting-agenda-items.section_main');
+    }
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null && $user->can('view', $ownerRecord);
+    }
 
     public function table(Table $table): Table
     {
@@ -45,21 +59,23 @@ class MeetingAgendaItemsRelationManager extends RelationManager
                     ->label(__('actions.create'))
                     ->modalWidth(Width::FiveExtraLarge)
                     ->form($this->formSchema())
-                    ->using(function (array $data): Model {
+                    ->using(fn (array $data): Model => RemapValidationToMountedAction::run(function () use ($data): Model {
                         /** @var Meeting $meeting */
                         $meeting = $this->getOwnerRecord();
+
                         return app(PersistMeetingAgendaItemAction::class)->create(auth()->user(), $meeting, $data);
-                    }),
+                    }, $this)),
             ])
             ->actions([
                 EditAction::make()
                     ->label(__('actions.edit'))
                     ->modalWidth(Width::FiveExtraLarge)
                     ->form($this->formSchema())
-                    ->using(function (array $data, Model $record): Model {
+                    ->using(fn (array $data, Model $record): Model => RemapValidationToMountedAction::run(function () use ($data, $record): Model {
                         /** @var MeetingAgendaItem $record */
+
                         return app(PersistMeetingAgendaItemAction::class)->update(auth()->user(), $record, $data);
-                    }),
+                    }, $this)),
                 DeleteAction::make()
                     ->label(__('actions.delete'))
                     ->using(function (Model $record): void {
@@ -70,12 +86,13 @@ class MeetingAgendaItemsRelationManager extends RelationManager
             ->modifyQueryUsing(function (Builder $query): Builder {
                 /** @var Meeting $meeting */
                 $meeting = $this->getOwnerRecord();
+
                 return $query->where('tenant_id', $meeting->tenant_id);
             });
     }
 
     /**
-     * @return array<int, \Filament\Schemas\Components\Component>
+     * @return array<int, Component>
      */
     private function formSchema(): array
     {
@@ -105,4 +122,3 @@ class MeetingAgendaItemsRelationManager extends RelationManager
         ];
     }
 }
-

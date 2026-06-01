@@ -14,9 +14,12 @@ use App\Filament\Admin\Resources\Minutes\RelationManagers\MinuteApprovalsRelatio
 use App\Filament\Admin\Resources\Minutes\RelationManagers\MinuteVersionsRelationManager;
 use App\Models\Minute;
 use App\Models\User;
+use App\Support\Filament\NotifyActionValidation;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -28,8 +31,10 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -38,6 +43,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\ValidationException;
 
 class MinuteResource extends Resource
 {
@@ -80,6 +86,19 @@ class MinuteResource extends Resource
             ->columns(1)
             ->extraAttributes(['class' => 'w-full min-w-0'])
             ->components([
+                $sectionLayout(Section::make(__('documents.sections.organization')))
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
+                    ->components([
+                        Select::make('tenant_id')
+                            ->label(__('fields.tenant'))
+                            ->relationship('tenant', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live()
+                            ->columnSpanFull(),
+                    ]),
+
                 $sectionLayout(Section::make(__('minutes.sections.data')))
                     ->components([
                         TextInput::make('title')
@@ -92,10 +111,18 @@ class MinuteResource extends Resource
                             ->relationship(
                                 name: 'meeting',
                                 titleAttribute: 'title',
-                                modifyQueryUsing: function (Builder $query): Builder {
+                                modifyQueryUsing: function (Builder $query, Get $get): Builder {
                                     $user = auth()->user();
-                                    if (! $user instanceof User || $user->isSuperAdmin()) {
-                                        return $query;
+                                    if (! $user instanceof User) {
+                                        return $query->whereRaw('1 = 0');
+                                    }
+
+                                    if ($user->isSuperAdmin()) {
+                                        $tenantId = $get('tenant_id');
+
+                                        return filled($tenantId)
+                                            ? $query->where('tenant_id', $tenantId)
+                                            : $query->whereRaw('1 = 0');
                                     }
 
                                     return $query->where('tenant_id', $user->tenant_id);
@@ -113,7 +140,8 @@ class MinuteResource extends Resource
                         RichEditor::make('content')
                             ->label(__('minutes.fields.content'))
                             ->required()
-                            ->disabled(fn (?Minute $record): bool => $record?->status !== MinuteStatus::Draft)
+                            ->disabled(fn (?Minute $record): bool => $record !== null && $record->status !== MinuteStatus::Draft)
+                            ->extraAttributes(['class' => 'bgp-minute-rich-editor'])
                             ->columnSpanFull(),
                         Textarea::make('status')
                             ->label(__('minutes.fields.status'))
@@ -139,7 +167,9 @@ class MinuteResource extends Resource
                 TextColumn::make('status')
                     ->label(__('minutes.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('minutes.status.'.((string) $state))),
+                    ->formatStateUsing(fn (MinuteStatus|string|null $state): string => __('minutes.status.'.(
+                        $state instanceof MinuteStatus ? $state->value : (string) ($state ?? '')
+                    ))),
                 TextColumn::make('current_version_id')
                     ->label(__('minutes.fields.current_version'))
                     ->toggleable()
@@ -165,44 +195,74 @@ class MinuteResource extends Resource
                 EditAction::make()
                     ->label(__('actions.edit'))
                     ->visible(fn (Minute $record): bool => $record->status === MinuteStatus::Draft)
-                    ->using(function (Minute $record, array $data): Minute {
-                        // edição só draft (enforced também na Action)
-                        $data['status'] = MinuteStatus::Draft->value;
-                        return app(PersistMinuteAction::class)->update(auth()->user(), $record, $data);
+                    ->using(function (Minute $record, array $data, HasActions $livewire): Minute {
+                        return RemapValidationToMountedAction::run(function () use ($record, $data): Minute {
+                            // edição só draft (enforced também na Action)
+                            $data['status'] = MinuteStatus::Draft->value;
+
+                            return app(PersistMinuteAction::class)->update(auth()->user(), $record, $data);
+                        }, $livewire);
                     }),
 
                 Action::make('submit_for_review')
                     ->label(__('minutes.actions.submit_for_review'))
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->visible(fn (Minute $record): bool => $record->status === MinuteStatus::Draft)
+                    ->authorize(fn (Minute $record): bool => auth()->user()?->can('update', $record) ?? false)
+                    ->disabled(fn (Minute $record): bool => ! self::meetingHasEligibleReviewParticipants($record))
+                    ->tooltip(fn (Minute $record): ?string => self::meetingHasEligibleReviewParticipants($record)
+                        ? null
+                        : __('minutes.validation.no_participants_for_review'))
                     ->requiresConfirmation()
-                    ->action(fn (Minute $record) => app(SubmitMinuteForReviewAction::class)->submit(auth()->user(), $record)),
+                    ->action(function (Minute $record): void {
+                        self::runMinuteWorkflowAction(function () use ($record): void {
+                            app(SubmitMinuteForReviewAction::class)->submit(auth()->user(), $record);
+                        }, __('minutes.notifications.submitted_for_review'));
+                    }),
 
                 Action::make('approve')
                     ->label(__('minutes.actions.approve'))
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->visible(fn (Minute $record): bool => $record->status === MinuteStatus::InReview)
-                    ->action(fn (Minute $record) => app(ApproveMinuteAction::class)->approve(auth()->user(), $record)),
+                    ->action(function (Minute $record): void {
+                        self::runMinuteWorkflowAction(function () use ($record): void {
+                            app(ApproveMinuteAction::class)->approve(auth()->user(), $record);
+                        }, __('minutes.notifications.approved'));
+                    }),
 
                 Action::make('reject')
                     ->label(__('minutes.actions.reject'))
                     ->icon(Heroicon::OutlinedXCircle)
                     ->visible(fn (Minute $record): bool => $record->status === MinuteStatus::InReview)
-                    ->action(fn (Minute $record) => app(RejectMinuteAction::class)->reject(auth()->user(), $record)),
+                    ->action(function (Minute $record): void {
+                        self::runMinuteWorkflowAction(function () use ($record): void {
+                            app(RejectMinuteAction::class)->reject(auth()->user(), $record);
+                        }, __('minutes.notifications.rejected'));
+                    }),
 
                 Action::make('reopen')
                     ->label(__('minutes.actions.reopen'))
                     ->icon(Heroicon::OutlinedArrowPath)
                     ->visible(fn (Minute $record): bool => $record->status === MinuteStatus::Rejected)
+                    ->authorize(fn (Minute $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->requiresConfirmation()
-                    ->action(fn (Minute $record) => app(ReopenRejectedMinuteAction::class)->reopen(auth()->user(), $record)),
+                    ->action(function (Minute $record): void {
+                        self::runMinuteWorkflowAction(function () use ($record): void {
+                            app(ReopenRejectedMinuteAction::class)->reopen(auth()->user(), $record);
+                        }, __('minutes.notifications.reopened'));
+                    }),
 
                 Action::make('archive')
                     ->label(__('minutes.actions.archive'))
                     ->icon(Heroicon::OutlinedArchiveBox)
                     ->visible(fn (Minute $record): bool => $record->status !== MinuteStatus::Archived)
+                    ->authorize(fn (Minute $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->requiresConfirmation()
-                    ->action(fn (Minute $record) => app(ArchiveMinuteAction::class)->archive(auth()->user(), $record)),
+                    ->action(function (Minute $record): void {
+                        self::runMinuteWorkflowAction(function () use ($record): void {
+                            app(ArchiveMinuteAction::class)->archive(auth()->user(), $record);
+                        }, __('minutes.notifications.archived'));
+                    }),
 
                 DeleteAction::make()->label(__('actions.delete')),
                 RestoreAction::make()->label(__('actions.restore')),
@@ -234,7 +294,7 @@ class MinuteResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]); // reason: apenas SoftDeletingScope; incluir trashed no admin; TenantScope mantém-se no query base.
 
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -260,5 +320,33 @@ class MinuteResource extends Resource
             $p->where('user_id', $user->id);
         });
     }
-}
 
+    public static function meetingHasEligibleReviewParticipants(Minute $minute): bool
+    {
+        return $minute->meeting
+            ->participants()
+            ->whereNotNull('user_id')
+            ->exists();
+    }
+
+    /**
+     * @param  callable(): void  $callback
+     */
+    private static function runMinuteWorkflowAction(callable $callback, ?string $successTitle = null): void
+    {
+        try {
+            $callback();
+        } catch (ValidationException $exception) {
+            NotifyActionValidation::send($exception);
+
+            return;
+        }
+
+        if ($successTitle !== null) {
+            Notification::make()
+                ->title($successTitle)
+                ->success()
+                ->send();
+        }
+    }
+}

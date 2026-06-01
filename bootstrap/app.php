@@ -21,12 +21,23 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
-        health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('dashboard:refresh-projections')
             ->everyFiveMinutes()
             ->withoutOverlapping(10)
+            ->runInBackground();
+
+        $schedule->command('backup:run')
+            ->dailyAt('03:00')
+            ->withoutOverlapping(60)
+            ->onOneServer()
+            ->runInBackground();
+
+        $schedule->command('backup:clean')
+            ->dailyAt('03:30')
+            ->withoutOverlapping(60)
+            ->onOneServer()
             ->runInBackground();
     })
     ->withMiddleware(function (Middleware $middleware): void {

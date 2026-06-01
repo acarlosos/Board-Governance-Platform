@@ -29,19 +29,50 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Garante que nunca corremos testes contra MySQL ou outra base de desenvolvimento.
+     * Garante isolamento: SQLite por defeito (CI/local) ou MySQL só no perfil
+     * documentado em docs/testing.md (smoke 17.7 — `.env.testing.mysql`).
      */
     protected function assertApplicationUsesIsolatedTestDatabase(Application $app): void
     {
+        // Laravel só considera runningUnitTests() quando env === 'testing'; o smoke MySQL usa testing.mysql.
         Assert::assertTrue(
-            $app->runningUnitTests(),
-            'A aplicação tem de estar em modo de testes PHPUnit.'
+            $app->runningUnitTests() || $app->environment('testing.mysql'),
+            'APP_ENV tem de ser testing (phpunit.xml) ou testing.mysql (phpunit.mysql.xml).'
         );
+
+        if ($app->environment('testing.mysql')) {
+            Assert::assertFileExists(
+                $app->basePath('.env.testing.mysql'),
+                'Smoke MySQL: copie .env.testing.mysql.example para .env.testing.mysql e configure DB_*.'
+            );
+
+            Assert::assertTrue(
+                $app['config']->get('app.testing_mysql_smoke') === true,
+                'Smoke MySQL: defina TESTING_MYSQL_SMOKE=true em .env.testing.mysql (ver .env.testing.mysql.example).'
+            );
+
+            Assert::assertSame(
+                'mysql',
+                $app['config']->get('database.default'),
+                'Smoke MySQL: DB_CONNECTION tem de ser mysql em .env.testing.mysql.'
+            );
+
+            $dbName = (string) $app['config']->get('database.connections.mysql.database');
+
+            Assert::assertNotSame('', $dbName, 'Smoke MySQL: DB_DATABASE não pode ser vazio.');
+            Assert::assertMatchesRegularExpression(
+                '/_(test|testing|smoke_test)$/i',
+                $dbName,
+                'Smoke MySQL: use um nome dedicado (ex.: *_test, *_testing, *_smoke_test); nunca produção.'
+            );
+
+            return;
+        }
 
         Assert::assertSame(
             'testing',
             $app->environment(),
-            'APP_ENV tem de ser testing para carregar .env.testing.'
+            'APP_ENV tem de ser testing (phpunit.xml) ou testing.mysql (phpunit.mysql.xml).'
         );
 
         Assert::assertSame(

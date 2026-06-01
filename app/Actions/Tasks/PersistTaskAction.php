@@ -46,7 +46,7 @@ final class PersistTaskAction
 
             $assignedTo = $safe->assigned_to ?? null;
             if ($assignedTo) {
-                $user = User::query()->withoutGlobalScopes()->find($assignedTo);
+                $user = User::query()->withoutGlobalScopes()->find($assignedTo); // reason: atribuição cross-check; tenant validado nas regras do payload.
                 if (! $user || (int) $user->tenant_id !== (int) $tenantId) {
                     $v->errors()->add('assigned_to', __('tasks.validation.assigned_must_belong_to_tenant'));
                 }
@@ -127,7 +127,7 @@ final class PersistTaskAction
 
             $assignedTo = $safe->assigned_to ?? null;
             if ($assignedTo) {
-                $user = User::query()->withoutGlobalScopes()->find($assignedTo);
+                $user = User::query()->withoutGlobalScopes()->find($assignedTo); // reason: atribuição cross-check; tenant validado nas regras do payload.
                 if (! $user || (int) $user->tenant_id !== (int) $tenantId) {
                     $v->errors()->add('assigned_to', __('tasks.validation.assigned_must_belong_to_tenant'));
                 }
@@ -208,7 +208,7 @@ final class PersistTaskAction
         }
 
         /** @var class-string<Model> $relatedType */
-        return $relatedType::query()->withoutGlobalScopes()->find((int) $relatedId);
+        return $relatedType::query()->withoutGlobalScopes()->find((int) $relatedId); // reason: polimórfico; tenant do task já estabelecido.
     }
 
     /**

@@ -6,15 +6,17 @@ use App\Actions\Filament\PersistPanelUserAction;
 use App\Enums\UserStatus;
 use App\Filament\Admin\Resources\Users\Pages\ManageUsers;
 use App\Models\User;
+use App\Services\Security\PasswordPolicyService;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
-use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
@@ -106,10 +108,15 @@ class UserResource extends Resource
                             ->revealable()
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->required(fn (string $operation): bool => $operation === 'create')
-                            ->minLength(8)
-                            ->helperText(fn (string $operation): ?string => $operation === 'edit'
-                                ? __('users.fields.password_helper_edit')
-                                : null)
+                            ->rules(fn (string $operation): array => $operation === 'create'
+                                ? array_merge(['required'], app(PasswordPolicyService::class)->rules())
+                                : array_merge(['sometimes'], app(PasswordPolicyService::class)->rules()))
+                            ->validationAttribute(__('users.validation.attributes.password'))
+                            ->helperText(fn (string $operation): ?string => match ($operation) {
+                                'create' => __('users.fields.password_helper_create'),
+                                'edit' => __('users.fields.password_helper_edit'),
+                                default => null,
+                            })
                             ->columnSpanFull(),
                     ]),
                 $sectionLayout(Section::make(__('users.section_organization')))
@@ -120,6 +127,9 @@ class UserResource extends Resource
                             ->relationship('tenant', 'name')
                             ->searchable()
                             ->preload()
+                            ->required(fn (Get $get, string $operation): bool => $operation === 'create'
+                                && ! (bool) $get('is_super_admin'))
+                            ->helperText(__('users.fields.tenant_helper'))
                             ->columnSpanFull(),
                     ]),
                 $sectionLayout(Section::make(__('users.section_permissions')))
@@ -256,8 +266,11 @@ class UserResource extends Resource
                                 ->all(),
                         ];
                     })
-                    ->using(function (array $data, HasActions & HasSchemas $livewire, Model $record, ?\Filament\Tables\Table $table): void {
-                        app(PersistPanelUserAction::class)->update(auth()->user(), $record, $data);
+                    ->using(function (array $data, HasActions&HasSchemas $livewire, Model $record): void {
+                        RemapValidationToMountedAction::run(
+                            fn () => app(PersistPanelUserAction::class)->update(auth()->user(), $record, $data),
+                            $livewire,
+                        );
                     }),
                 DeleteAction::make()
                     ->label(__('actions.delete')),
@@ -302,6 +315,6 @@ class UserResource extends Resource
         return parent::getRecordRouteBindingEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
-            ]);
+            ]); // reason: apenas SoftDeletingScope; resolver URL admin a registos soft-deleted; TenantScope mantém-se no query base.
     }
 }

@@ -44,8 +44,9 @@ Mapeamento exacto: `Database\Seeders\RolesAndPermissionsSeeder`.
 ## Seeders
 
 - `RolesAndPermissionsSeeder` — cria permissões e roles e faz `syncPermissions`.
-- `DatabaseSeeder` — `RolesAndPermissionsSeeder` **antes** de `InitialTenantSeeder`.
-- `InitialTenantSeeder` — administrador inicial recebe role `tenant_admin`.
+- `DatabaseSeeder` — ordem: `RolesAndPermissionsSeeder` → `InitialTenantSeeder` → `SuperAdminSeeder`.
+- `InitialTenantSeeder` — tenant `slug=principal` e administrador da organização com role `tenant_admin` (`SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`).
+- `SuperAdminSeeder` — super administrador **global** (`tenant_id` null, `is_super_admin` true, role `super_admin`; `SEED_SUPER_ADMIN_EMAIL`, `SEED_SUPER_ADMIN_PASSWORD`). Correr isolado: `php artisan db:seed --class=SuperAdminSeeder --force`.
 
 ## Regras de negócio
 

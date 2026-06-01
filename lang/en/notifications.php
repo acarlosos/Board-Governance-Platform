@@ -37,6 +37,15 @@ return [
         'failed' => 'Failed',
     ],
 
+    'bell' => [
+        'heading' => 'Notifications',
+        'mark_all_read' => 'Mark all as read',
+        'empty' => [
+            'heading' => 'No notifications',
+            'description' => 'When you have alerts, they will appear here.',
+        ],
+    ],
+
     'driver' => [
         'database_ok' => 'Internal notification recorded.',
         'email_fake_ok' => 'Fake email send (no SMTP).',
@@ -50,4 +59,3 @@ return [
         'not_allowed' => 'You are not allowed to perform this action.',
     ],
 ];
-

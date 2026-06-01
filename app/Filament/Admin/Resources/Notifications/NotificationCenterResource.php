@@ -9,6 +9,7 @@ use App\Enums\NotificationStatus;
 use App\Filament\Admin\Resources\Notifications\Pages\ManageNotificationsCenter;
 use App\Models\NotificationCenter;
 use App\Models\User;
+use App\Support\Filament\FormatBackedEnumState;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -69,11 +70,11 @@ class NotificationCenterResource extends Resource
                 TextColumn::make('channel')
                     ->label(__('notifications.fields.channel'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('notifications.channel.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('notifications.channel.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('status')
                     ->label(__('notifications.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('notifications.status.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('notifications.status.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('read_at')
                     ->label(__('notifications.fields.read_at'))
                     ->dateTime()
@@ -133,7 +134,7 @@ class NotificationCenterResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]); // reason: apenas SoftDeletingScope; incluir trashed no admin; TenantScope mantém-se no query base.
 
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -151,4 +152,3 @@ class NotificationCenterResource extends Resource
         return $query->where('tenant_id', $user->tenant_id);
     }
 }
-

@@ -8,9 +8,12 @@ use App\Enums\BoardStatus;
 use App\Filament\Admin\Resources\Boards\Pages\ManageBoards;
 use App\Filament\Admin\Resources\Boards\RelationManagers\BoardMembersRelationManager;
 use App\Models\Board;
-use App\Models\User;
+use App\Support\Filament\RelationManagerModalAction;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -163,11 +166,23 @@ class BoardResource extends Resource
                 EditAction::make()
                     ->label(__('actions.edit'))
                     ->modalWidth(Width::FiveExtraLarge)
-                    ->using(function (array $data, HasSchemas $livewire, Model $record): void {
+                    ->using(function (array $data, HasActions&HasSchemas $livewire, Model $record): void {
                         /** @var Board $record */
-                        app(PersistBoardAction::class)->update(auth()->user(), $record, $data);
+                        RemapValidationToMountedAction::run(
+                            fn () => app(PersistBoardAction::class)->update(auth()->user(), $record, $data),
+                            $livewire,
+                        );
                     }),
-                \Filament\Actions\Action::make('archive')
+                RelationManagerModalAction::make(
+                    name: 'members',
+                    label: __('board-members.section_main'),
+                    relationManager: BoardMembersRelationManager::class,
+                    icon: Heroicon::OutlinedUserGroup,
+                    pageClass: ManageBoards::class,
+                    visible: fn (Board $record): bool => auth()->user()?->can('update', $record) ?? false,
+                    recordTitle: fn (Board $record): string => $record->name,
+                ),
+                Action::make('archive')
                     ->label(__('boards.actions.archive'))
                     ->icon(Heroicon::OutlinedArchiveBox)
                     ->visible(fn (Board $record): bool => $record->status !== BoardStatus::Archived)
@@ -231,7 +246,6 @@ class BoardResource extends Resource
         return parent::getRecordRouteBindingEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
-            ]);
+            ]); // reason: apenas SoftDeletingScope; resolver URL admin a registos soft-deleted; TenantScope mantém-se no query base.
     }
 }
-

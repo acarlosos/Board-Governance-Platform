@@ -17,7 +17,7 @@ final class SubmitMinuteForReviewAction
 
         if ($minute->status === MinuteStatus::InReview) {
             // Idempotência: já está em revisão, só garante approvals.
-            return $this->ensureApprovals($minute);
+            return $this->syncApprovals($minute);
         }
 
         if ($minute->status !== MinuteStatus::Draft) {
@@ -33,7 +33,7 @@ final class SubmitMinuteForReviewAction
         }
 
         return DB::transaction(function () use ($minute): Minute {
-            $minute = $this->ensureApprovals($minute);
+            $minute = $this->syncApprovals($minute);
 
             $minute->status = MinuteStatus::InReview;
             $minute->save();
@@ -42,35 +42,33 @@ final class SubmitMinuteForReviewAction
         });
     }
 
-    private function ensureApprovals(Minute $minute): Minute
+    private function syncApprovals(Minute $minute): Minute
     {
-        return DB::transaction(function () use ($minute): Minute {
-            $participantIds = $minute->meeting->participants()
-                ->whereNotNull('user_id')
-                ->pluck('user_id')
-                ->unique()
-                ->values()
-                ->all();
+        $participantIds = $minute->meeting->participants()
+            ->whereNotNull('user_id')
+            ->pluck('user_id')
+            ->unique()
+            ->values()
+            ->all();
 
-            if ($participantIds === []) {
-                throw ValidationException::withMessages([
-                    'meeting_id' => __('minutes.validation.no_participants_for_review'),
-                ]);
-            }
+        if ($participantIds === []) {
+            throw ValidationException::withMessages([
+                'meeting_id' => __('minutes.validation.no_participants_for_review'),
+            ]);
+        }
 
-            foreach ($participantIds as $userId) {
-                $minute->approvals()->updateOrCreate(
-                    ['tenant_id' => $minute->tenant_id, 'user_id' => $userId],
-                    [
-                        'status' => MinuteApprovalStatus::Pending->value,
-                        'approved_at' => null,
-                        'rejected_at' => null,
-                    ],
-                );
-            }
+        foreach ($participantIds as $userId) {
+            $minute->approvals()->updateOrCreate(
+                ['tenant_id' => $minute->tenant_id, 'user_id' => $userId],
+                [
+                    'status' => MinuteApprovalStatus::Pending->value,
+                    'approved_at' => null,
+                    'rejected_at' => null,
+                ],
+            );
+        }
 
-            return $minute->fresh();
-        });
+        return $minute->fresh();
     }
 
     private function assertTenantAccess(User $actor, Minute $minute): void
@@ -86,4 +84,3 @@ final class SubmitMinuteForReviewAction
         }
     }
 }
-

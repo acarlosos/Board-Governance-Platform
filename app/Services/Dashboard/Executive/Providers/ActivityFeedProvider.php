@@ -42,7 +42,7 @@ final class ActivityFeedProvider
         $buffer = (int) ceil($activityMax * 0.5);
         $fetchLimit = $activityMax + $buffer;
 
-        $query = AuditLog::query()->withoutGlobalScopes();
+        $query = AuditLog::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($query);
 
         /** @var Collection<int, AuditLog> $logs */
@@ -113,7 +113,7 @@ final class ActivityFeedProvider
 
         try {
             /** @var class-string<Model> $type */
-            return $type::query()->withoutGlobalScopes()->find($id);
+            return $type::query()->withoutGlobalScopes()->find($id); // reason: polimórfico por classe/id; Gate::view valida acesso ao auditable.
         } catch (\Throwable) {
             return null;
         }

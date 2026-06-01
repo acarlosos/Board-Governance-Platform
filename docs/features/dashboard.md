@@ -307,8 +307,8 @@ Convenção transversal: ver [`.cursor/rules/cache.mdc`](../../.cursor/rules/cac
 - **19A.5** (concluída): `ExecutiveDashboardReadService` em `ExecutiveDashboardReadService.php` + L2 `Cache::flexible` (Hero/Operations); KPI fora do L2 — testes em `ExecutiveDashboardReadServiceTest` e composition.
 - **19A.6** (concluída): gate `view_executive_dashboard` registado em `app/Providers/AuthServiceProvider.php` (wrapper sobre `view_reports` + `super_admin`).
 - **19A.7** (concluída): 4 widgets Livewire em `App\Filament\Admin\Widgets\Executive` + views Blade `bgp-dashboard__*` + asset CSS `public/css/app/bgp-dashboard.css` + i18n `dashboard.executive.*` (pt_BR/en/es) + gate `view_executive_dashboard` nos `Executive*Widget::canView()`; `Dashboard::canAccess()` = autenticado. Coexistência regida pela feature flag `board.dashboard.use_executive_widgets` (default `false`): `false` mantém os 6 `*StatsWidget` legacy visíveis, `true` activa o conjunto executivo e oculta os legacy. Testes em `tests/Feature/Filament/Dashboard/` (page + 4 widgets + smoke).
-- **19A.8** (em curso): validação, hardening e rampa controlada (sem features novas). Pré-trabalho técnico e findings nesta ficha (secção "QA 19A.8 — findings"). Decisão arquitectural §12.C fechada e codificada no gate.
-- **19A.9**: actualizar esta ficha com estado pós-implementação.
+- **19A.8** (evidência estática concluída; **GO staging QA pendente**): validação, hardening e rampa controlada (sem features novas). Findings arquivados nesta ficha (`### QA 19A.8 — findings (arquivado)`). Decisão arquitectural §12.C fechada e codificada no gate. Relatório oficial de staging: [`docs/execution/19A.8-staging-validation.result.md`](../execution/19A.8-staging-validation.result.md).
+- **19A.9** (concluída): sync desta ficha + `architecture.md` + `roadmap.md` pós-19B.1–19B.4 — ver [`docs/execution/19A.9-docs-final.result.md`](../execution/19A.9-docs-final.result.md).
 - **19B.1** (concluída): invalidação L1/L2 por `ExecutiveDashboardCacheInvalidator` + observers (`Task`, `Meeting`, `Vote`, `Minute`, `SignatureRequest`, `NotificationCenter`); chaves centralizadas em `ExecutiveDashboardCacheKeys`; D11 (sem flush `global` por evento de tenant); D12 (`KPI_FIELDS` + `updated` selectivo). Ver secção **19B.1 — Invalidação** abaixo.
 - **19B.2** (concluída): observabilidade leve — `ExecutiveDashboardObservability` (counters diários agregados L1 hit/miss, L2 hit/miss, invalidações), instrumentação em `DashboardMetricsService::getMetrics`, `ExecutiveDashboardReadService::loadOrComputeShared` (skip `none`) e `ExecutiveDashboardCacheInvalidator::invalidateForTenant`; comando `php artisan dashboard:cache-stats [--day=][--json]`. Ver secção **19B.2 — Observabilidade** abaixo e `docs/execution/19B.2-dashboard-observability.md`.
 - **19B.3** (concluída): projection table `tenant_dashboard_snapshots` + `DashboardProjectionService` + job `RefreshTenantDashboardSnapshotJob` + comando `dashboard:refresh-projections`; leitura condicionada a `BGP_DASHBOARD_USE_PROJECTION`; invalidador marca `is_stale`. Ver secção **19B.3 — Projection** abaixo e `docs/execution/19B.3-projection-table.md`.
@@ -455,7 +455,7 @@ Durante a primeira tentativa de deploy do branch `feature/fase19`, o hook `compo
 ```bash
 php artisan filament:assets   # ✅ Successfully published assets! (lista inclui bgp-panel/bgp-login/bgp-dashboard)
 php artisan filament:upgrade  # ✅ Successfully upgraded!
-php artisan test              # ✅ 286/286 verde
+php artisan test              # ✅ suite completa verde (contagem dinâmica; ver último `19A.9-docs-final.result.md` ou CI)
 ```
 
 **Convenção daqui em diante**: qualquer CSS/JS local em `public/` registado via `FilamentAsset` (panel `assets([...])`) **tem de** passar `$path = public_path(...)` ou apontar para `resources/dist/...`. Se o source não existir em disco (ex.: gerado por Vite), apontar para o build output ou usar `loadedOnRequest()` — nunca deixar `$path` implícito a null.
@@ -470,7 +470,7 @@ php artisan test              # ✅ 286/286 verde
 | Providers internos (Hero/KPI/Operations/Priorities/Activity) | `tests/Unit/Dashboard/Executive/Providers/` | 21 testes verde (provém 19A.4) |
 | Read service (composition + cache flow + anti-leakage) | `tests/Feature/Dashboard/Executive/` + `tests/Unit/Dashboard/Executive/ExecutiveDashboardReadServiceCompositionTest` | verde (provém 19A.5) |
 | Snapshot DTOs shape + serialização | `tests/Unit/Dashboard/Executive/Snapshot/` | verde (provém 19A.3) |
-| Regressão API + Auth + Filament + multitenancy | `php artisan test` completo | verde (352/352 na última execução local do Executor; actualizar após cada release) |
+| Regressão API + Auth + Filament + multitenancy | `php artisan test` completo | verde (contagem na última execução documentada em [`19A.9-docs-final.result.md`](../execution/19A.9-docs-final.result.md); actualizar após cada release) |
 
 #### Comportamento por perfil — tabela canónica (validada pelo gate)
 
@@ -563,7 +563,7 @@ Tempo expectável de execução: < 2 minutos. Cobertura automática do rollback 
 
 | Critério | Estado actual | Bloqueia produção? |
 |---|---|---|
-| Suite completa verde | ✅ 286/286 (1941 assertions) | sim |
+| Suite completa verde | ✅ verde (contagem/assertions dinâmicas; ver [`19A.9-docs-final.result.md`](../execution/19A.9-docs-final.result.md) ou CI) | sim |
 | Decisão §12.C fechada e testada | ✅ | sim |
 | 5 perfis seedados | ✅ | sim |
 | Flag documentada em `.env.example` | ✅ | sim |

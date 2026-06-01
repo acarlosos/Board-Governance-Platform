@@ -22,6 +22,7 @@ return [
         'quorum_required' => 'Quorum (minimum votes)',
         'starts_at' => 'Starts at',
         'ends_at' => 'Ends at',
+        'options' => 'Options',
         'responses' => 'Responses',
     ],
 
@@ -48,6 +49,15 @@ return [
         'vote' => 'Vote',
     ],
 
+    'notifications' => [
+        'opened' => 'Vote opened.',
+        'opened_for_participant' => 'Vote opened: :title',
+    ],
+
+    'hints' => [
+        'add_options_after_save' => 'After creating, use Vote options on the list to add at least 2 options before opening the vote.',
+    ],
+
     'validation' => [
         'tenant_required' => 'Tenant is required.',
         'tenant_mismatch' => 'You cannot access resources from another tenant.',
@@ -63,4 +73,3 @@ return [
         'option_must_belong_to_vote' => 'Option must belong to the vote.',
     ],
 ];
-

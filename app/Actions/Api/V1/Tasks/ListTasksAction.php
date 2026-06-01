@@ -34,7 +34,7 @@ final class ListTasksAction
             'desc'
         );
 
-        $builder = Task::query()->withoutGlobalScopes();
+        $builder = Task::query()->withoutGlobalScopes(); // reason: API v1 — strip TenantScope; tenant_id aplicado no builder abaixo.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {

@@ -28,7 +28,11 @@ final class OpenVoteAction
         $vote->status = VoteStatus::Open;
         $vote->save();
 
-        return $vote->fresh();
+        $vote = $vote->fresh();
+
+        app(NotifyVoteOpenedParticipantsAction::class)->notify($actor, $vote);
+
+        return $vote;
     }
 
     private function assertTenantAccess(User $actor, Vote $vote): void
@@ -44,4 +48,3 @@ final class OpenVoteAction
         }
     }
 }
-

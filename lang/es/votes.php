@@ -22,6 +22,7 @@ return [
         'quorum_required' => 'Quórum (mínimo de votos)',
         'starts_at' => 'Inicio',
         'ends_at' => 'Fin',
+        'options' => 'Opciones',
         'responses' => 'Respuestas',
     ],
 
@@ -48,6 +49,15 @@ return [
         'vote' => 'Votar',
     ],
 
+    'notifications' => [
+        'opened' => 'Votación abierta.',
+        'opened_for_participant' => 'Votación abierta: :title',
+    ],
+
+    'hints' => [
+        'add_options_after_save' => 'Después de crear, use Opciones de voto en el listado para añadir al menos 2 opciones antes de abrir la votación.',
+    ],
+
     'validation' => [
         'tenant_required' => 'El tenant es obligatorio.',
         'tenant_mismatch' => 'No puedes acceder a recursos de otro tenant.',
@@ -63,4 +73,3 @@ return [
         'option_must_belong_to_vote' => 'La opción debe pertenecer a la votación.',
     ],
 ];
-

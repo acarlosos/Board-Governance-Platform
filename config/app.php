@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Smoke PHPUnit contra MySQL (17.7)
+    |--------------------------------------------------------------------------
+    |
+    | Quando APP_ENV=testing.mysql e phpunit.mysql.xml, o TestCase exige
+    | TESTING_MYSQL_SMOKE=true e um DB_DATABASE com sufixo seguro.
+    |
+    */
+
+    'testing_mysql_smoke' => filter_var(env('TESTING_MYSQL_SMOKE', '0'), FILTER_VALIDATE_BOOLEAN),
+
 ];

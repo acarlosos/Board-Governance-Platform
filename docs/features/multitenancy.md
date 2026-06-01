@@ -42,6 +42,7 @@ _Não existe tabela de domínio “canário” na aplicação._ Os testes de `Be
 
 - `Database\Seeders\InitialTenantSeeder` — cria tenant `slug=principal` e utilizador administrador ligado ao tenant.
 - Variáveis de ambiente (opcional): `SEED_ADMIN_EMAIL` (default `admin@localhost`), `SEED_ADMIN_PASSWORD` (default `AlterarEstaSenha1!`). **Alterar em produção.**
+- `Database\Seeders\SuperAdminSeeder` — super administrador da plataforma sem tenant (`SEED_SUPER_ADMIN_EMAIL` default `root@localhost`, `SEED_SUPER_ADMIN_PASSWORD` default `AlterarEstaSenhaRoot1!`). Ver `auth-permissions.md`.
 
 ## Policies envolvidas
 

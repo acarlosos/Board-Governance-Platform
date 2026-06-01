@@ -77,21 +77,21 @@ final class DashboardMetricsService
      */
     private function taskMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Task::query()->withoutGlobalScopes();
+        $total = Task::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
-        $open = Task::query()->withoutGlobalScopes();
+        $open = Task::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($open);
         $period->applyToCreatedAt($open);
         $open->whereIn('status', [TaskStatus::Pending->value, TaskStatus::InProgress->value]);
 
-        $completed = Task::query()->withoutGlobalScopes();
+        $completed = Task::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($completed);
         $period->applyToCreatedAt($completed);
         $completed->where('status', TaskStatus::Completed->value);
 
-        $overdue = Task::query()->withoutGlobalScopes();
+        $overdue = Task::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($overdue);
         $overdue->whereIn('status', [TaskStatus::Pending->value, TaskStatus::InProgress->value])
             ->whereNotNull('due_date')
@@ -110,19 +110,19 @@ final class DashboardMetricsService
      */
     private function meetingMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Meeting::query()->withoutGlobalScopes();
+        $total = Meeting::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
         $thisMonthStart = now()->copy()->startOfMonth();
         $thisMonthEnd = now()->copy()->endOfMonth();
 
-        $thisMonth = Meeting::query()->withoutGlobalScopes();
+        $thisMonth = Meeting::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($thisMonth);
         $thisMonth->whereNotNull($thisMonth->qualifyColumn('scheduled_at'))
             ->whereBetween($thisMonth->qualifyColumn('scheduled_at'), [$thisMonthStart, $thisMonthEnd]);
 
-        $completed = Meeting::query()->withoutGlobalScopes();
+        $completed = Meeting::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($completed);
         $period->applyToCreatedAt($completed);
         $completed->where('status', MeetingStatus::Completed->value);
@@ -139,16 +139,16 @@ final class DashboardMetricsService
      */
     private function minuteMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Minute::query()->withoutGlobalScopes();
+        $total = Minute::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
-        $pending = Minute::query()->withoutGlobalScopes();
+        $pending = Minute::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($pending);
         $period->applyToCreatedAt($pending);
         $pending->where('status', MinuteStatus::InReview->value);
 
-        $approved = Minute::query()->withoutGlobalScopes();
+        $approved = Minute::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($approved);
         $period->applyToCreatedAt($approved);
         $approved->where('status', MinuteStatus::Approved->value);
@@ -165,16 +165,16 @@ final class DashboardMetricsService
      */
     private function voteMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = Vote::query()->withoutGlobalScopes();
+        $total = Vote::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
-        $open = Vote::query()->withoutGlobalScopes();
+        $open = Vote::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($open);
         $period->applyToCreatedAt($open);
         $open->where('status', VoteStatus::Open->value);
 
-        $closed = Vote::query()->withoutGlobalScopes();
+        $closed = Vote::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($closed);
         $period->applyToCreatedAt($closed);
         $closed->where('status', VoteStatus::Closed->value);
@@ -191,11 +191,11 @@ final class DashboardMetricsService
      */
     private function signatureMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = SignatureRequest::query()->withoutGlobalScopes();
+        $total = SignatureRequest::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
-        $pending = SignatureRequest::query()->withoutGlobalScopes();
+        $pending = SignatureRequest::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($pending);
         $period->applyToCreatedAt($pending);
         $pending->whereIn('status', [
@@ -204,7 +204,7 @@ final class DashboardMetricsService
             SignatureRequestStatus::Failed->value,
         ]);
 
-        $done = SignatureRequest::query()->withoutGlobalScopes();
+        $done = SignatureRequest::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($done);
         $period->applyToCreatedAt($done);
         $done->where('status', SignatureRequestStatus::Completed->value);
@@ -221,11 +221,11 @@ final class DashboardMetricsService
      */
     private function notificationMetrics(ReportingContext $ctx, DashboardMetricsPeriod $period): array
     {
-        $total = NotificationCenter::query()->withoutGlobalScopes();
+        $total = NotificationCenter::query()->withoutGlobalScopes(); // reason: strip TenantScope; tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($total);
         $period->applyToCreatedAt($total);
 
-        $unread = NotificationCenter::query()->withoutGlobalScopes();
+        $unread = NotificationCenter::query()->withoutGlobalScopes(); // reason: idem — tenant via $ctx->restrictToTenant().
         $ctx->restrictToTenant($unread);
         $period->applyToCreatedAt($unread);
         $unread->where('status', NotificationStatus::Unread->value);

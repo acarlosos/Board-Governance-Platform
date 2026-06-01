@@ -12,8 +12,12 @@ use App\Filament\Admin\Resources\Meetings\RelationManagers\MeetingAgendaItemsRel
 use App\Filament\Admin\Resources\Meetings\RelationManagers\MeetingParticipantsRelationManager;
 use App\Models\Board;
 use App\Models\Meeting;
+use App\Support\Filament\RelationManagerModalAction;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -21,6 +25,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -107,15 +112,16 @@ class MeetingResource extends Resource
                             ->relationship(
                                 name: 'board',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: function (Builder $q): Builder {
+                                modifyQueryUsing: function (Builder $query): Builder {
                                     $user = auth()->user();
                                     if (! $user) {
-                                        return $q;
+                                        return $query;
                                     }
                                     if ($user->isSuperAdmin()) {
-                                        return $q;
+                                        return $query;
                                     }
-                                    return $q->where('tenant_id', $user->tenant_id);
+
+                                    return $query->where('tenant_id', $user->tenant_id);
                                 },
                             )
                             ->searchable()
@@ -124,12 +130,12 @@ class MeetingResource extends Resource
                             ->columnSpanFull(),
                     ]),
                 $sectionLayout(Section::make(__('meetings.section_dates')))
+                    ->columns(3)
                     ->components([
                         DateTimePicker::make('scheduled_at')
                             ->label(__('meetings.fields.scheduled_at'))
                             ->required()
-                            ->seconds(false)
-                            ->columnSpanFull(),
+                            ->seconds(false),
                         DateTimePicker::make('starts_at')
                             ->label(__('meetings.fields.starts_at'))
                             ->seconds(false),
@@ -175,6 +181,7 @@ class MeetingResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('title')
                     ->label(__('meetings.fields.title'))
@@ -224,10 +231,10 @@ class MeetingResource extends Resource
                 Filter::make('scheduled_period')
                     ->label(__('meetings.filters.period'))
                     ->form([
-                        \Filament\Forms\Components\DatePicker::make('from')
+                        DatePicker::make('from')
                             ->label(__('meetings.filters.from'))
                             ->native(false),
-                        \Filament\Forms\Components\DatePicker::make('until')
+                        DatePicker::make('until')
                             ->label(__('meetings.filters.until'))
                             ->native(false),
                     ])
@@ -245,23 +252,42 @@ class MeetingResource extends Resource
                 EditAction::make()
                     ->label(__('actions.edit'))
                     ->modalWidth(Width::FiveExtraLarge)
-                    ->using(function (array $data, HasSchemas $livewire, Model $record): void {
+                    ->using(function (array $data, HasActions&HasSchemas $livewire, Model $record): void {
                         /** @var Meeting $record */
-                        app(PersistMeetingAction::class)->update(auth()->user(), $record, $data);
+                        RemapValidationToMountedAction::run(
+                            fn () => app(PersistMeetingAction::class)->update(auth()->user(), $record, $data),
+                            $livewire,
+                        );
                     }),
-                \Filament\Actions\Action::make('start')
+                RelationManagerModalAction::make(
+                    name: 'participants',
+                    label: __('meeting-participants.section_main'),
+                    relationManager: MeetingParticipantsRelationManager::class,
+                    icon: Heroicon::OutlinedUserGroup,
+                    pageClass: ManageMeetings::class,
+                    visible: fn (Meeting $record): bool => auth()->user()?->can('update', $record) ?? false,
+                ),
+                RelationManagerModalAction::make(
+                    name: 'agenda',
+                    label: __('meeting-agenda-items.section_main'),
+                    relationManager: MeetingAgendaItemsRelationManager::class,
+                    icon: Heroicon::OutlinedClipboardDocumentList,
+                    pageClass: ManageMeetings::class,
+                    visible: fn (Meeting $record): bool => auth()->user()?->can('update', $record) ?? false,
+                ),
+                Action::make('start')
                     ->label(__('meetings.actions.start'))
                     ->icon(Heroicon::OutlinedPlay)
                     ->visible(fn (Meeting $record): bool => $record->status === MeetingStatus::Scheduled)
                     ->requiresConfirmation()
                     ->action(fn (Meeting $record) => app(StartMeetingAction::class)->start(auth()->user(), $record)),
-                \Filament\Actions\Action::make('complete')
+                Action::make('complete')
                     ->label(__('meetings.actions.complete'))
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->visible(fn (Meeting $record): bool => $record->status === MeetingStatus::InProgress)
                     ->requiresConfirmation()
                     ->action(fn (Meeting $record) => app(CompleteMeetingAction::class)->complete(auth()->user(), $record)),
-                \Filament\Actions\Action::make('cancel')
+                Action::make('cancel')
                     ->label(__('meetings.actions.cancel'))
                     ->icon(Heroicon::OutlinedXCircle)
                     ->visible(fn (Meeting $record): bool => in_array($record->status, [MeetingStatus::Draft, MeetingStatus::Scheduled], true))
@@ -327,7 +353,6 @@ class MeetingResource extends Resource
         return parent::getRecordRouteBindingEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
-            ]);
+            ]); // reason: apenas SoftDeletingScope; resolver URL admin a registos soft-deleted; TenantScope mantém-se no query base.
     }
 }
-

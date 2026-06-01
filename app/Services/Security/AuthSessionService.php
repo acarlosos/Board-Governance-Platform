@@ -78,7 +78,7 @@ final class AuthSessionService
     {
         $request ??= request();
 
-        $user = $email ? User::query()->withoutGlobalScopes()->where('email', $email)->first() : null;
+        $user = $email ? User::query()->withoutGlobalScopes()->where('email', $email)->first() : null; // reason: login falhado ainda sem tenant de sessão; auditar por email.
 
         $this->audit->log(
             action: AuditAction::FailedLogin,

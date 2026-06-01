@@ -11,11 +11,18 @@ use App\Enums\TaskStatus;
 use App\Filament\Admin\Resources\Tasks\Pages\ManageTasks;
 use App\Filament\Admin\Resources\Tasks\RelationManagers\TaskCommentsRelationManager;
 use App\Filament\Admin\Resources\Tasks\RelationManagers\TaskHistoryRelationManager;
+use App\Models\Document;
+use App\Models\Meeting;
+use App\Models\Minute;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\Vote;
+use App\Support\Filament\FormatBackedEnumState;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -103,6 +110,7 @@ class TaskResource extends Resource
                                     if (! $user instanceof User || $user->isSuperAdmin()) {
                                         return $query;
                                     }
+
                                     return $query->where('tenant_id', $user->tenant_id);
                                 },
                             )
@@ -130,10 +138,10 @@ class TaskResource extends Resource
                         Select::make('related_type')
                             ->label(__('tasks.fields.related_type'))
                             ->options([
-                                \App\Models\Minute::class => __('minutes.model_label'),
-                                \App\Models\Vote::class => __('votes.model_label'),
-                                \App\Models\Document::class => __('documents.model_label'),
-                                \App\Models\Meeting::class => __('meetings.model_label'),
+                                Minute::class => __('minutes.model_label'),
+                                Vote::class => __('votes.model_label'),
+                                Document::class => __('documents.model_label'),
+                                Meeting::class => __('meetings.model_label'),
                             ])
                             ->live(),
                         TextInput::make('related_id')
@@ -173,11 +181,11 @@ class TaskResource extends Resource
                 TextColumn::make('priority')
                     ->label(__('tasks.fields.priority'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('tasks.priority.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('tasks.priority.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('status')
                     ->label(__('tasks.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('tasks.status.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('tasks.status.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('due_date')
                     ->label(__('tasks.fields.due_date'))
                     ->dateTime()
@@ -201,7 +209,10 @@ class TaskResource extends Resource
             ->actions([
                 EditAction::make()
                     ->label(__('actions.edit'))
-                    ->using(fn (Task $record, array $data): Task => app(PersistTaskAction::class)->update(auth()->user(), $record, $data)),
+                    ->using(fn (Task $record, array $data, HasActions $livewire): Task => RemapValidationToMountedAction::run(
+                        fn (): Task => app(PersistTaskAction::class)->update(auth()->user(), $record, $data),
+                        $livewire,
+                    )),
 
                 Action::make('start')
                     ->label(__('tasks.actions.start'))
@@ -251,7 +262,7 @@ class TaskResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]); // reason: apenas SoftDeletingScope; incluir trashed no admin; TenantScope mantém-se no query base.
 
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -269,4 +280,3 @@ class TaskResource extends Resource
         return $query->where('tenant_id', $user->tenant_id);
     }
 }
-

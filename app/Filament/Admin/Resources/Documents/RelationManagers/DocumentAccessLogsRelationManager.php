@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Documents\RelationManagers;
 
+use App\Enums\DocumentAccessAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -21,11 +22,9 @@ class DocumentAccessLogsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('action')
                     ->label(__('document-access-logs.fields.action'))
-                    ->formatStateUsing(fn ($state): string => match ((string) $state) {
-                        'viewed' => __('document-access-logs.actions.viewed'),
-                        'downloaded' => __('document-access-logs.actions.downloaded'),
-                        default => (string) $state,
-                    })
+                    ->formatStateUsing(fn (DocumentAccessAction|string|null $state): string => __('document-access-logs.actions.'.(
+                        $state instanceof DocumentAccessAction ? $state->value : (string) ($state ?? '')
+                    )))
                     ->badge(),
                 TextColumn::make('user.email')
                     ->label(__('document-access-logs.fields.user'))
@@ -41,4 +40,3 @@ class DocumentAccessLogsRelationManager extends RelationManager
             ->defaultSort('created_at', 'desc');
     }
 }
-

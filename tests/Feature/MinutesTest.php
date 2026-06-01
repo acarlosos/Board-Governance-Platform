@@ -7,7 +7,6 @@ use App\Actions\Minutes\ArchiveMinuteAction;
 use App\Actions\Minutes\CreateMinuteVersionAction;
 use App\Actions\Minutes\PersistMinuteAction;
 use App\Actions\Minutes\RejectMinuteAction;
-use App\Actions\Minutes\ReopenRejectedMinuteAction;
 use App\Actions\Minutes\SubmitMinuteForReviewAction;
 use App\Enums\MinuteApprovalStatus;
 use App\Enums\MinuteStatus;
@@ -205,6 +204,32 @@ class MinutesTest extends TestCase
         app(RejectMinuteAction::class)->reject($u1, $minute2); // não rejeita duas vezes
     }
 
+    public function test_envio_para_revisao_sem_participantes_com_user_id_falha_validacao(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+        $this->actingAs($admin);
+
+        $meeting = Meeting::factory()->create(['tenant_id' => $tenant->id]);
+        $minute = Minute::factory()->create([
+            'tenant_id' => $tenant->id,
+            'meeting_id' => $meeting->id,
+            'status' => MinuteStatus::Draft,
+        ]);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage(__('minutes.validation.no_participants_for_review'));
+
+        try {
+            app(SubmitMinuteForReviewAction::class)->submit($admin, $minute);
+        } catch (ValidationException $exception) {
+            $this->assertSame(MinuteStatus::Draft, $minute->fresh()->status);
+
+            throw $exception;
+        }
+    }
+
     public function test_state_machine_impede_transicoes_invalidas(): void
     {
         $tenant = Tenant::factory()->create();
@@ -284,4 +309,3 @@ class MinutesTest extends TestCase
         $this->assertStringNotContainsString((string) $version->content, $json);
     }
 }
-

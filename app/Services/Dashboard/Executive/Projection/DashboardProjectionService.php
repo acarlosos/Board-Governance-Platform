@@ -17,7 +17,7 @@ final class DashboardProjectionService
 
     public function refreshFor(int $tenantId, DashboardMetricsPeriod $period): void
     {
-        $user = User::query()->withoutGlobalScopes()
+        $user = User::query()->withoutGlobalScopes() // reason: job sem request; filtra tenant_id explicitamente abaixo.
             ->where('tenant_id', $tenantId)
             ->orderBy('id')
             ->first();
@@ -34,7 +34,7 @@ final class DashboardProjectionService
             'operations' => $this->operations->build($user, $period)->toArray(),
         ];
 
-        TenantDashboardSnapshot::query()->withoutGlobalScopes()->updateOrCreate(
+        TenantDashboardSnapshot::query()->withoutGlobalScopes()->updateOrCreate( // reason: escrita L3 por tenant_id; comando/job sem TenantScope HTTP.
             [
                 'tenant_id' => $tenantId,
                 'period' => $period->value,
@@ -50,7 +50,7 @@ final class DashboardProjectionService
     public function findValid(int $tenantId, DashboardMetricsPeriod $period): ?TenantDashboardSnapshot
     {
         $snapshot = TenantDashboardSnapshot::query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScopes() // reason: leitura L3 por tenant_id explícito; fora de request tenant-scoped.
             ->where('tenant_id', $tenantId)
             ->where('period', $period->value)
             ->valid()
@@ -71,7 +71,7 @@ final class DashboardProjectionService
 
     public function markStale(int $tenantId): void
     {
-        TenantDashboardSnapshot::query()->withoutGlobalScopes()
+        TenantDashboardSnapshot::query()->withoutGlobalScopes() // reason: marca stale por tenant_id em job/comando sem TenantScope HTTP.
             ->where('tenant_id', $tenantId)
             ->update(['is_stale' => true]);
     }

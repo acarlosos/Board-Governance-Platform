@@ -13,20 +13,35 @@ Na raiz do projecto:
 bash scripts/deploy.sh
 ```
 
-O script corre `composer install --no-dev`, `migrate --force`, caches de config/route/view e `filament:upgrade`.
+O script corre `composer install --no-dev`, `migrate --force`, caches de config/route/view, `filament:upgrade` e **`php artisan queue:restart`** (PO4 — workers pick up código novo após deploy).
+
+## Rollback operacional (caches + workers)
+
+Após reverter o checkout ou o symlink do release no servidor (Forge / artefacto anterior), repor caches alinhados ao código activo **sem** nova instalação Composer nem migrations:
+
+```bash
+bash scripts/rollback.sh
+```
+
+`migrate:rollback` só manualmente quando a release problemática introduziu migrações e a reversão for segura (ver runbook).
 
 ## Healthcheck
 
-- `GET /health` — JSON `status`, `db`, `cache`, `app_env`; **200** se DB + cache OK, **503** caso contrário.
-- Monitor externo (ex.: UptimeRobot): ping HTTPS a `/health` a cada 1–5 min.
+- **Endpoint oficial:** `GET /health` — JSON `status`, `db`, `cache`, `app_env`; **200** se DB + cache OK, **503** caso contrário.
+- **Decisão (PO5 / PR):** não existe rota `GET /up`; probes e monitorização devem usar apenas `/health` (evita duplicar semântica com o health check mínimo do skeleton Laravel). A rota está em `PreventRequestsDuringMaintenance::except(['/health'])`.
+- Monitor externo (ex.: UptimeRobot): HTTPS a **`/health`** a cada 1–5 min.
 
 ## Scheduler
 
-Confirmar `php artisan schedule:list` inclui `dashboard:refresh-projections` e outras entradas definidas em `bootstrap/app.php`.
+Confirmar `php artisan schedule:list` inclui `dashboard:refresh-projections`, `backup:run`, `backup:clean` e outras entradas em `bootstrap/app.php`.
 
-## Backup
+## Backup (18.5 — `mysqldump` + gzip)
 
-**Pendente:** pacote `spatie/laravel-backup` sem release compatível com **Laravel 13** no momento da execução da fase 18 (ver `docs/execution/18-production-deploy.result.md`). Quando disponível: `composer require spatie/laravel-backup`, publicar config, agendar `backup:run` / `backup:clean`.
+- **Sem Spatie:** backup diário via Artisan `backup:run` (pipe `mysqldump` → `gzip`) e retenção com `backup:clean`. Credenciais apenas via ficheiro temporário `--defaults-file` (nunca `-p` na linha de comando).
+- Saída: `storage/app/backups/bgp-{APP_ENV}-{Y-m-d-His}.sql.gz` (directório ignorado pelo git excepto `.gitkeep`).
+- Agendamento: `backup:run` 03:00, `backup:clean` 03:30 (`bootstrap/app.php`).
+- Servidor: requer `mysqldump` e `gzip` no PATH (Ubuntu/Forge: `mysql-client`).
+- **Não inclui** ficheiros em `storage/app/private` (documentos) — ver runbook (D51).
 
 ## Fila
 

@@ -34,7 +34,7 @@ final class RefreshProjectionsCommand extends Command
             return self::SUCCESS;
         }
 
-        Tenant::query()->withoutGlobalScopes()->orderBy('id')->each(function (Tenant $tenant) use ($force, &$dispatched): void {
+        Tenant::query()->withoutGlobalScopes()->orderBy('id')->each(function (Tenant $tenant) use ($force, &$dispatched): void { // reason: comando consola percorre todos os tenants sem contexto HTTP.
             foreach (DashboardMetricsPeriod::filterOptions() as $period) {
                 if ($this->shouldDispatch((int) $tenant->id, $period, $force)) {
                     RefreshTenantDashboardSnapshotJob::dispatch((int) $tenant->id, $period);
@@ -54,7 +54,7 @@ final class RefreshProjectionsCommand extends Command
             return true;
         }
 
-        $row = TenantDashboardSnapshot::query()->withoutGlobalScopes()
+        $row = TenantDashboardSnapshot::query()->withoutGlobalScopes() // reason: leitura por tenant_id no comando; sem scope de request.
             ->where('tenant_id', $tenantId)
             ->where('period', $period->value)
             ->first();

@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Gerir **reuniões** por board (conselho), com participantes e pauta, estado (máquina de estados), link de videoconferência (apenas URL), isolamento multi-tenant, auditoria e painel Filament.
+Gerir **reuniões** por board (conselho), com participantes e pauta, estado (máquina de estados), link de videoconferência (apenas URL), isolamento multi-tenant, auditoria e painel Filament. No admin: **Criar**, **Editar**, **Participantes** e **Pauta** usam **modal** na listagem (RelationManagers embebidos via Livewire).
 
 ## Tabelas envolvidas
 
@@ -27,7 +27,8 @@ Gerir **reuniões** por board (conselho), com participantes e pauta, estado (má
 
 ## Services / Actions envolvidos
 
-- `App\Actions\Meetings\PersistMeetingAction` — valida `tenant_id` (autofill p/ não-super), valida `board_id` no mesmo tenant.
+- `App\Actions\Meetings\PersistMeetingAction` — valida `tenant_id` (autofill p/ não-super), valida `board_id` no mesmo tenant; na **criação**, em transacção, chama `SyncMeetingParticipantsFromBoardAction`.
+- `App\Actions\Meetings\SyncMeetingParticipantsFromBoardAction` — para cada membro **activo** do `board_id` da reunião, cria `MeetingParticipant` via `PersistMeetingParticipantAction` (estado `invited`, papel mapeado por `App\Support\Meetings\BoardMemberToMeetingParticipantRole`).
 - Transições de status (controladas por actions):
   - `StartMeetingAction` (`scheduled` -> `in_progress`)
   - `CompleteMeetingAction` (`in_progress` -> `completed`)
@@ -42,7 +43,9 @@ Gerir **reuniões** por board (conselho), com participantes e pauta, estado (má
   - `scheduled` -> `in_progress`
   - `in_progress` -> `completed`
   - `draft|scheduled` -> `cancelled`
-- Participante “ativo” na reunião = status em `invited` ou `confirmed` (não pode duplicar).
+- Participante “ativo” na reunião = status em `invited` ou `confirmed` (não pode duplicar); no Filament, o select de **Criar participante** exclui utilizadores já activos (`MeetingParticipant::activeUserIdsForMeetingSubquery`).
+- **Criação da reunião:** participantes iniciais = todos os `board_members` com `status` **active** do conselho seleccionado. Mapeamento de papéis: `chairperson`→`chairperson`, `secretary`→`secretary`, `member`→`participant`, `observer`→`guest`. Conselho sem membros activos → reunião sem participantes (atas em revisão exigem participantes adicionados manualmente ou membros no conselho antes de criar). **Edição** da reunião (incl. mudar `board_id`) **não** reimporta membros.
+- Membro activo do conselho continua a poder **ver** a reunião pela policy mesmo sem registo em `meeting_participants`; a sincronização na criação alinha convites/atas com a composição do conselho.
 
 ## Regras de segurança
 
@@ -52,9 +55,11 @@ Gerir **reuniões** por board (conselho), com participantes e pauta, estado (má
 
 ## Testes relacionados
 
-- `tests/Feature/MeetingsTest.php` — isolamento multi-tenant, bloqueio cross-tenant (board/participante), transições válidas/invalidas, visibilidade de `board_member`/participante, e auditoria (created/status_changed).
+- `tests/Feature/MeetingsTest.php` — isolamento multi-tenant, bloqueio cross-tenant (board/participante), transições válidas/invalidas, visibilidade de `board_member`/participante, auditoria (created/status_changed), sincronização de participantes na criação (activos/inactivos/conselho vazio).
+- `tests/Unit/Support/Meetings/BoardMemberToMeetingParticipantRoleTest.php` — mapeamento de papéis conselho→reunião.
 
 ## Pendências futuras
 
+- Botão «Importar membros do conselho» na edição da reunião ou ao mudar `board_id`.
 - Convites/notificações (e-mail, calendário) — fora de escopo.
 - Integração real de videoconferência — fora de escopo (aqui é apenas URL).

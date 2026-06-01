@@ -15,11 +15,13 @@ use App\Filament\Admin\Resources\Signatures\RelationManagers\SignatureSignersRel
 use App\Models\Document;
 use App\Models\Minute;
 use App\Models\SignatureRequest;
-use App\Models\SignatureRequestSigner;
 use App\Models\User;
+use App\Support\Filament\FormatBackedEnumState;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -176,11 +178,11 @@ class SignatureRequestResource extends Resource
                 TextColumn::make('provider')
                     ->label(__('signatures.fields.provider'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('signatures.provider.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('signatures.provider.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('status')
                     ->label(__('signatures.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('signatures.status.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('signatures.status.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('signable_type')
                     ->label(__('signatures.fields.signable'))
                     ->formatStateUsing(fn ($state): string => $state === Document::class ? __('documents.model_label') : ($state === Minute::class ? __('minutes.model_label') : (string) $state))
@@ -261,7 +263,10 @@ class SignatureRequestResource extends Resource
                 EditAction::make()
                     ->label(__('actions.edit'))
                     ->visible(fn (SignatureRequest $record): bool => $record->status === SignatureRequestStatus::Draft)
-                    ->using(fn (SignatureRequest $record, array $data): SignatureRequest => app(PersistSignatureRequestAction::class)->update(auth()->user(), $record, $data)),
+                    ->using(fn (SignatureRequest $record, array $data, HasActions $livewire): SignatureRequest => RemapValidationToMountedAction::run(
+                        fn (): SignatureRequest => app(PersistSignatureRequestAction::class)->update(auth()->user(), $record, $data),
+                        $livewire,
+                    )),
 
                 DeleteAction::make()->label(__('actions.delete')),
                 RestoreAction::make()->label(__('actions.restore')),
@@ -293,7 +298,7 @@ class SignatureRequestResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]); // reason: apenas SoftDeletingScope; incluir trashed no admin; TenantScope mantém-se no query base.
 
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -311,4 +316,3 @@ class SignatureRequestResource extends Resource
         return $query->where('tenant_id', $user->tenant_id);
     }
 }
-

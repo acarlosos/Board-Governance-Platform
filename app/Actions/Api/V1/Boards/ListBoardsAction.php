@@ -28,7 +28,7 @@ final class ListBoardsAction
             'desc'
         );
 
-        $builder = Board::query()->withoutGlobalScopes();
+        $builder = Board::query()->withoutGlobalScopes(); // reason: API v1 — strip TenantScope; tenant_id do actor no builder.
 
         if (! $actor->isSuperAdmin()) {
             if ($actor->tenant_id === null) {
