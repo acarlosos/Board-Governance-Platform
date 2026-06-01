@@ -7,6 +7,7 @@ use App\Models\Board;
 use App\Models\Meeting;
 use App\Models\User;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -67,22 +68,24 @@ final class PersistMeetingAction
 
         $validated = $validator->validate();
 
-        $meeting = new Meeting;
-        $meeting->fill(Arr::only($validated, [
-            'tenant_id',
-            'board_id',
-            'title',
-            'description',
-            'scheduled_at',
-            'starts_at',
-            'ends_at',
-            'video_conference_url',
-            'status',
-        ]));
-        $meeting->created_by = $actor->getKey();
-        $meeting->save();
+        return DB::transaction(function () use ($actor, $validated): Meeting {
+            $meeting = new Meeting;
+            $meeting->fill(Arr::only($validated, [
+                'tenant_id',
+                'board_id',
+                'title',
+                'description',
+                'scheduled_at',
+                'starts_at',
+                'ends_at',
+                'video_conference_url',
+                'status',
+            ]));
+            $meeting->created_by = $actor->getKey();
+            $meeting->save();
 
-        return $meeting->fresh();
+            return app(SyncMeetingParticipantsFromBoardAction::class)->sync($actor, $meeting);
+        });
     }
 
     /**
@@ -186,4 +189,3 @@ final class PersistMeetingAction
         return $data;
     }
 }
-

@@ -2,6 +2,7 @@
 
 return [
     'create' => 'Create',
+    'cancel' => 'Cancel',
     'edit' => 'Edit',
     'delete' => 'Delete',
     'restore' => 'Restore',

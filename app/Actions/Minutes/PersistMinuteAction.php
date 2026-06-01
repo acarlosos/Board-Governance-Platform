@@ -6,6 +6,7 @@ use App\Enums\MinuteStatus;
 use App\Models\Meeting;
 use App\Models\Minute;
 use App\Models\User;
+use App\Support\Minutes\MinuteContent;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,11 @@ final class PersistMinuteAction
             $safe = $v->safe();
             $tenantId = $safe->tenant_id ?? null;
             $meetingId = $safe->meeting_id ?? null;
+
+            if (MinuteContent::isBlank($safe->content ?? null)) {
+                $v->errors()->add('content', __('minutes.validation.content_required'));
+            }
+
             if (! $tenantId || ! $meetingId) {
                 return;
             }
@@ -82,6 +88,11 @@ final class PersistMinuteAction
             $safe = $v->safe();
             $tenantId = $safe->tenant_id ?? null;
             $meetingId = $safe->meeting_id ?? null;
+
+            if (MinuteContent::isBlank($safe->content ?? null)) {
+                $v->errors()->add('content', __('minutes.validation.content_required'));
+            }
+
             if (! $tenantId || ! $meetingId) {
                 return;
             }
@@ -131,4 +142,3 @@ final class PersistMinuteAction
         return $data;
     }
 }
-

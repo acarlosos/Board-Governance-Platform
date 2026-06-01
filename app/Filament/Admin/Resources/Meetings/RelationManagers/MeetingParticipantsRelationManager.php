@@ -7,12 +7,14 @@ use App\Enums\MeetingParticipantRole;
 use App\Enums\MeetingParticipantStatus;
 use App\Models\Meeting;
 use App\Models\MeetingParticipant;
+use App\Support\Filament\RemapValidationToMountedAction;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Component;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,6 +24,18 @@ use Illuminate\Database\Eloquent\Model;
 class MeetingParticipantsRelationManager extends RelationManager
 {
     protected static string $relationship = 'participants';
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('meeting-participants.section_main');
+    }
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null && $user->can('view', $ownerRecord);
+    }
 
     public function table(Table $table): Table
     {
@@ -48,21 +62,23 @@ class MeetingParticipantsRelationManager extends RelationManager
                     ->label(__('actions.create'))
                     ->modalWidth(Width::FiveExtraLarge)
                     ->form($this->formSchema())
-                    ->using(function (array $data): Model {
+                    ->using(fn (array $data): Model => RemapValidationToMountedAction::run(function () use ($data): Model {
                         /** @var Meeting $meeting */
                         $meeting = $this->getOwnerRecord();
+
                         return app(PersistMeetingParticipantAction::class)->create(auth()->user(), $meeting, $data);
-                    }),
+                    }, $this)),
             ])
             ->actions([
                 EditAction::make()
                     ->label(__('actions.edit'))
                     ->modalWidth(Width::FiveExtraLarge)
                     ->form($this->formSchema(isEdit: true))
-                    ->using(function (array $data, Model $record): Model {
+                    ->using(fn (array $data, Model $record): Model => RemapValidationToMountedAction::run(function () use ($data, $record): Model {
                         /** @var MeetingParticipant $record */
+
                         return app(PersistMeetingParticipantAction::class)->update(auth()->user(), $record, $data);
-                    }),
+                    }, $this)),
                 DeleteAction::make()
                     ->label(__('actions.delete'))
                     ->using(function (Model $record): void {
@@ -73,12 +89,13 @@ class MeetingParticipantsRelationManager extends RelationManager
             ->modifyQueryUsing(function (Builder $query): Builder {
                 /** @var Meeting $meeting */
                 $meeting = $this->getOwnerRecord();
+
                 return $query->where('tenant_id', $meeting->tenant_id);
             });
     }
 
     /**
-     * @return array<int, \Filament\Schemas\Components\Component>
+     * @return array<int, Component>
      */
     private function formSchema(bool $isEdit = false): array
     {
@@ -94,10 +111,18 @@ class MeetingParticipantsRelationManager extends RelationManager
                 ->relationship(
                     name: 'user',
                     titleAttribute: 'email',
-                    modifyQueryUsing: fn (Builder $q) => $q->where('tenant_id', $meeting->tenant_id),
+                    modifyQueryUsing: function (Builder $query) use ($meeting, $isEdit): void {
+                        $query->where('tenant_id', $meeting->tenant_id);
+
+                        if (! $isEdit) {
+                            $query->whereNotIn('id', MeetingParticipant::activeUserIdsForMeetingSubquery($meeting));
+                        }
+                    },
                 )
                 ->searchable()
                 ->preload()
+                ->noOptionsMessage(__('meeting-participants.messages.no_users_available'))
+                ->noSearchResultsMessage(__('meeting-participants.messages.no_users_search_results'))
                 ->required()
                 ->disabled($isEdit),
             Select::make('role')
@@ -117,4 +142,3 @@ class MeetingParticipantsRelationManager extends RelationManager
         ];
     }
 }
-

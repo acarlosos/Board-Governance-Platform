@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SuperAdminSeeder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthPermissionsTest extends TestCase
@@ -112,5 +114,19 @@ class AuthPermissionsTest extends TestCase
 
         $this->assertTrue($user->isSuperAdmin());
         $this->assertTrue($user->shouldBypassTenantScope());
+    }
+
+    public function test_super_admin_seeder_cria_utilizador_global_com_role_e_tenants(): void
+    {
+        $this->seed(SuperAdminSeeder::class);
+
+        $user = User::query()->withoutGlobalScopes()->where('email', 'root@localhost')->first();
+
+        $this->assertNotNull($user);
+        $this->assertNull($user->tenant_id);
+        $this->assertTrue($user->is_super_admin);
+        $this->assertTrue($user->hasRole('super_admin'));
+        $this->assertTrue(Hash::check('AlterarEstaSenhaRoot1!', $user->password));
+        $this->assertTrue(Gate::forUser($user)->allows('viewAny', Tenant::class));
     }
 }

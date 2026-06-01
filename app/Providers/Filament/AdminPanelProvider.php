@@ -2,6 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Livewire\NotificationCenterBell;
+use App\Filament\Admin\Pages\Auth\PgTrustLogin;
+use App\Filament\Admin\Pages\Auth\PgTrustRequestPasswordReset;
+use App\Filament\Admin\Pages\Auth\PgTrustResetPassword;
 use App\Filament\Admin\Widgets\Executive\ExecutiveHeroWidget;
 use App\Filament\Admin\Widgets\Executive\ExecutiveKpiStripWidget;
 use App\Filament\Admin\Widgets\Executive\ExecutiveOperationsWidget;
@@ -12,14 +16,12 @@ use App\Filament\Admin\Widgets\NotificationsStatsWidget;
 use App\Filament\Admin\Widgets\SignaturesStatsWidget;
 use App\Filament\Admin\Widgets\TasksStatsWidget;
 use App\Filament\Admin\Widgets\VotesStatsWidget;
-use App\Filament\Admin\Pages\Auth\PgTrustLogin;
-use App\Filament\Admin\Pages\Auth\PgTrustRequestPasswordReset;
-use App\Filament\Admin\Pages\Auth\PgTrustResetPassword;
 use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TouchAuthSessionActivity;
 use Filament\Actions\EditAction;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Enums\DatabaseNotificationsPosition;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -27,7 +29,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Assets\Css;
-use Filament\Support\Colors\Color;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -81,6 +82,10 @@ class AdminPanelProvider extends PanelProvider
                     fn (EditAction $action): EditAction => $action->color('gray'),
                 );
             })
+            ->databaseNotifications(
+                livewireComponent: NotificationCenterBell::class,
+                position: DatabaseNotificationsPosition::Topbar,
+            )
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
             ->widgets([

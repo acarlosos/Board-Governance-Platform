@@ -3,9 +3,9 @@
 namespace App\Filament\Admin\Resources\Documents;
 
 use App\Actions\Documents\ArchiveDocumentAction;
-use App\Actions\Documents\RecordDocumentAccessAction;
 use App\Actions\Documents\PersistDocumentAction;
 use App\Actions\Documents\PublishDocumentAction;
+use App\Actions\Documents\RecordDocumentAccessAction;
 use App\Enums\DocumentAccessAction;
 use App\Enums\DocumentStatus;
 use App\Filament\Admin\Resources\Documents\Pages\ManageDocuments;
@@ -13,9 +13,11 @@ use App\Filament\Admin\Resources\Documents\RelationManagers\DocumentAccessLogsRe
 use App\Filament\Admin\Resources\Documents\RelationManagers\DocumentVersionsRelationManager;
 use App\Models\Document;
 use App\Models\User;
+use App\Support\Filament\RemapValidationToMountedAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -174,12 +176,9 @@ class DocumentResource extends Resource
                 TextColumn::make('status')
                     ->label(__('documents.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => match ((string) $state) {
-                        DocumentStatus::Draft->value => __('documents.statuses.draft'),
-                        DocumentStatus::Published->value => __('documents.statuses.published'),
-                        DocumentStatus::Archived->value => __('documents.statuses.archived'),
-                        default => (string) $state,
-                    }),
+                    ->formatStateUsing(fn (DocumentStatus|string|null $state): string => __('documents.statuses.'.(
+                        $state instanceof DocumentStatus ? $state->value : (string) ($state ?? '')
+                    ))),
                 TextColumn::make('board.name')
                     ->label(__('documents.fields.board'))
                     ->toggleable(),
@@ -205,9 +204,10 @@ class DocumentResource extends Resource
             ->actions([
                 EditAction::make()
                     ->label(__('actions.edit'))
-                    ->using(function (Document $record, array $data): Document {
-                        return app(PersistDocumentAction::class)->update(auth()->user(), $record, $data);
-                    })
+                    ->using(fn (Document $record, array $data, HasActions $livewire): Document => RemapValidationToMountedAction::run(
+                        fn (): Document => app(PersistDocumentAction::class)->update(auth()->user(), $record, $data),
+                        $livewire,
+                    ))
                     ->after(function (Document $record): void {
                         app(RecordDocumentAccessAction::class)->record(
                             actor: auth()->user(),
@@ -327,4 +327,3 @@ class DocumentResource extends Resource
         });
     }
 }
-

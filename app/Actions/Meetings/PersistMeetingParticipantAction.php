@@ -49,7 +49,7 @@ final class PersistMeetingParticipantAction
                 return;
             }
 
-            $user = \App\Models\User::query()->find($userId);
+            $user = User::query()->find($userId);
             if (! $user) {
                 return;
             }
@@ -62,10 +62,7 @@ final class PersistMeetingParticipantAction
                 ->where('tenant_id', $meeting->tenant_id)
                 ->where('meeting_id', $meeting->id)
                 ->where('user_id', $userId)
-                ->whereIn('status', [
-                    MeetingParticipantStatus::Invited->value,
-                    MeetingParticipantStatus::Confirmed->value,
-                ])
+                ->active()
                 ->exists();
 
             if ($existsActive) {
@@ -132,10 +129,7 @@ final class PersistMeetingParticipantAction
                 ->where('tenant_id', $participant->tenant_id)
                 ->where('meeting_id', $participant->meeting_id)
                 ->where('user_id', $participant->user_id)
-                ->whereIn('status', [
-                    MeetingParticipantStatus::Invited->value,
-                    MeetingParticipantStatus::Confirmed->value,
-                ])
+                ->active()
                 ->whereKeyNot($participant->getKey())
                 ->exists();
 
@@ -172,4 +166,3 @@ final class PersistMeetingParticipantAction
         }
     }
 }
-

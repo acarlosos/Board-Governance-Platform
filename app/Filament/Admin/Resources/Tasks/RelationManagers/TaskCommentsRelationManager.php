@@ -3,17 +3,20 @@
 namespace App\Filament\Admin\Resources\Tasks\RelationManagers;
 
 use App\Actions\Tasks\AddTaskCommentAction;
+use App\Models\Task;
+use App\Support\Filament\RemapValidationToMountedAction;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class TaskCommentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'comments';
 
-    public static function getTitle(\Illuminate\Database\Eloquent\Model $ownerRecord, string $pageClass): string
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('task-comments.plural_label');
     }
@@ -43,14 +46,14 @@ class TaskCommentsRelationManager extends RelationManager
                             ->label(__('task-comments.fields.comment'))
                             ->required(),
                     ])
-                    ->using(function (array $data) {
-                        /** @var \App\Models\Task $task */
+                    ->using(fn (array $data) => RemapValidationToMountedAction::run(function () use ($data) {
+                        /** @var Task $task */
                         $task = $this->getOwnerRecord();
+
                         return app(AddTaskCommentAction::class)->add(auth()->user(), $task, (string) $data['comment']);
-                    }),
+                    }, $this)),
             ])
             ->actions([])
             ->bulkActions([]);
     }
 }
-

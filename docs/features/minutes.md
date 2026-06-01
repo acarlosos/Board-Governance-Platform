@@ -48,9 +48,15 @@ Gerir **atas de reunião** com **versionamento**, **workflow de aprovação** e 
 - **Aprovações**: somente participantes elegíveis (vinculados à reunião no tenant) recebem `MinuteApproval`.
 - **Auditoria sem conteúdo completo**: `MinuteObserver` não registra `content`; `MinuteVersionObserver` registra apenas metadados e `changes_summary`.
 
+## UI Filament (validação)
+
+- Create/Edit em modais delegam a `PersistMinuteAction` / `CreateMinuteVersionAction`. Erros de `ValidationException` com chaves simples (ex. `meeting_id`) são re-mapeados via `App\Support\Filament\RemapValidationToMountedAction` para `mountedActions.*.data.*`, para o Filament exibir mensagens no formulário em vez de falhar em silêncio.
+- Ações de workflow sem formulário (submeter, aprovar, etc.) usam `NotifyActionValidation` para notificação toast.
+
 ## Testes relacionados
 
 - `tests/Feature/MinutesTest.php` — criação, isolamento tenant, visibilidade por participante, versionamento, workflow de revisão/aprovação/rejeição, bloqueio de edição e auditoria sem conteúdo.
+- `tests/Unit/Support/Filament/RemapValidationToMountedActionTest.php` — remapeamento de erros para modais Filament.
 
 ## Pendências futuras
 

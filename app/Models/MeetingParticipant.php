@@ -6,6 +6,7 @@ use App\Enums\MeetingParticipantRole;
 use App\Enums\MeetingParticipantStatus;
 use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\MeetingParticipantFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,5 +51,32 @@ class MeetingParticipant extends Model
     {
         return $this->belongsTo(User::class);
     }
-}
 
+    /**
+     * Participante com convite pendente ou confirmado (não pode duplicar na mesma reunião).
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            MeetingParticipantStatus::Invited->value,
+            MeetingParticipantStatus::Confirmed->value,
+        ]);
+    }
+
+    /**
+     * Subquery de `user_id` já participantes ativos numa reunião (para excluir do select de convite).
+     *
+     * @return Builder<self>
+     */
+    public static function activeUserIdsForMeetingSubquery(Meeting $meeting): Builder
+    {
+        return static::query()
+            ->select('user_id')
+            ->where('tenant_id', $meeting->tenant_id)
+            ->where('meeting_id', $meeting->id)
+            ->active();
+    }
+}

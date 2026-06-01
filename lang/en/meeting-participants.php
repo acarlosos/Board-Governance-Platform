@@ -24,6 +24,11 @@ return [
         'absent' => 'Absent',
     ],
 
+    'messages' => [
+        'no_users_available' => 'No users are available to invite to this meeting.',
+        'no_users_search_results' => 'No users found for this search.',
+    ],
+
     'validation' => [
         'user_must_belong_to_meeting_tenant' => 'The user must belong to the same tenant as the meeting.',
         'duplicate_active_participant' => 'This user is already an active participant of this meeting.',
@@ -35,4 +40,3 @@ return [
         ],
     ],
 ];
-

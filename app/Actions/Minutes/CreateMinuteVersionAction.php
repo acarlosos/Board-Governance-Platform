@@ -6,6 +6,7 @@ use App\Enums\MinuteStatus;
 use App\Models\Minute;
 use App\Models\MinuteVersion;
 use App\Models\User;
+use App\Support\Minutes\MinuteContent;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -25,7 +26,7 @@ final class CreateMinuteVersionAction
             ]);
         }
 
-        if (! isset($data['content']) || ! is_string($data['content']) || $data['content'] === '') {
+        if (! isset($data['content']) || ! is_string($data['content']) || MinuteContent::isBlank($data['content'])) {
             throw ValidationException::withMessages([
                 'content' => __('minutes.validation.content_required'),
             ]);
@@ -90,4 +91,3 @@ final class CreateMinuteVersionAction
         }
     }
 }
-

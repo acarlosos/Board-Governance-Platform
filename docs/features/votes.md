@@ -30,6 +30,15 @@ Gerir **votações** vinculadas a **reuniões**, com opções e respostas, **vot
 - `App\Actions\Votes\CloseVoteAction`
 - `App\Actions\Votes\CancelVoteAction`
 - `App\Actions\Votes\CastVoteAction`
+- `App\Actions\Votes\NotifyVoteOpenedParticipantsAction` — notifica participantes activos ao abrir (chamada por `OpenVoteAction`)
+
+## Notificações ao abrir
+
+- Ao passar para `open`, `OpenVoteAction` invoca `NotifyVoteOpenedParticipantsAction`.
+- Destinatários: participantes da reunião com status **convidado** ou **confirmado** (`MeetingParticipant::active()`), **excepto** quem abriu a votação.
+- Canal `database`; template `vote_opened` (global, override por tenant); `related` = `Vote`.
+- Locale do destinatário (`users.locale`, fallback `pt_BR`). Título fallback: `votes.notifications.opened_for_participant`.
+- Falha ao notificar um destinatário não reverte a abertura da votação.
 
 ## Regras de negócio
 
@@ -37,7 +46,7 @@ Gerir **votações** vinculadas a **reuniões**, com opções e respostas, **vot
 - Apenas participantes da reunião podem votar.
 - Um utilizador só pode votar uma vez por votação (`unique tenant_id + vote_id + user_id`).
 - Máquina de estados (`VoteStatus`): `draft` → `open` → `closed`, e `draft|open` → `cancelled`.
-- Abertura exige pelo menos 2 opções.
+- Abertura exige pelo menos 2 opções (geridas na ação **Opções de voto** na listagem, só em rascunho).
 - Período opcional de votação: respeitar `starts_at` / `ends_at` quando preenchidos.
 
 ## Regras de segurança
@@ -50,6 +59,7 @@ Gerir **votações** vinculadas a **reuniões**, com opções e respostas, **vot
 ## Testes relacionados
 
 - `tests/Feature/VotesTest.php` — multi-tenancy, transições, abertura com 2 opções, voto único, período, opção pertencente à votação e auditoria (`vote_cast` sem comment).
+- `tests/Feature/Votes/VoteOpenedNotificationsTest.php` — notificações ao abrir (destinatários, declined, isolamento tenant).
 
 ## Pendências futuras
 

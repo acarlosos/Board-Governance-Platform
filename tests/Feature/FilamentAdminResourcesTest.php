@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
-use ReflectionClass;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -284,6 +283,30 @@ class FilamentAdminResourcesTest extends TestCase
 
         $this->assertTrue($created->is_super_admin);
         $this->assertTrue($created->hasRole('super_admin'));
+    }
+
+    public function test_super_admin_exige_tenant_id_para_utilizador_de_organizacao(): void
+    {
+        $super = User::factory()->create(['tenant_id' => null]);
+        $super->assignRole('super_admin');
+
+        $this->expectException(ValidationException::class);
+
+        try {
+            app(PersistPanelUserAction::class)->create($super, [
+                'name' => 'Sem tenant',
+                'email' => 'sem-tenant@example.test',
+                'password' => 'StrongPass!1',
+                'locale' => 'pt_BR',
+                'status' => UserStatus::Active->value,
+                'is_super_admin' => false,
+                'roles' => ['tenant_admin'],
+            ]);
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('tenant_id', $e->errors());
+
+            throw $e;
+        }
     }
 
     public function test_desmarcar_is_super_admin_remove_role_super_admin(): void

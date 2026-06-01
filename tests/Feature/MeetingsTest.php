@@ -10,14 +10,16 @@ use App\Actions\Meetings\PersistMeetingAction;
 use App\Actions\Meetings\PersistMeetingParticipantAction;
 use App\Actions\Meetings\StartMeetingAction;
 use App\Enums\AuditAction;
+use App\Enums\BoardMemberRole;
+use App\Enums\BoardMemberStatus;
 use App\Enums\MeetingParticipantRole;
 use App\Enums\MeetingParticipantStatus;
 use App\Enums\MeetingStatus;
 use App\Filament\Admin\Resources\Meetings\MeetingResource;
-use App\Models\AuditLog;
 use App\Models\Board;
 use App\Models\BoardMember;
 use App\Models\Meeting;
+use App\Models\MeetingAgendaItem;
 use App\Models\MeetingParticipant;
 use App\Models\Tenant;
 use App\Models\User;
@@ -90,6 +92,87 @@ class MeetingsTest extends TestCase
         $this->assertSame($tenant->id, $created->tenant_id);
     }
 
+    public function test_criacao_reuniao_sincroniza_membros_activos_do_conselho(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $board = Board::factory()->create(['tenant_id' => $tenant->id]);
+
+        $chair = User::factory()->create(['tenant_id' => $tenant->id]);
+        $member = User::factory()->create(['tenant_id' => $tenant->id]);
+        $inactive = User::factory()->create(['tenant_id' => $tenant->id]);
+
+        BoardMember::factory()->create([
+            'tenant_id' => $tenant->id,
+            'board_id' => $board->id,
+            'user_id' => $chair->id,
+            'role' => BoardMemberRole::Chairperson,
+            'status' => BoardMemberStatus::Active,
+        ]);
+        BoardMember::factory()->create([
+            'tenant_id' => $tenant->id,
+            'board_id' => $board->id,
+            'user_id' => $member->id,
+            'role' => BoardMemberRole::Member,
+            'status' => BoardMemberStatus::Active,
+        ]);
+        BoardMember::factory()->create([
+            'tenant_id' => $tenant->id,
+            'board_id' => $board->id,
+            'user_id' => $inactive->id,
+            'role' => BoardMemberRole::Observer,
+            'status' => BoardMemberStatus::Inactive,
+        ]);
+
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+
+        $meeting = app(PersistMeetingAction::class)->create($admin, [
+            'tenant_id' => $tenant->id,
+            'board_id' => $board->id,
+            'title' => 'Reunião do conselho',
+            'scheduled_at' => now()->addDay()->toDateTimeString(),
+            'status' => MeetingStatus::Draft->value,
+        ]);
+
+        $participants = MeetingParticipant::query()
+            ->where('meeting_id', $meeting->id)
+            ->orderBy('user_id')
+            ->get();
+
+        $this->assertCount(2, $participants);
+
+        $chairParticipant = $participants->firstWhere('user_id', $chair->id);
+        $this->assertNotNull($chairParticipant);
+        $this->assertSame(MeetingParticipantRole::Chairperson, $chairParticipant->role);
+        $this->assertSame(MeetingParticipantStatus::Invited, $chairParticipant->status);
+
+        $memberParticipant = $participants->firstWhere('user_id', $member->id);
+        $this->assertNotNull($memberParticipant);
+        $this->assertSame(MeetingParticipantRole::Participant, $memberParticipant->role);
+        $this->assertSame(MeetingParticipantStatus::Invited, $memberParticipant->status);
+
+        $this->assertNull($participants->firstWhere('user_id', $inactive->id));
+    }
+
+    public function test_criacao_reuniao_com_conselho_sem_membros_nao_cria_participantes(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $board = Board::factory()->create(['tenant_id' => $tenant->id]);
+
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+
+        $meeting = app(PersistMeetingAction::class)->create($admin, [
+            'tenant_id' => $tenant->id,
+            'board_id' => $board->id,
+            'title' => 'Reunião vazia',
+            'scheduled_at' => now()->addDay()->toDateTimeString(),
+            'status' => MeetingStatus::Scheduled->value,
+        ]);
+
+        $this->assertSame(0, MeetingParticipant::query()->where('meeting_id', $meeting->id)->count());
+    }
+
     public function test_board_member_ve_apenas_reunioes_do_board_onde_e_membro_ativo(): void
     {
         $tenant = Tenant::factory()->create();
@@ -103,7 +186,7 @@ class MeetingsTest extends TestCase
             'tenant_id' => $tenant->id,
             'board_id' => $boardA->id,
             'user_id' => $user->id,
-            'status' => \App\Enums\BoardMemberStatus::Active,
+            'status' => BoardMemberStatus::Active,
         ]);
 
         Meeting::factory()->create(['tenant_id' => $tenant->id, 'board_id' => $boardA->id, 'title' => 'M1']);
@@ -142,6 +225,23 @@ class MeetingsTest extends TestCase
 
         $this->assertFalse(Gate::forUser($guest)->allows('viewAny', Meeting::class));
         $this->assertFalse(Gate::forUser($guest)->allows('create', Meeting::class));
+    }
+
+    public function test_policies_de_participantes_e_pauta_usam_view_any_e_create_padrao_laravel(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create(['tenant_id' => $tenant->id]);
+        $admin->assignRole('tenant_admin');
+        $guest = User::factory()->create(['tenant_id' => $tenant->id]);
+        $guest->assignRole('guest');
+
+        $this->assertTrue(Gate::forUser($admin)->allows('viewAny', MeetingParticipant::class));
+        $this->assertTrue(Gate::forUser($admin)->allows('create', MeetingParticipant::class));
+        $this->assertTrue(Gate::forUser($admin)->allows('viewAny', MeetingAgendaItem::class));
+        $this->assertTrue(Gate::forUser($admin)->allows('create', MeetingAgendaItem::class));
+
+        $this->assertFalse(Gate::forUser($guest)->allows('viewAny', MeetingParticipant::class));
+        $this->assertFalse(Gate::forUser($guest)->allows('create', MeetingParticipant::class));
     }
 
     public function test_transicoes_validas_e_invalidas_de_status_sao_controladas_por_actions(): void
@@ -252,5 +352,30 @@ class MeetingsTest extends TestCase
             'status' => MeetingParticipantStatus::Confirmed->value,
         ]);
     }
-}
 
+    public function test_usuarios_ja_participantes_ativos_sao_excluidos_da_lista_de_convite(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $board = Board::factory()->create(['tenant_id' => $tenant->id]);
+        $meeting = Meeting::factory()->create(['tenant_id' => $tenant->id, 'board_id' => $board->id]);
+
+        $invited = User::factory()->create(['tenant_id' => $tenant->id]);
+        $available = User::factory()->create(['tenant_id' => $tenant->id]);
+
+        MeetingParticipant::factory()->create([
+            'tenant_id' => $tenant->id,
+            'meeting_id' => $meeting->id,
+            'user_id' => $invited->id,
+            'status' => MeetingParticipantStatus::Invited,
+        ]);
+
+        $eligibleIds = User::query()
+            ->where('tenant_id', $tenant->id)
+            ->whereNotIn('id', MeetingParticipant::activeUserIdsForMeetingSubquery($meeting))
+            ->pluck('id')
+            ->all();
+
+        $this->assertContains($available->id, $eligibleIds);
+        $this->assertNotContains($invited->id, $eligibleIds);
+    }
+}

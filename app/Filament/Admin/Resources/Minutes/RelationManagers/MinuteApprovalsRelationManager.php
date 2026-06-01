@@ -2,7 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Minutes\RelationManagers;
 
-use App\Models\MinuteApproval;
+use App\Support\Filament\FormatBackedEnumState;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -26,7 +26,7 @@ class MinuteApprovalsRelationManager extends RelationManager
                 TextColumn::make('status')
                     ->label(__('minute-approvals.fields.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state): string => __('minute-approvals.status.'.((string) $state))),
+                    ->formatStateUsing(fn (mixed $state): string => __('minute-approvals.status.'.FormatBackedEnumState::value($state))),
                 TextColumn::make('approved_at')
                     ->label(__('minute-approvals.fields.approved_at'))
                     ->dateTime()
@@ -39,4 +39,3 @@ class MinuteApprovalsRelationManager extends RelationManager
             ->defaultSort('id');
     }
 }
-

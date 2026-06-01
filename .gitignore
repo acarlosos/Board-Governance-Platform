@@ -25,7 +25,13 @@
 /storage/*.key
 /storage/pail
 /vendor
-/lang/vendor
+/lang/vendor/*
+!/lang/vendor/filament-forms/
+/lang/vendor/filament-forms/*
+!/lang/vendor/filament-forms/pt_BR/
+!/lang/vendor/filament-forms/pt_BR/components.php
+!/lang/vendor/filament-forms/es/
+!/lang/vendor/filament-forms/es/components.php
 _ide_helper.php
 Homestead.json
 Homestead.yaml

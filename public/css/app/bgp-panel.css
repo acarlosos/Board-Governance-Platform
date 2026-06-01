@@ -166,3 +166,11 @@
   box-shadow: none !important;
 }
 
+/* Atas — área de edição ampla para texto longo (Filament RichEditor / TipTap) */
+.bgp-minute-rich-editor .ProseMirror,
+.bgp-minute-rich-editor .tiptap {
+  min-height: 22rem;
+  max-height: min(50vh, 32rem);
+  overflow-y: auto;
+}
+

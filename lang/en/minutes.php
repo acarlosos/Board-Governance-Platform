@@ -31,6 +31,14 @@ return [
         'reopen' => 'Reopen for editing',
     ],
 
+    'notifications' => [
+        'submitted_for_review' => 'Minute submitted for review.',
+        'approved' => 'Approval recorded.',
+        'rejected' => 'Rejection recorded.',
+        'reopened' => 'Minute reopened for editing.',
+        'archived' => 'Minute archived.',
+    ],
+
     'status' => [
         'draft' => 'Draft',
         'in_review' => 'In review',
@@ -58,4 +66,3 @@ return [
         'content_required' => 'Content is required.',
     ],
 ];
-

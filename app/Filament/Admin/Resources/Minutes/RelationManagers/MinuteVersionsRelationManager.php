@@ -6,6 +6,7 @@ use App\Actions\Minutes\CreateMinuteVersionAction;
 use App\Enums\MinuteStatus;
 use App\Models\Minute;
 use App\Models\MinuteVersion;
+use App\Support\Filament\RemapValidationToMountedAction;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
@@ -39,16 +40,18 @@ class MinuteVersionsRelationManager extends RelationManager
                     ->visible(function (): bool {
                         /** @var Minute $minute */
                         $minute = $this->getOwnerRecord();
+
                         return $minute->status === MinuteStatus::Draft;
                     })
                     ->form([
                         RichEditor::make('content')
                             ->label(__('minutes.fields.content'))
-                            ->required(),
+                            ->required()
+                            ->extraAttributes(['class' => 'bgp-minute-rich-editor']),
                         Textarea::make('changes_summary')
                             ->label(__('minute-versions.fields.changes_summary')),
                     ])
-                    ->using(function (array $data): MinuteVersion {
+                    ->using(fn (array $data): MinuteVersion => RemapValidationToMountedAction::run(function () use ($data): MinuteVersion {
                         /** @var Minute $minute */
                         $minute = $this->getOwnerRecord();
 
@@ -56,8 +59,7 @@ class MinuteVersionsRelationManager extends RelationManager
                             'content' => (string) $data['content'],
                             'changes_summary' => $data['changes_summary'] ?? null,
                         ]);
-                    }),
+                    }, $this)),
             ]);
     }
 }
-

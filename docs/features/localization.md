@@ -45,6 +45,7 @@ _Nenhuma específica nesta fase._
 - **`lang/vendor/`** está em **`.gitignore`**: evita voltar a versionar milhares de ficheiros por engano.
 - **Só publicar e versionar** traduções de pacote quando for **estritamente necessário** sobrescrever uma ou mais chaves concretas (copywriting, correcção, locale em falta no pacote).
 - Nesse caso: usar `php artisan vendor:publish` **apenas com a tag** do pacote necessário (ex. um único conjunto `*-translations`), editar **só** os ficheiros/locales alterados e **não** adicionar árvores completas de dezenas de idiomas sem critério.
+- **Overrides mínimos (app):** quando o pacote tem locale parcial (ex. `pt_BR` do `filament/forms` sem `components.select.no_options_message`), colocar só as chaves em falta em `lang/vendor/filament-forms/{locale}/components.php` (merge `array_replace_recursive` pelo `FileLoader`). **Não** usar `Lang::addLines()` no boot — marca o grupo como carregado com chaves parciais e faz fallback para `en` nas restantes (ex. `placeholder` → "Select an option"). Excepções em `.gitignore` só para estes ficheiros.
 
 ## Como adicionar novas traduções (app)
 
@@ -71,6 +72,7 @@ _Nenhuma específica nesta fase._
 ## Testes relacionados
 
 - `tests/Feature/LocaleTest.php` — convidado (pt_BR), utilizador `es`, `locale` inválido; usa a rota `testing.locale-smoke` (`/_testing/locale-smoke`, só `APP_ENV=local|testing`) para obter HTML 200 com `messages.welcome.heading` após `SetLocale`.
+- `tests/Unit/Support/Localization/FilamentFormsTranslationsTest.php` — `placeholder` e `no_options_message` do `Select` Filament em `pt_BR` e `es`.
 
 ## Pendências futuras
 

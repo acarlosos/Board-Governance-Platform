@@ -55,11 +55,16 @@ final class PersistPanelUserAction
             ],
         );
 
-        $validator->after(function (\Illuminate\Validation\Validator $v): void {
-            $roles = $v->safe()->roles ?? [];
-            $isSuper = (bool) ($v->safe()->is_super_admin ?? false);
+        $validator->after(function (\Illuminate\Validation\Validator $v) use ($actor): void {
+            $safe = $v->safe();
+            $roles = $safe->roles ?? [];
+            $isSuper = (bool) ($safe->is_super_admin ?? false);
             if (count($roles) < 1 && ! $isSuper) {
                 $v->errors()->add('roles', __('users.validation.roles_required_unless_super'));
+            }
+
+            if ($actor->isSuperAdmin() && ! $isSuper && empty($safe->tenant_id)) {
+                $v->errors()->add('tenant_id', __('users.validation.tenant_required_for_org_user'));
             }
         });
 

@@ -37,6 +37,15 @@ return [
         'failed' => 'Falló',
     ],
 
+    'bell' => [
+        'heading' => 'Notificaciones',
+        'mark_all_read' => 'Marcar todas como leídas',
+        'empty' => [
+            'heading' => 'Sin notificaciones',
+            'description' => 'Cuando tengas avisos, aparecerán aquí.',
+        ],
+    ],
+
     'driver' => [
         'database_ok' => 'Notificación interna registrada.',
         'email_fake_ok' => 'Envío fake de email (sin SMTP).',
@@ -50,4 +59,3 @@ return [
         'not_allowed' => 'No tienes permiso para ejecutar esta acción.',
     ],
 ];
-

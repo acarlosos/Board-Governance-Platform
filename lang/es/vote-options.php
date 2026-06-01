@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'section_main' => 'Opciones de voto',
     'model_label' => 'Opción de voto',
 
     'fields' => [
@@ -9,4 +10,3 @@ return [
         'order' => 'Orden',
     ],
 ];
-

@@ -13,8 +13,10 @@ return [
         'name' => 'Name',
         'email' => 'Email',
         'password' => 'Password',
+        'password_helper_create' => 'At least 8 characters with upper and lower case, numbers and symbols (e.g. ChangeThisPass1!).',
         'password_helper_edit' => 'Leave blank to keep the current password.',
         'tenant' => 'Tenant',
+        'tenant_helper' => 'Required for organization users. Select the tenant you created before saving.',
         'locale' => 'Locale',
         'status' => 'Status',
         'roles' => 'Roles',
@@ -43,5 +45,6 @@ return [
         'tenant_mismatch' => 'This operation is not allowed for this tenant.',
         'roles_not_allowed' => 'One or more roles are not allowed for your profile.',
         'roles_required_unless_super' => 'Select at least one role, or enable “Platform super administrator”.',
+        'tenant_required_for_org_user' => 'Select the organization tenant for this user.',
     ],
 ];

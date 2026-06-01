@@ -7,11 +7,12 @@ use App\Actions\Documents\UploadDocumentVersionAction;
 use App\Enums\DocumentAccessAction;
 use App\Models\Document;
 use App\Models\DocumentVersion;
+use App\Support\Filament\RemapValidationToMountedAction;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
-use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -59,7 +60,7 @@ class DocumentVersionsRelationManager extends RelationManager
                             ->storeFiles(false)
                             ->required(),
                     ])
-                    ->using(function (array $data): DocumentVersion {
+                    ->using(fn (array $data): DocumentVersion => RemapValidationToMountedAction::run(function () use ($data): DocumentVersion {
                         /** @var Document $document */
                         $document = $this->getOwnerRecord();
 
@@ -67,7 +68,7 @@ class DocumentVersionsRelationManager extends RelationManager
                         $file = $data['file'];
 
                         return app(UploadDocumentVersionAction::class)->upload(auth()->user(), $document, $file);
-                    }),
+                    }, $this)),
             ])
             ->actions([
                 Action::make('download')
@@ -93,4 +94,3 @@ class DocumentVersionsRelationManager extends RelationManager
             ]);
     }
 }
-
