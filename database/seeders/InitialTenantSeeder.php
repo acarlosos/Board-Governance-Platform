@@ -7,7 +7,7 @@ use App\Enums\UserStatus;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class InitialTenantSeeder extends Seeder
 {
@@ -27,12 +27,19 @@ class InitialTenantSeeder extends Seeder
 
         $email = env('SEED_ADMIN_EMAIL', 'admin@localhost');
         $password = env('SEED_ADMIN_PASSWORD', 'AlterarEstaSenha1!');
+        $superEmail = env('SEED_SUPER_ADMIN_EMAIL', 'root@localhost');
 
-        $user = User::query()->updateOrCreate(
+        if (strcasecmp($email, $superEmail) === 0) {
+            throw new RuntimeException(
+                'SEED_ADMIN_EMAIL must differ from SEED_SUPER_ADMIN_EMAIL (same email would be overwritten by SuperAdminSeeder).',
+            );
+        }
+
+        $user = User::query()->withoutGlobalScopes()->updateOrCreate(
             ['email' => $email],
             [
                 'name' => 'Administrador',
-                'password' => Hash::make($password),
+                'password' => $password,
                 'locale' => 'pt_BR',
                 'tenant_id' => $tenant->id,
                 'status' => UserStatus::Active,
