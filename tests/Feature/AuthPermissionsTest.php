@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\InitialTenantSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SuperAdminSeeder;
 use Illuminate\Support\Facades\Gate;
@@ -128,5 +130,37 @@ class AuthPermissionsTest extends TestCase
         $this->assertTrue($user->hasRole('super_admin'));
         $this->assertTrue(Hash::check('AlterarEstaSenhaRoot1!', $user->password));
         $this->assertTrue(Gate::forUser($user)->allows('viewAny', Tenant::class));
+    }
+
+    public function test_database_seeder_cria_admin_do_tenant_e_super_admin_distintos(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $tenantAdmin = User::query()->withoutGlobalScopes()->where('email', 'admin@localhost')->first();
+        $superAdmin = User::query()->withoutGlobalScopes()->where('email', 'root@localhost')->first();
+
+        $this->assertNotNull($tenantAdmin);
+        $this->assertNotNull($superAdmin);
+        $this->assertNotSame($tenantAdmin->id, $superAdmin->id);
+        $this->assertNotNull($tenantAdmin->tenant_id);
+        $this->assertTrue($tenantAdmin->hasRole('tenant_admin'));
+        $this->assertFalse($tenantAdmin->is_super_admin);
+        $this->assertNull($superAdmin->tenant_id);
+        $this->assertTrue($superAdmin->hasRole('super_admin'));
+    }
+
+    public function test_seeders_rejeitam_mesmo_email_para_admin_e_super_admin(): void
+    {
+        $this->expectException(\RuntimeException::class);
+
+        putenv('SEED_ADMIN_EMAIL=duplicado@test.local');
+        putenv('SEED_SUPER_ADMIN_EMAIL=duplicado@test.local');
+
+        try {
+            $this->seed(InitialTenantSeeder::class);
+        } finally {
+            putenv('SEED_ADMIN_EMAIL');
+            putenv('SEED_SUPER_ADMIN_EMAIL');
+        }
     }
 }
