@@ -19,6 +19,12 @@ return [
         'form_title' => 'Accede a tu cuenta',
         'form_subtitle' => 'Ingresa con tus credenciales para acceder a la plataforma',
 
+        'form' => [
+            'email' => 'Correo electrónico',
+            'password' => 'Contraseña',
+            'remember' => 'Recordarme',
+        ],
+
         'rights_reserved' => 'Todos los derechos reservados.',
     ],
 ];

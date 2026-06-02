@@ -919,6 +919,22 @@
   max-width: 100%;
 }
 
+/*
+ * Card do formulário é sempre claro (#fff). O Filament aplica dark:text-white nos labels
+ * quando o painel está em dark mode — texto branco sobre fundo branco (só o * vermelho aparece).
+ */
+.bgp-login .bgp-login__form-body .fi-fo-field-label-content {
+  color: #111827 !important;
+}
+
+.bgp-login .bgp-login__form-body .fi-fo-field-label-required-mark {
+  color: #dc2626 !important;
+}
+
+.bgp-login .bgp-login__form-body .fi-fo-checkbox .fi-fo-field-label-content {
+  color: #374151 !important;
+}
+
 /* Ajustes de ergonomia dos campos (sem mexer na lógica do Filament) */
 .bgp-login__form-body input[type="email"],
 .bgp-login__form-body input[type="password"],

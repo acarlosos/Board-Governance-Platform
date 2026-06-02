@@ -73,6 +73,12 @@ _Nenhuma específica nesta fase._
 
 - `tests/Feature/LocaleTest.php` — convidado (pt_BR), utilizador `es`, `locale` inválido; usa a rota `testing.locale-smoke` (`/_testing/locale-smoke`, só `APP_ENV=local|testing`) para obter HTML 200 com `messages.welcome.heading` após `SetLocale`.
 - `tests/Unit/Support/Localization/FilamentFormsTranslationsTest.php` — `placeholder` e `no_options_message` do `Select` Filament em `pt_BR` e `es`.
+- `tests/Feature/Filament/Auth/PgTrustLoginLabelsTest.php` — labels do login PG Trust (`login.pgtrust.form.*`) e CSS do card claro em dark mode.
+
+## Login PG Trust (labels)
+
+- Labels **E-mail**, **Senha** e **Lembrar de mim** vêm de `lang/{locale}/login.php` → `login.pgtrust.form.*` (não do vendor Filament), via `PgTrustLogin`.
+- O card do formulário é sempre claro (`#fff`); `public/css/app/bgp-login.css` força cor escura nos labels Filament (`.fi-fo-field-label-content`) para utilizadores com **dark mode** do painel — sem isso só o asterisco vermelho aparece.
 
 ## Pendências futuras
 

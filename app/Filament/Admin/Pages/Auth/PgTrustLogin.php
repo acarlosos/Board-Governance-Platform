@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Pages\Auth;
 
 use Filament\Auth\Pages\Login as BaseLogin;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Flex;
 use Filament\Schemas\Components\Html;
 use Filament\Schemas\Schema;
@@ -31,6 +32,24 @@ final class PgTrustLogin extends BaseLogin
                 )),
             ])->alignBetween()->verticallyAlignCenter(),
         ]);
+    }
+
+    protected function getEmailFormComponent(): Component
+    {
+        return parent::getEmailFormComponent()
+            ->label(__('login.pgtrust.form.email'));
+    }
+
+    protected function getPasswordFormComponent(): Component
+    {
+        return parent::getPasswordFormComponent()
+            ->label(__('login.pgtrust.form.password'));
+    }
+
+    protected function getRememberFormComponent(): Component
+    {
+        return parent::getRememberFormComponent()
+            ->label(__('login.pgtrust.form.remember'));
     }
 }
 

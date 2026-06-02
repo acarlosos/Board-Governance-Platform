@@ -19,6 +19,12 @@ return [
         'form_title' => 'Access your account',
         'form_subtitle' => 'Sign in with your credentials to access the platform',
 
+        'form' => [
+            'email' => 'Email',
+            'password' => 'Password',
+            'remember' => 'Remember me',
+        ],
+
         'rights_reserved' => 'All rights reserved.',
     ],
 ];
